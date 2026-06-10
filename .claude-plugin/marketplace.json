@@ -1,0 +1,11 @@
+{
+  "name": "foundry",
+  "owner": { "name": "Brandon Ransom" },
+  "plugins": [
+    {
+      "name": "foundry",
+      "source": "./plugins/foundry",
+      "description": "Bootstrap an AI-assisted engineering setup into any repo."
+    }
+  ]
+}
