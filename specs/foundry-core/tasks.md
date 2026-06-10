@@ -303,6 +303,10 @@ jobs:
 Run: `scripts/check-fast.sh`
 Expected: `check-fast: PASS`. (The workflow itself is exercised on first push once a remote exists; if `claude plugin validate` needs auth in CI, gate that section on `CLAUDE_CODE_OAUTH_TOKEN` being present and record the finding here — do not delete the check.)
 
+Finding (2026-06-10): `claude plugin validate` runs unauthenticated — probed with
+`HOME="$(mktemp -d)" claude plugin validate plugins/foundry` → `✔ Validation passed`, exit 0.
+No CI token gating needed.
+
 - [x] **Step 3: Commit**
 
 ```bash

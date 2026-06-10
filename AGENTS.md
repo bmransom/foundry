@@ -13,8 +13,14 @@ Foundry is self-hosted: this repo is developed with its own conventions. The boa
 
 ## Commands
 
-The verification gate lands with the first implementation cards (see the board).
-Until then: `claude plugin validate plugins/foundry` once the plugin manifest exists.
+```bash
+scripts/check-fast.sh                      # the quick gate: plugin validate + byte-identity + script tests
+scripts/install-hooks.sh                   # once per clone: route git hooks through .githooks/
+claude plugin validate plugins/foundry     # manifest check only (runs inside the gate)
+```
+
+The gate runs from `.githooks/pre-push` (bypass once with `git push --no-verify`) and
+from CI (`.github/workflows/check-fast.yml`) — same script, two triggers.
 
 ## Boundaries
 
