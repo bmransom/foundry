@@ -3,9 +3,11 @@
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIPT="$HERE/../scripts/check-byte-identity.sh"
+FIXTURE_ROOT="$(mktemp -d)"
+trap 'rm -rf "$FIXTURE_ROOT"' EXIT
 
 make_fixture() {
-  fixture="$(mktemp -d)"
+  fixture="$(mktemp -d "$FIXTURE_ROOT/case.XXXXXX")"
   mkdir -p "$fixture/plugins/foundry/templates/scripts" "$fixture/scripts"
   printf '# foundry-template: tool v1\necho hello\n' > "$fixture/plugins/foundry/templates/scripts/tool.sh"
   printf '# foundry-template: tool v1\necho hello\n' > "$fixture/scripts/tool.sh"
