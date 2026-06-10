@@ -4,5 +4,5 @@
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 git config core.hooksPath .githooks
-chmod +x .githooks/*
+find .githooks -maxdepth 1 -type f -exec chmod +x {} +
 echo "hooks installed (core.hooksPath=.githooks)"
