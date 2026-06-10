@@ -34,7 +34,7 @@ Octant retrofit is outside this spec (board card, spec to write).
 - Create: `plugins/foundry/.claude-plugin/plugin.json`
 - Create: `.claude-plugin/marketplace.json`
 
-- [ ] **Step 1: Write the plugin manifest**
+- [x] **Step 1: Write the plugin manifest**
 
 ```json
 {
@@ -45,7 +45,7 @@ Octant retrofit is outside this spec (board card, spec to write).
 }
 ```
 
-- [ ] **Step 2: Write the marketplace manifest**
+- [x] **Step 2: Write the marketplace manifest**
 
 ```json
 {
@@ -61,12 +61,12 @@ Octant retrofit is outside this spec (board card, spec to write).
 }
 ```
 
-- [ ] **Step 3: Validate both**
+- [x] **Step 3: Validate both**
 
 Run: `claude plugin validate plugins/foundry && claude plugin validate .`
 Expected: both report valid. If the marketplace form of the command differs in the installed CLI version, check `claude plugin validate --help` and use the documented invocation; record the working invocation in this file.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add plugins/foundry/.claude-plugin/plugin.json .claude-plugin/marketplace.json
@@ -79,7 +79,7 @@ git commit -m "feat(plugin): add plugin and marketplace manifests"
 - Create: `scripts/check-byte-identity.sh`
 - Test: `tests/byte_identity_test.sh`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```bash
 #!/usr/bin/env bash
@@ -115,12 +115,12 @@ if "$SCRIPT" "$fixture" >/dev/null 2>&1; then fail "missing copy should fail"; f
 echo "byte_identity_test: PASS"
 ```
 
-- [ ] **Step 2: Run it to verify it fails**
+- [x] **Step 2: Run it to verify it fails**
 
 Run: `bash tests/byte_identity_test.sh`
 Expected: FAIL — `check-byte-identity.sh` does not exist.
 
-- [ ] **Step 3: Implement the check**
+- [x] **Step 3: Implement the check**
 
 ```bash
 #!/usr/bin/env bash
@@ -152,12 +152,12 @@ done < <(find "$TEMPLATES" -type f -print0)
 exit "$fail"
 ```
 
-- [ ] **Step 4: Run the test to verify it passes**
+- [x] **Step 4: Run the test to verify it passes**
 
 Run: `chmod +x scripts/check-byte-identity.sh tests/byte_identity_test.sh && bash tests/byte_identity_test.sh`
 Expected: `byte_identity_test: PASS`
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add scripts/check-byte-identity.sh tests/byte_identity_test.sh
@@ -171,7 +171,7 @@ git commit -m "feat(gate): add byte-identity self-host check with tests"
 
 This is foundry's own per-repo gate (generated-class, not a template — consumer repos get theirs from the bootstrap skill).
 
-- [ ] **Step 1: Write the gate**
+- [x] **Step 1: Write the gate**
 
 ```bash
 #!/usr/bin/env bash
@@ -193,12 +193,12 @@ done
 echo "check-fast: PASS"
 ```
 
-- [ ] **Step 2: Run it end to end**
+- [x] **Step 2: Run it end to end**
 
 Run: `chmod +x scripts/check-fast.sh && scripts/check-fast.sh`
 Expected: final line `check-fast: PASS`.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add scripts/check-fast.sh
@@ -213,7 +213,7 @@ git commit -m "feat(gate): add check-fast quick gate"
 - Create: `.githooks/pre-push` (foundry's own copy)
 - Create: `scripts/install-hooks.sh` (foundry's own copy)
 
-- [ ] **Step 1: Write the template hook**
+- [x] **Step 1: Write the template hook**
 
 `plugins/foundry/templates/.githooks/pre-push`:
 
@@ -224,7 +224,7 @@ git commit -m "feat(gate): add check-fast quick gate"
 exec "$(git rev-parse --show-toplevel)/scripts/check-fast.sh"
 ```
 
-- [ ] **Step 2: Write the template installer**
+- [x] **Step 2: Write the template installer**
 
 `plugins/foundry/templates/scripts/install-hooks.sh`:
 
@@ -239,7 +239,7 @@ find .githooks -maxdepth 1 -type f -exec chmod +x {} +
 echo "hooks installed (core.hooksPath=.githooks)"
 ```
 
-- [ ] **Step 3: Install foundry's own copies (byte-identical)**
+- [x] **Step 3: Install foundry's own copies (byte-identical)**
 
 ```bash
 mkdir -p .githooks
@@ -251,12 +251,12 @@ scripts/install-hooks.sh
 
 Expected: `hooks installed (core.hooksPath=.githooks)`
 
-- [ ] **Step 4: Run the gate — byte-identity now checks real templates**
+- [x] **Step 4: Run the gate — byte-identity now checks real templates**
 
 Run: `scripts/check-fast.sh`
 Expected: `byte-identity: PASS` (two files compared) and `check-fast: PASS`.
 
-- [ ] **Step 5: Prove the gate discriminates (manual seeded defect)**
+- [x] **Step 5: Prove the gate discriminates (manual seeded defect)**
 
 ```bash
 echo '# drift' >> scripts/install-hooks.sh
@@ -266,7 +266,7 @@ git checkout scripts/install-hooks.sh
 
 Expected: `byte-identity: DRIFT scripts/install-hooks.sh` and `exit=1`, then clean after checkout.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add plugins/foundry/templates .githooks/pre-push scripts/install-hooks.sh
@@ -278,7 +278,7 @@ git commit -m "feat(templates): add pre-push hook and installer as first verbati
 **Files:**
 - Create: `.github/workflows/check-fast.yml`
 
-- [ ] **Step 1: Write the workflow**
+- [x] **Step 1: Write the workflow**
 
 ```yaml
 name: check-fast
@@ -298,12 +298,12 @@ jobs:
       - run: scripts/check-fast.sh
 ```
 
-- [ ] **Step 2: Verify locally what CI will run**
+- [x] **Step 2: Verify locally what CI will run**
 
 Run: `scripts/check-fast.sh`
 Expected: `check-fast: PASS`. (The workflow itself is exercised on first push once a remote exists; if `claude plugin validate` needs auth in CI, gate that section on `CLAUDE_CODE_OAUTH_TOKEN` being present and record the finding here — do not delete the check.)
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add .github/workflows/check-fast.yml
@@ -312,16 +312,16 @@ git commit -m "ci: run the quick gate on push and pull request"
 
 ### Task 6: Record the gate and move the card
 
-- [ ] **Step 1: Run the full gate and capture the PASS**
+- [x] **Step 1: Run the full gate and capture the PASS**
 
 Run: `scripts/check-fast.sh 2>&1 | tail -3`
 Expected: `check-fast: PASS` — paste the output into the board card.
 
-- [ ] **Step 2: Update the board**
+- [x] **Step 2: Update the board**
 
 In `docs/ROADMAP.md`: plugin-skeleton card → `Done — gate recorded <date>: check-fast: PASS`; template-extraction card → `Ready`.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add docs/ROADMAP.md specs/foundry-core/tasks.md
