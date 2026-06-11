@@ -15,7 +15,7 @@ Copy into your reply; check off as you go. A gate is a **prohibition**: do not
 start a later phase until the prior gate is met.
 
 - [ ] **1 Read state** — `.foundry-manifest.json`; absent → Legacy mode (below). GATE: no file writes before the full comparison report.
-- [ ] **2 Compare verbatim** — classify every plugin template: current, refresh, customized, or new. GATE: classification only — no copies yet.
+- [ ] **2 Compare verbatim** — classify every plugin template: current, pristine, customized, or new. GATE: classification only — no copies yet.
 - [ ] **3 Compare seeds** — `foundry-seed:` marker versions, repo vs plugin. GATE: never touch a repo seed.
 - [ ] **4 Report** — the verdict table in the reply; then apply refreshes and new installs. GATE: no write before the table.
 - [ ] **5 Verify** — the repo's canonical gate green; manifest current. GATE: no commit without a pasted PASS and the caller's go-ahead.
@@ -42,7 +42,7 @@ v<N>`) vs the manifest entry's version.
 |---|---|---|
 | same version | **current** | skip |
 | newer; `shasum -a 256` of the repo file equals the manifest hash | **pristine** | refresh: copy byte-exact; re-record name, version, hash |
-| newer; hash differs | **customized** | leave the file alone; flag with both diffs — the template changelog (old → new template) and the local customization (old template → repo file); the old pristine content is in the repo's git history |
+| newer; hash differs | **customized** | leave the file alone; flag with both diffs — the template changelog (old → new template) and the local customization (old template → repo file); the old pristine content may be recoverable from git history — if not, show only the changelog and flag the customization diff as unrecoverable |
 | no manifest entry | **new** | install like bootstrap's Copy: byte-exact, marker included, scripts executable; add the manifest entry |
 
 Manifest hashes cover the installed content *including* its marker — hash what
