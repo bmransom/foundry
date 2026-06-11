@@ -51,6 +51,7 @@ when the caller supplies them. The questions:
 5. Gate commands the team already runs (confirm what Inspect detected).
 6. Will parallel agents work in this repo on one machine?
 7. Apps and services only: the unit of work for logging (request, job, solve…).
+8. The first epic — the milestone that heads the board.
 
 ## 3 · Copy
 
