@@ -73,7 +73,7 @@ every per-stack mapping. Produce:
   repo-portable: discover project-local toolchains (venv, `node_modules/.bin`)
   at runtime; never hardcode machine paths. CI installs dependencies first.
 - `scripts/verify.sh` + machine-global lock — only when an expensive validation
-  exists — see `references/generate.md` §verify.sh.
+  exists — see `references/generate.md` §Gate wiring.
 - `features/` + the stack's BDD runner + one walking-skeleton Scenario through
   a real production entrypoint — no mocks.
 - A CI workflow running the same gate, plus a docs-build job.
