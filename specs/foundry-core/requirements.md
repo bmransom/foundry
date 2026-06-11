@@ -10,8 +10,7 @@ executable Gherkin features, a vitepress doc site with frontmatter-driven discov
 a tracked kanban board with spec pointers, a glossary-as-contract, two-trigger
 verification gates (pre-push + CI), contract-first APIs, agent-isolation patterns,
 and COE-driven eval accretion. Generic parts live in the versioned plugin and
-propagate on update; per-repo parts are installed by a hybrid bootstrap (verbatim
-templates + stack-aware generation).
+propagate on update; a hybrid bootstrap (verbatim templates + stack-aware generation) installs the per-repo parts.
 
 ## User stories
 
@@ -29,7 +28,7 @@ proven working — so a new project starts with the discipline octant evolved.
 - AC-1.2 WHEN bootstrap finishes, THE SYSTEM SHALL have verified its own output:
   hooks installed, vitepress builds, the walking-skeleton Scenario passes, and the
   quick gate passes — a recorded PASS, not a claim.
-- AC-1.3 WHEN the target repo is Rust, Python, or TypeScript (or a mix), THE SYSTEM
+- AC-1.3 WHEN the consumer repo is Rust, Python, or TypeScript (or a mix), THE SYSTEM
   SHALL wire the BDD runner (cucumber-rs / pytest-bdd / cucumber-js) and gate
   commands to the detected stack.
 - AC-1.4 WHEN the repo has an API surface (per the interview), THE SYSTEM SHALL add
@@ -40,7 +39,7 @@ proven working — so a new project starts with the discipline octant evolved.
   testcontainers, or a machine-global gate lock).
 - AC-1.6 WHERE a verbatim template is installed, THE SYSTEM SHALL stamp it with a
   version marker (`foundry-template: <name> v<N>`).
-- AC-1.7 WHEN the target repo is an application or service, THE SYSTEM SHALL write
+- AC-1.7 WHEN the consumer repo is an application or service, THE SYSTEM SHALL write
   a Logging section in AGENTS.md (structured wide events — one canonical event per
   unit of work; glossary vocabulary for field names; trace/span correlation IDs)
   and SHALL wire the stack-standard library (`tracing` / `structlog` / `pino`)

@@ -7,10 +7,8 @@ description: Use when implementing, adding, changing, or fixing a feature in a r
 
 # The code lifecycle
 
-This skill is the **spine** of feature work in any repo with the foundry setup: the
-ordered stages and the gate at each one. It names no other skill — if a more specialized
-one fits a stage's work, prefer it (see **Enhancement** at the end). It owns the
-*sequence* only; every repo specific comes from the repo's own files:
+This skill defines the ordered stages and gates for feature work in any repo with the foundry setup.
+Every repo-specific detail comes from:
 
 | Repo specific | Read it from |
 |---|---|
@@ -42,19 +40,12 @@ not start a later stage until the prior gate is met.
 | **Bug fix** | Reproduce → write the failing test → fix → Verify → Finish. Skip 1–2. |
 | **Refactor** (no behavior change) | Build → Verify → Finish; leave `features/` untouched. |
 
-Match the path to the work: forcing a one-line fix through a full spec breeds
-skipped steps; under-specifying a new feature ships the wrong thing.
-
 ## 1 · Spec
 
 Write `specs/<feature>/{requirements,design,tasks}.md` in the format `specs/README.md`
-defines, in the vocabulary of `docs/glossary.md`. Before coining any canonical name —
-a glossary term, a public type or field, a config knob — search the prior art: the
-domain's literature, the stack's naming conventions, comparable tools (web search when
-local knowledge runs out); prefer the established name and record its provenance — or
-why none fits — in the glossary. Dispatch the `spec-reviewer` agent on the Design
+defines, in the vocabulary of `docs/glossary.md`. Before coining any canonical name (glossary term, public type or field, config knob), search the prior art — domain literature, stack naming conventions, comparable tools; record provenance, or why none fits, in the glossary. Dispatch the `spec-reviewer` agent on the Design
 before presenting it.
-**Gate:** no implementation until the Design is approved and `spec-reviewer` applied.
+**Gate:** no implementation until the Design is approved.
 
 ## 2 · Plan
 
@@ -74,7 +65,7 @@ you commit — never `git add -A` (the tree may be shared by parallel agents).
 ## 4 · Verify
 
 Run the repo's canonical gate — the command `AGENTS.md` Commands names.
-**Gate:** not "done" until a recorded gate PASS — paste the gate's final PASS line, not a claim.
+**Gate:** paste the gate's final PASS line.
 
 ## 5 · Docs
 
@@ -88,7 +79,7 @@ Branch first if you are on the default branch. **Ask before you commit or push.*
 Move the card on `docs/ROADMAP.md` Validating → Done. If a real failure showed the
 setup let an agent go wrong, write a COE from `docs/coe-template.md` — a COE is
 closed only by a mechanical change (gate, lint, rule, or eval case), never prose.
-**Gate:** `Done` requires the recorded gate PASS — the gate is the evaluator, not your assertion.
+**Gate:** `Done` requires the recorded gate PASS.
 
 ## Don't rationalize past a gate
 
