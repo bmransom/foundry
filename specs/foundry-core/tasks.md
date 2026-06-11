@@ -500,3 +500,16 @@ re-run until green.
 ### Task 4.3: record the gate, move the card
 
 Full gate PASS recorded; `update` skill promoted to Ready.
+
+### Wave 4 smoke findings → Wave 6 eval cases (the accretion rule)
+
+The six smoke fixes (F1 epic question, F2 CLI isolation row, F3 vocab-lint
+glossary self-hit, F4 inventory omissions, F5 template code failing a stricter
+consumer linter, F6 CI dependency install) shipped before the eval harness
+exists. Per the eval-accretion rule each becomes a mandatory Wave 6 case:
+the python-service fixture asserts F1/F4 (inventory + epic present), F3
+(vocab-lint passes on a fresh bootstrap, fails on a seeded debt term), F5
+(consumer gate green on template-owned code out of the box), F6 (CI workflow
+installs deps before the gate); the resolved design questions (no Logging for
+a CLI; symlink after AGENTS.md; repo-portable gate commands) get one assertion
+each in the rust-cli fixture.

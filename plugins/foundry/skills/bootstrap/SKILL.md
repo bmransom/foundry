@@ -62,15 +62,17 @@ when the caller supplies them. The questions:
   column, and polarity statement; the first ROADMAP epic; the
   `docs/.vitepress/site.json` title and description. Keep the `foundry-seed:`
   markers.
-- `ln -s AGENTS.md CLAUDE.md` — a symlink, not a copy.
 
 ## 4 · Generate
 
 Read `references/generate.md` first — it carries the AGENTS.md skeleton and
 every per-stack mapping. Produce:
 
-- `AGENTS.md` from the skeleton, filled with detected + interview content.
-- `scripts/check-fast.sh` wired to the repo's real commands.
+- `AGENTS.md` from the skeleton, filled with detected + interview content; then
+  `ln -s AGENTS.md CLAUDE.md` — a symlink, not a copy.
+- `scripts/check-fast.sh` wired to the repo's real commands. Commands must be
+  repo-portable: discover project-local toolchains (venv, `node_modules/.bin`)
+  at runtime; never hardcode machine paths. CI installs dependencies first.
 - `scripts/verify.sh` + machine-global lock — only when an expensive validation
   exists (long benchmark, full integration suite).
 - `features/` + the stack's BDD runner + one walking-skeleton Scenario through

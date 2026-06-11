@@ -103,6 +103,10 @@ feature Scenarios exercise the contract through the production entrypoint.
 
 ## Logging — repo shape is app or service
 
+A plain CLI gets no Logging section: its unit of work ends at the process
+boundary, and its structured output IS its result. Wire logging where work
+outlives a request or run (services, apps, daemons).
+
 | Stack | Library |
 |---|---|
 | Rust | `tracing` + JSON subscriber |
