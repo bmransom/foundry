@@ -92,7 +92,6 @@ def infer_crate(relpath):
 def discover(root, config):
     """Return curated docs as dicts sorted by path. Each dict has public keys
     (path, title, description, kind, crate, lifecycle) plus internal _ok/_meta."""
-    kinds = config["kinds"]
     doc_globs = config["doc_globs"]
     exclude_substrings = config.get("exclude_substrings", [])
     exclude_prefixes = tuple(config.get("exclude_prefixes", []))
