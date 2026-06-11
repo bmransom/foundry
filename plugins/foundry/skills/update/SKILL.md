@@ -22,10 +22,16 @@ start a later phase until the prior gate is met.
 
 ## 1 · Read state
 
-Read `.foundry-manifest.json` at the repo root: the plugin version plus, per
-installed verbatim file, its template name, version, and sha256. Absent → the
-repo predates the manifest; switch to Legacy mode below. Phases 2–3 are
-read-only; nothing is written until the report (4) is in the reply.
+Read `.foundry-manifest.json` at the repo root — the canonical shape, written
+by bootstrap and backfilled by Legacy mode:
+
+```json
+{ "pluginVersion": "0.1.0",
+  "files": { "scripts/board.sh": { "template": "board", "version": 1, "sha256": "<hex>" } } }
+```
+
+Absent → the repo predates the manifest; switch to Legacy mode below. Phases
+2–3 are read-only; nothing is written until the report (4) is in the reply.
 
 ## 2 · Compare verbatim
 

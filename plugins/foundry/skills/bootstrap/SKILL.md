@@ -63,7 +63,9 @@ when the caller supplies them. The questions:
   markers.
 - Write `.foundry-manifest.json`: the plugin version, plus per verbatim file its
   template name, marker version, and `shasum -a 256` of the installed content —
-  `/foundry:update` tells pristine from customized by these hashes.
+  `/foundry:update` tells pristine from customized by these hashes. The shape:
+  `{"pluginVersion": "<v>", "files": {"<repo path>": {"template": "<name>",
+  "version": <N>, "sha256": "<hex>"}}}`.
 
 ## 4 · Generate
 
