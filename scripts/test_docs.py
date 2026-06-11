@@ -466,6 +466,13 @@ class ParseHeadingsTests(unittest.TestCase):
         headings = docs.parse_headings(text)
         self.assertEqual(headings[0][1], "Spaced heading")
 
+    def test_ignores_hash_inside_fenced_block(self):
+        """A # line inside a fenced code block must not be treated as a heading."""
+        text = "## Real heading\n\n```bash\n# not a heading\necho hello\n```\n"
+        headings = docs.parse_headings(text)
+        self.assertEqual(len(headings), 1)
+        self.assertEqual(headings[0][1], "Real heading")
+
 
 # ---------------------------------------------------------------------------
 # cmd_outline  (TDD — tests written before implementation)
@@ -605,6 +612,59 @@ class SectionTests(unittest.TestCase):
         code, output = self._run_section(self.SAMPLE_DOC, "terms")
         self.assertEqual(code, 0)
         self.assertIn("Canonical terms", output)
+
+    def test_section_includes_post_fence_body(self):
+        """Body text after a fenced code block (which contains a # comment) must
+        appear in the section output; the next sibling heading stops extraction."""
+        doc = (
+            "## Target\n"
+            "\n"
+            "```bash\n"
+            "# shell comment — not a heading\n"
+            "echo done\n"
+            "```\n"
+            "\n"
+            "post-fence body\n"
+            "\n"
+            "## Next\n"
+            "\n"
+            "should not appear\n"
+        )
+        code, output = self._run_section(doc, "Target")
+        self.assertEqual(code, 0)
+        self.assertIn("post-fence body", output)
+        self.assertNotIn("should not appear", output)
+
+
+# ---------------------------------------------------------------------------
+# main() — lazy config loading (Fix 2)
+# ---------------------------------------------------------------------------
+
+
+class MainLazyConfigTests(unittest.TestCase):
+    def test_outline_via_main_succeeds_without_docs_config(self):
+        """main() must not call load_config() before it knows the command;
+        outline/section must work in a repo with no docs/docs-config.json."""
+        with tempfile.TemporaryDirectory() as root:
+            doc_rel = "doc.md"
+            _make_tree(root, {doc_rel: "# Title\n\n## Section\n"})
+            # Temporarily redirect REPO_ROOT so docs.py resolves paths here
+            original_root = docs.REPO_ROOT
+            original_config_path = docs.CONFIG_PATH
+            docs.REPO_ROOT = root
+            docs.CONFIG_PATH = os.path.join(root, "docs", "docs-config.json")
+            try:
+                import io
+                from unittest.mock import patch
+
+                captured = io.StringIO()
+                with patch("sys.stdout", captured):
+                    code = docs.main(["outline", doc_rel])
+                self.assertEqual(code, 0)
+                self.assertIn("Title", captured.getvalue())
+            finally:
+                docs.REPO_ROOT = original_root
+                docs.CONFIG_PATH = original_config_path
 
 
 if __name__ == "__main__":

@@ -307,9 +307,15 @@ def sync_site(root, config):
 def parse_headings(text):
     """Return list of (level, text, lineno) for every ATX heading in text.
     lineno is 1-based. Only ATX headings (# ... lines) are matched; setext
-    headings are ignored."""
+    headings and lines inside fenced code blocks are ignored."""
     headings = []
+    in_fence = False
     for lineno, line in enumerate(text.splitlines(), start=1):
+        if line.lstrip().startswith("```"):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
         match = re.match(r"^(#{1,6})\s+(.*)", line)
         if match:
             level = len(match.group(1))
@@ -384,17 +390,13 @@ def cmd_section(doc_path, heading_query, root):
 
 
 def main(argv=None):
-    config = load_config()
-    kinds = config["kinds"]
-    lifecycles = config.get("lifecycles", ["current", "superseded", "historical"])
-
     parser = argparse.ArgumentParser(prog="docs", description=__doc__.splitlines()[0])
     sub = parser.add_subparsers(dest="command", required=True)
 
     p_list = sub.add_parser("list", help="list curated docs grouped by kind")
-    p_list.add_argument("--kind", choices=kinds)
+    p_list.add_argument("--kind")
     p_list.add_argument("--crate")
-    p_list.add_argument("--lifecycle", choices=lifecycles)
+    p_list.add_argument("--lifecycle")
     p_list.add_argument("--json", action="store_true", help="machine-readable array")
     p_list.add_argument("--paths", action="store_true", help="bare paths only")
 
@@ -419,6 +421,17 @@ def main(argv=None):
 
     args = parser.parse_args(argv)
 
+    if args.command == "outline":
+        return cmd_outline(args.doc_path, REPO_ROOT)
+
+    if args.command == "section":
+        return cmd_section(args.doc_path, args.heading, REPO_ROOT)
+
+    # Commands below require config.
+    config = load_config()
+    kinds = config["kinds"]
+    lifecycles = config.get("lifecycles", ["current", "superseded", "historical"])
+
     if args.command == "check":
         code, report = run_check(REPO_ROOT, config)
         stream = sys.stderr if code else sys.stdout
@@ -440,18 +453,22 @@ def main(argv=None):
         print(f"docs sync: staged {sync_site(REPO_ROOT, config)} crate docs")
         return 0
 
-    if args.command == "outline":
-        return cmd_outline(args.doc_path, REPO_ROOT)
-
-    if args.command == "section":
-        return cmd_section(args.doc_path, args.heading, REPO_ROOT)
-
+    # args.command == "list"
+    # Validate --kind / --lifecycle after loading config so choices are accurate.
+    kind = getattr(args, "kind", None)
+    lifecycle = getattr(args, "lifecycle", None)
+    if kind and kind not in kinds:
+        parser.error(f"argument --kind: invalid choice: '{kind}' (choose from {kinds})")
+    if lifecycle and lifecycle not in lifecycles:
+        parser.error(
+            f"argument --lifecycle: invalid choice: '{lifecycle}' (choose from {lifecycles})"
+        )
     docs_list = filter_docs(
-        curated(REPO_ROOT, config), args.kind, args.crate, args.lifecycle
+        curated(REPO_ROOT, config), kind, getattr(args, "crate", None), lifecycle
     )
-    if args.json:
+    if getattr(args, "json", False):
         print(json.dumps([public_view(d) for d in docs_list], indent=2))
-    elif args.paths:
+    elif getattr(args, "paths", False):
         print("\n".join(d["path"] for d in docs_list))
     else:
         print(format_list(docs_list, config))
