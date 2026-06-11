@@ -14,13 +14,16 @@ Expected — every row present (plus whatever the repo already had):
 | Path | Class |
 |---|---|
 | `AGENTS.md` · `CLAUDE.md -> AGENTS.md` (symlink) | generated |
-| `docs/{README,index,ROADMAP,BACKLOG,glossary,validation,coe-template}.md` · `docs/docs-config.json` | seeds, filled |
+| `docs/{README,index,ROADMAP,BACKLOG,glossary,validation,coe-template}.md` | seeds, filled |
+| `docs/docs-config.json` | seed (generic config — nothing to fill) |
 | `docs/.vitepress/{config.ts,site.json}` · `docs/{package.json,tsconfig.json}` | verbatim (`site.json` is a seed) |
 | `specs/README.md` · `features/README.md` · `.claude/rules/spec-conventions.md` | seeds |
 | `features/<name>.feature` + its runner wiring | generated |
 | `scripts/{docs.py,test_docs.py,board.sh,install-hooks.sh,worktree-retire.sh}` · `.githooks/pre-push` | verbatim |
 | `scripts/check-fast.sh` · `.github/workflows/check-fast.yml` | generated |
 | `scripts/verify.sh` (+ lock) | generated — only when an expensive validation exists |
+| `scripts/vocab-lint.sh` | generated — only when the glossary debt column has entries |
+| `scripts/agent-env.sh` | generated — only for service/app + parallel agents |
 
 Version markers (AC-1.6):
 
