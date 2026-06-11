@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Status:** Wave 1 planned in detail (2026-06-10); Waves 2–7 scope-locked, each planned at claim time per the lifecycle Plan stage — tracked on the [board](../../docs/ROADMAP.md).
+**Status:** Wave 1 done (2026-06-10); Waves 2–7 scope-locked, each planned at claim time per the lifecycle Plan stage — tracked on the [board](../../docs/ROADMAP.md). Wave 1 code blocks below were synced with the post-review fixes (marketplace validate in the gate, EMPTY-TEMPLATE check, no-tests guard, install-hooks hook-count guard) so the plan remains a faithful account of what shipped.
 
 **Goal:** Ship foundry v1 — an installable Claude Code plugin whose bootstrap installs the octant-style setup into any repo, with evals that grade changes.
 
@@ -87,9 +87,11 @@ git commit -m "feat(plugin): add plugin and marketplace manifests"
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIPT="$HERE/../scripts/check-byte-identity.sh"
+FIXTURE_ROOT="$(mktemp -d)"
+trap 'rm -rf "$FIXTURE_ROOT"' EXIT
 
 make_fixture() {
-  fixture="$(mktemp -d)"
+  fixture="$(mktemp -d "$FIXTURE_ROOT/case.XXXXXX")"
   mkdir -p "$fixture/plugins/foundry/templates/scripts" "$fixture/scripts"
   printf '# foundry-template: tool v1\necho hello\n' > "$fixture/plugins/foundry/templates/scripts/tool.sh"
   printf '# foundry-template: tool v1\necho hello\n' > "$fixture/scripts/tool.sh"
@@ -112,6 +114,11 @@ make_fixture
 rm "$fixture/scripts/tool.sh"
 if "$SCRIPT" "$fixture" >/dev/null 2>&1; then fail "missing copy should fail"; fi
 
+make_fixture
+printf '# foundry-template: tool v1\n' > "$fixture/plugins/foundry/templates/scripts/tool.sh"
+: > "$fixture/scripts/tool.sh"
+if "$SCRIPT" "$fixture" >/dev/null 2>&1; then fail "marker-only template should fail"; fi
+
 echo "byte_identity_test: PASS"
 ```
 
@@ -132,24 +139,29 @@ REPO="${1:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 TEMPLATES="$REPO/plugins/foundry/templates"
 [ -d "$TEMPLATES" ] || { echo "byte-identity: PASS (no templates yet)"; exit 0; }
 
-fail=0
+has_violation=0
 while IFS= read -r -d '' template_file; do
   relative_path="${template_file#"$TEMPLATES/"}"
   repo_copy="$REPO/$relative_path"
-  if [ ! -f "$repo_copy" ]; then
-    echo "byte-identity: MISSING $relative_path"
-    fail=1
+  if ! grep -qvF 'foundry-template:' "$template_file"; then
+    echo "byte-identity: EMPTY-TEMPLATE $relative_path (no content besides the marker)"
+    has_violation=1
     continue
   fi
-  if ! diff -q <(grep -v 'foundry-template:' "$template_file") \
-               <(grep -v 'foundry-template:' "$repo_copy") >/dev/null; then
+  if [ ! -f "$repo_copy" ]; then
+    echo "byte-identity: MISSING $relative_path"
+    has_violation=1
+    continue
+  fi
+  if ! diff -q <(grep -vF 'foundry-template:' "$template_file") \
+               <(grep -vF 'foundry-template:' "$repo_copy") >/dev/null; then
     echo "byte-identity: DRIFT $relative_path"
-    fail=1
+    has_violation=1
   fi
 done < <(find "$TEMPLATES" -type f -print0)
 
-[ "$fail" -eq 0 ] && echo "byte-identity: PASS"
-exit "$fail"
+[ "$has_violation" -eq 0 ] && echo "byte-identity: PASS"
+exit "$has_violation"
 ```
 
 - [x] **Step 4: Run the test to verify it passes**
@@ -181,12 +193,15 @@ REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 echo "== plugin validate"
 claude plugin validate "$REPO/plugins/foundry"
+claude plugin validate "$REPO"
 
 echo "== byte identity"
 "$REPO/scripts/check-byte-identity.sh"
 
 echo "== script tests"
-for test_file in "$REPO"/tests/*_test.sh; do
+test_files=("$REPO"/tests/*_test.sh)
+[ -e "${test_files[0]}" ] || { echo "check-fast: no test files found in tests/" >&2; exit 1; }
+for test_file in "${test_files[@]}"; do
   bash "$test_file"
 done
 
@@ -234,9 +249,11 @@ exec "$(git rev-parse --show-toplevel)/scripts/check-fast.sh"
 # One-time per clone: route git hooks through .githooks/.
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
+hook_count="$(find .githooks -maxdepth 1 -type f | wc -l | tr -d ' ')"
+[ "$hook_count" -gt 0 ] || { echo "install-hooks: no hook files in .githooks/ — nothing to install" >&2; exit 1; }
 git config core.hooksPath .githooks
 find .githooks -maxdepth 1 -type f -exec chmod +x {} +
-echo "hooks installed (core.hooksPath=.githooks)"
+echo "hooks installed (core.hooksPath=.githooks, $hook_count hook(s))"
 ```
 
 - [x] **Step 3: Install foundry's own copies (byte-identical)**
