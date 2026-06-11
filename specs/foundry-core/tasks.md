@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Status:** Waves 1–5 done (2026-06-11); Waves 6–7 scope-locked, each planned at claim time per the lifecycle Plan stage — tracked on the [board](../../docs/ROADMAP.md). Wave 1 code blocks below were synced with the post-review fixes (marketplace validate in the gate, EMPTY-TEMPLATE check, no-tests guard, install-hooks hook-count guard) so the plan remains a faithful account of what shipped.
+**Status:** Waves 1–6 done (2026-06-11); Wave 7 scope-locked, each planned at claim time per the lifecycle Plan stage — tracked on the [board](../../docs/ROADMAP.md). Wave 1 code blocks below were synced with the post-review fixes (marketplace validate in the gate, EMPTY-TEMPLATE check, no-tests guard, install-hooks hook-count guard) so the plan remains a faithful account of what shipped.
 
 **Goal:** Ship foundry v1 — an installable Claude Code plugin whose bootstrap installs the octant-style setup into any repo, with evals that grade changes.
 

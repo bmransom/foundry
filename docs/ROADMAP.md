@@ -41,7 +41,7 @@ model, forbidden terms, standing rules, or gate commands.
 | `spec-reviewer` agent, generalized (entity model read from repo glossary) (@main) | Done — gate recorded 2026-06-11: check-fast: PASS | `specs/foundry-core/` | template extraction |
 | `bootstrap` skill: inspect → interview → copy → generate → verify (@main) | Done — gate recorded 2026-06-11: check-fast: PASS; smoke bootstrap of /tmp/wclip green end-to-end | `specs/foundry-core/` | template extraction |
 | `update` skill: version-marker diff + refresh (@main) | Done — gate recorded 2026-06-11: check-fast: PASS; smoke update of /tmp/wclip green (legacy backfill, refresh, customization protection, seed announce) | `specs/foundry-core/` | bootstrap skill |
-| Evals L1–L2: fixtures (Rust CLI, Python service, TS monorepo), harness, seeded defects, gate-discrimination checks (@main) | In progress | `specs/foundry-core/` | bootstrap skill |
-| Evals L3: spec-reviewer precision/recall suite; lifecycle artifact checks | Planned | `specs/foundry-core/` | Evals L1–L2 |
+| Evals L1–L2: fixtures (Rust CLI, Python service, TS monorepo), harness, seeded defects, gate-discrimination checks (@main) | Done — 2026-06-11: full headless sweep green — python-service 51/51, rust-cli 47/47, ts-monorepo 46/46, update-eval 11/11; check-fast: PASS | `specs/foundry-core/` | bootstrap skill |
+| Evals L3: spec-reviewer precision/recall suite; lifecycle artifact checks | Ready | `specs/foundry-core/` | Evals L1–L2 |
 | COE mechanism: template (landed Wave 2), promote-upstream flow, eval-accretion rule (@main) | Done — gate recorded 2026-06-11: check-fast: PASS | `specs/foundry-core/` | plugin skeleton |
 | Octant retrofit: consume foundry, move generic skill content upstream, keep lp-result-triage local | Backlog | spec to write | bootstrap skill |
