@@ -124,7 +124,7 @@ work in the production entrypoint, so the walking skeleton exercises it.
 |---|---|
 | Service/app, parallel agents | `scripts/agent-env.sh`: per-worktree `.env`, deterministic free ports; testcontainers wiring for integration tests |
 | Resource-heavy single-host gate | machine-global mkdir-lock in `verify.sh`, stale-lock reclaim |
-| Library / solo | `worktree-retire.sh` + the explicit-paths staging rule only |
+| Library or CLI / solo | `worktree-retire.sh` + the explicit-paths staging rule only |
 
 ## CI workflow
 
