@@ -11,7 +11,7 @@
 # them) — and REFUSES to remove a worktree that still holds un-promoted notes.
 #
 # Promote durable notes to the TRACKED tree first (docs/ROADMAP.md, specs/,
-# docs/backlog), commit, then retire. `--force` deletes anyway.
+# docs/BACKLOG.md), commit, then retire. `--force` deletes anyway.
 #
 # Usage: scripts/worktree-retire.sh <worktree-path> [--force]
 set -euo pipefail
@@ -40,7 +40,7 @@ if [ -n "$strays" ] && [ "$force" -eq 0 ]; then
   echo "$strays" | sed 's/^/    /' >&2
   echo "" >&2
   echo "  These are NOT in git and will be lost on removal. Promote what matters to the" >&2
-  echo "  tracked tree (docs/ROADMAP.md, specs/, docs/backlog), commit," >&2
+  echo "  tracked tree (docs/ROADMAP.md, specs/, docs/BACKLOG.md), commit," >&2
   echo "  then retire. Or re-run with --force to delete them anyway." >&2
   exit 1
 fi
