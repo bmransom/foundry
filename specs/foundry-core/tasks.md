@@ -623,3 +623,49 @@ pointer; .gitignore evals/results/.
 ### Task 6.6: record the gate, move the card
 
 Evals L3 promoted to Ready.
+
+---
+
+## Wave 7 — Evals L3 + v1.0.0 (claimed @main 2026-06-11)
+
+Behavioral evals for the prompt artifacts (AC-5.3), then the version-bump rule
+(AC-2.3): 1.0.0 ships only on a green L3 run. Honest framing per design
+§Evals: at affordable N these are smoke alarms for large regressions, not
+statistics — report scores and variance, never pretend precision.
+
+### Task 7.1: reviewer eval
+
+`evals/fixtures/reviewer/`: a fake consumer tree (glossary with canonical
+terms + debt column + a small entity model; AGENTS.md writing style) and a
+spec `design.md` carrying ~10 seeded violations — debt terms, an entity-model
+misfit, an uncited coined term, passive/wordy prose — each with a unique
+greppable signature, PLUS 2–3 decoys (correct usages a sloppy reviewer would
+flag, e.g. a coined term WITH recorded prior art). `answer-key.json` lists
+violation signatures and decoy signatures. `evals/harness/reviewer-eval.sh`:
+N headless runs (default 3) of the spec-reviewer agent over the fixture;
+mechanical scoring — recall = seeded signatures present in the findings,
+decoy hits = precision failures; NDJSON per case + a summary record with
+mean/min recall and decoy count; provisional pass bar: mean recall ≥ 0.8 AND
+zero decoy hits (calibrate against the first real runs and record actuals).
+Scorer logic TDD'd against canned findings text.
+
+### Task 7.2: run the reviewer eval
+
+Three runs; calibrate; fix fixture/agent defects found; record scores on the
+board.
+
+### Task 7.3: lifecycle eval
+
+`evals/harness/lifecycle-eval.sh <bootstrapped-tree>`: one scripted small
+feature ("add a --version flag" class) executed headless under the code
+skill with canned approvals; artifact graders (mechanical): the Scenario's
+commit precedes or equals the implementation commit; the transcript carries a
+pasted gate PASS line; no `git add -A`/`git add .` in the transcript;
+`specs/<feature>/{requirements,design,tasks}.md` exist; gate green at HEAD.
+One run against a fresh `bootstrap-eval.sh --keep` tree — a smoke alarm, run
+once per version bump.
+
+### Task 7.4: v1.0.0
+
+On green 7.2 + 7.3: plugin.json → 1.0.0; validation.md L3 rows; board — Epic 0
+wraps with only the octant retrofit remaining (own spec).
