@@ -40,6 +40,11 @@ proven working — so a new project starts with the discipline octant evolved.
   testcontainers, or a machine-global gate lock).
 - AC-1.6 WHERE a verbatim template is installed, THE SYSTEM SHALL stamp it with a
   version marker (`foundry-template: <name> v<N>`).
+- AC-1.7 WHEN the target repo is an application or service, THE SYSTEM SHALL write
+  a Logging section in AGENTS.md (structured wide events — one canonical event per
+  unit of work; glossary vocabulary for field names; trace/span correlation IDs)
+  and SHALL wire the stack-standard library (`tracing` / `structlog` / `pino`)
+  with one working example event.
 
 **US-2 Update propagation.** As the maintainer, when I improve foundry, consumer
 repos receive the improvement — skills and agents automatically via the plugin,

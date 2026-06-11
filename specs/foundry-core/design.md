@@ -101,12 +101,50 @@ the consumer repo's AGENTS.md.
 (fast feedback, bypassable) and CI (non-bypassable backstop). `verify.sh` exists
 only where an expensive validation does.
 
+**Structured logging.** Application and service repos get a Logging section in
+AGENTS.md: structured key-value events, never prose interpolation; one **wide
+event** (canonical log line) per unit of work carrying identity, release metadata,
+execution cost, and decision inputs; trace/span correlation IDs on every record
+(OpenTelemetry semantic conventions where OTel is in play); field names come from
+the repo glossary — the log schema is the glossary on the wire. Stack mapping:
+`tracing` + JSON subscriber (Rust), `structlog` (Python), `pino` (TS/Node). The
+interview names the unit of work (request, job, solve) so the canonical event has a
+name from day one. Octant's NDJSON `Trace` is the worked example of the pattern.
+Applied to foundry itself at its native scale: gates emit stable one-line
+`key: value` verdicts (`check-fast: PASS`, `byte-identity: DRIFT <path>`), and the
+eval harness (Wave 6) emits one NDJSON wide event per eval case (fixture, seeded
+defect, verdict, duration, tokens).
+
 **COE.** Template ships in every bootstrap: what happened, root cause, blast
 radius, the mechanical fix, the eval case spawned. Closure rule: prose alone never
 closes a COE. Promotion rule: root cause in shared machinery → the COE moves to
 foundry and adds a fixture/answer-key case. Octant's production-path COE is the
 worked example: it becomes the seeded defect proving the production-path lint
 discriminates.
+
+## Tooling decisions
+
+**Repo scripts over agent tools.** `docs.py`, `board.sh`, and the gates stay plain
+CLI scripts shipped as templates — not MCP tools, not plugin `bin/` executables.
+Rationale: the portability principle (any agent, humans, and CI can run them; an
+MCP tool is Claude-session-only), discovery is solved by AGENTS.md naming the
+command, and a CLI has no extra process or config to fail. Plugin `bin/` was
+considered and rejected: it would make consumer repos depend on the plugin being
+installed, breaking self-containedness for CI and non-Claude users.
+
+**Progressive disclosure has three levels; tooling covers the first two, grep the
+third.**
+
+| Level | Question | Mechanism |
+|---|---|---|
+| 1 — index | "what docs exist?" | `docs.py list` — kind + title + frontmatter description |
+| 2 — outline | "what's in this 30 KB doc?" | `docs.py outline <doc>` — heading tree; `docs.py section <doc> <heading>` prints one section |
+| 3 — retrieval | "where is X discussed?" | grep + targeted Read — already optimal, no tooling |
+
+Level 2 (`outline`/`section`) is new in the Wave 2 template: it lets an agent pull
+one section of a large reference doc instead of the whole file, mirroring the
+manual → table-of-contents → chapter structure skills use. Level 3 stays grep:
+a search index would be machinery without a failure it prevents.
 
 ## Update mechanism
 
@@ -167,4 +205,6 @@ Polyglot targets · shared core as a plugin (not one-shot copy, not copier templ
 plugin over a standalone scaffolding agent (distribution + versioning + propagation;
 agents are used *inside* the design where context isolation pays: spec-reviewer) ·
 CI mirroring and explicit versioning added after best-practice review · COE and
-self-hosting adopted 2026-06-10.
+self-hosting adopted 2026-06-10 · structured logging (wide events + OTel correlation
++ glossary field names) and the script-over-MCP tooling decision with `docs.py
+outline`/`section` added 2026-06-10.

@@ -15,7 +15,7 @@
 | Wave | Scope | Spec coverage | Detail |
 |---|---|---|---|
 | 1 | Plugin skeleton + self-host gate + CI | design §Shape, AC-5.1 (gate + byte-identity), AC-2.3 (version field) | below |
-| 2 | Template extraction from octant: `docs.py` (config block) + `test_docs.py`, `board.sh`, vitepress scaffold, `ROADMAP`/`BACKLOG`/`glossary`/`validation`/`index`/`specs-README`/`features-README`/`spec-conventions`/COE templates, `worktree-retire.sh`; foundry adopts each as it lands | AC-1.1, AC-1.6, AC-6.1, design §Split | at claim |
+| 2 | Template extraction from octant: `docs.py` (config block; new `outline` + `section` subcommands per design §Tooling decisions) + `test_docs.py`, `board.sh`, vitepress scaffold, `ROADMAP`/`BACKLOG`/`glossary`/`validation`/`index`/`specs-README`/`features-README`/`spec-conventions`/COE templates, `worktree-retire.sh`; foundry adopts each as it lands | AC-1.1, AC-1.6, AC-6.1, design §Split | at claim |
 | 3 | `code` lifecycle skill + `spec-reviewer` agent, generalized (commands/paths/entity model read from consumer repo files) | US-3, US-4 | at claim |
 | 4 | `bootstrap` skill: inspect → interview → copy → generate → verify | US-1 (all ACs), design §Bootstrap flow, §Isolation | at claim |
 | 5 | `update` skill: version-marker diff + refresh, flag customized files | AC-2.1, AC-2.2 | at claim |
@@ -266,7 +266,7 @@ chmod +x .githooks/pre-push scripts/install-hooks.sh plugins/foundry/templates/.
 scripts/install-hooks.sh
 ```
 
-Expected: `hooks installed (core.hooksPath=.githooks)`
+Expected: `hooks installed (core.hooksPath=.githooks, 2 hook(s))` (count reflects files present)
 
 - [x] **Step 4: Run the gate — byte-identity now checks real templates**
 
