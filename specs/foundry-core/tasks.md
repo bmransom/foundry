@@ -410,3 +410,51 @@ Gate: docs.py check green over the adopted files; seeds audit clean.
 
 Run the full gate, record PASS on the template-extraction card, promote the
 Wave 3 card (lifecycle skill + spec-reviewer) and the COE-mechanism card to Ready.
+
+---
+
+## Wave 3 — Skills, agent, context budget, COE closure (claimed @main 2026-06-11)
+
+First plugin-resident prose: held hardest to Strunk & White (design §Context-economy
+prose) and budget-linted. Octant sources: `.claude/skills/code/SKILL.md`,
+`.claude/agents/spec-reviewer.md`. Generalization rule: the skill/agent name no
+repo specifics — commands, paths, and the entity model come from the consumer
+repo's AGENTS.md, glossary, and seeds (AC-3.1, AC-4.1).
+
+### Task 3.1: `code` lifecycle skill
+
+`plugins/foundry/skills/code/SKILL.md`, generalized from octant's: the 7-stage
+checklist (Frame → Spec → Plan → Build → Verify → Docs → Finish) with gate
+prohibitions; Frame routes by work size (AC-3.2); feature-file-first (AC-3.3);
+prior-art naming step in the Spec stage (AC-3.4); board claim at Plan, card move +
+recorded gate PASS at Finish; COE on field failures the setup permitted; the
+"Don't rationalize past a gate" table; the Enhancement rule (prefer a more
+specialized skill per stage). All repo specifics read from AGENTS.md/seeds.
+Gate: `claude plugin validate plugins/foundry` green; prose review applied.
+
+### Task 3.2: `spec-reviewer` agent
+
+`plugins/foundry/agents/spec-reviewer.md`, generalized: criteria from files at
+review time (repo glossary + entity model, AGENTS.md writing style) — never the
+agent's priors; flags non-canonical and debt-column terms, entity-model misfits,
+near-duplicate names, coined terms with no prior art or reason (AC-4.3), prose
+violations; scope covers specs AND context-resident files; read-only tools.
+Gate: plugin validate green; smoke-run the agent on a foundry spec.
+
+### Task 3.3: context-budget lint
+
+`scripts/check-context-budget.sh` (foundry-internal, not a template) + test:
+fail when plugin-resident prose exceeds its budget — budgets calibrated from the
+real Wave 3 files and recorded in the script. Wire into `check-fast.sh`.
+Gate: TDD red→green; seeded oversize file fails the lint.
+
+### Task 3.4: COE mechanism closure
+
+Foundry adopts `docs/coe-template.md` from the seed; `docs/README.md` index
+pointer. The promote-upstream flow and eval-accretion rule are already recorded
+(design §COE, AGENTS.md); this closes the card.
+Gate: `python3 scripts/docs.py check` green.
+
+### Task 3.5: Record the gate, move the cards
+
+Full gate PASS recorded on all three cards; bootstrap card promoted to Ready.
