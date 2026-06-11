@@ -80,4 +80,6 @@ sides, the idiom foundry's own check-byte-identity.sh uses:
 - different → flag for human review with the diff; no manifest entry, no write.
 
 Write `.foundry-manifest.json` from the verified entries plus the plugin
-version, report, and stop. The next run proceeds in manifest mode above.
+version, report, and finish with 5 · Verify — the backfill is a write, so it
+needs the pasted PASS and the caller's go-ahead like any other. Refreshes wait
+for the next run, which proceeds in manifest mode above.
