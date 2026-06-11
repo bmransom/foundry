@@ -8,8 +8,8 @@ trap 'rm -rf "$FIXTURE_ROOT"' EXIT
 
 make_fixture() {
   fixture="$(mktemp -d "$FIXTURE_ROOT/case.XXXXXX")"
-  mkdir -p "$fixture/plugins/foundry/templates/scripts" "$fixture/scripts"
-  printf '# foundry-template: tool v1\necho hello\n' > "$fixture/plugins/foundry/templates/scripts/tool.sh"
+  mkdir -p "$fixture/plugins/foundry/templates/verbatim/scripts" "$fixture/scripts"
+  printf '# foundry-template: tool v1\necho hello\n' > "$fixture/plugins/foundry/templates/verbatim/scripts/tool.sh"
   printf '# foundry-template: tool v1\necho hello\n' > "$fixture/scripts/tool.sh"
 }
 
@@ -31,7 +31,7 @@ rm "$fixture/scripts/tool.sh"
 if "$SCRIPT" "$fixture" >/dev/null 2>&1; then fail "missing copy should fail"; fi
 
 make_fixture
-printf '# foundry-template: tool v1\n' > "$fixture/plugins/foundry/templates/scripts/tool.sh"
+printf '# foundry-template: tool v1\n' > "$fixture/plugins/foundry/templates/verbatim/scripts/tool.sh"
 : > "$fixture/scripts/tool.sh"
 if "$SCRIPT" "$fixture" >/dev/null 2>&1; then fail "marker-only template should fail"; fi
 

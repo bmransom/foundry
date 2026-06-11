@@ -19,7 +19,7 @@ foundry/
       code/SKILL.md                   # generalized lifecycle
     agents/
       spec-reviewer.md
-    templates/                        # verbatim-copy files, version-marked
+    templates/{verbatim,seeds}/       # byte-checked tooling / repo-owned starting points
   evals/
     fixtures/                         # rust-cli/, python-service/, ts-monorepo/
     harness/                          # headless runner + graders + answer keys

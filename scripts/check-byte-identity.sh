@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # Self-host gate: foundry's own copies of verbatim templates must be
-# byte-identical to plugins/foundry/templates/ (modulo the version-marker line).
+# byte-identical to plugins/foundry/templates/verbatim/ (modulo the version-marker line).
 # Usage: check-byte-identity.sh [repo-root]   (defaults to this repo)
 set -euo pipefail
 REPO="${1:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
-TEMPLATES="$REPO/plugins/foundry/templates"
-[ -d "$TEMPLATES" ] || { echo "byte-identity: PASS (no templates yet)"; exit 0; }
+TEMPLATES="$REPO/plugins/foundry/templates/verbatim"
+[ -d "$TEMPLATES" ] || { echo "byte-identity: PASS (no verbatim templates yet)"; exit 0; }
 
 has_violation=0
 while IFS= read -r -d '' template_file; do

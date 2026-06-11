@@ -38,7 +38,7 @@ from CI (`.github/workflows/check-fast.yml`) — same script, two triggers.
   comparable tools. Prefer the established term; record provenance in
   `docs/glossary.md`.
 - Keep foundry's own copies of verbatim-template files byte-identical to
-  `plugins/foundry/templates/` (modulo the version marker) — the self-host gate.
+  `plugins/foundry/templates/verbatim/` (modulo the version marker) — the self-host gate.
 - A template or skill change that alters behavior needs an eval case before it ships.
 - A COE is closed only by a mechanical change (gate, lint, rule, or eval fixture),
   never by prose alone.
