@@ -14,6 +14,9 @@ echo "== docs"
 python3 "$REPO/scripts/docs.py" check
 python3 "$REPO/scripts/test_docs.py"
 
+echo "== context budget"
+"$REPO/scripts/check-context-budget.sh"
+
 echo "== script tests"
 test_files=("$REPO"/tests/*_test.sh)
 [ -e "${test_files[0]}" ] || { echo "check-fast: no test files found in tests/" >&2; exit 1; }
