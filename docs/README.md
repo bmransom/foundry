@@ -30,6 +30,7 @@ Every doc carries frontmatter — `title`, `description`, and one `kind`:
 
 ## Index
 
+- Evals live in `../evals/` — fixtures, the headless harness, NDJSON results; see `validation.md` for the commands.
 <!-- Add an index pointer here for every new doc. -->
 
 - `ROADMAP.md` — the board; the single source of truth for cross-spec status.
