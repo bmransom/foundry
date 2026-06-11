@@ -21,7 +21,7 @@ has_violation=0
 check_file() {
   local path="$1" budget="$2"
   local lines
-  lines="$(wc -l < "$path" | tr -d ' ')"
+  lines="$(awk 'END{print NR}' "$path")"
   if [ "$lines" -gt "$budget" ]; then
     echo "context-budget: OVER ${path#"$REPO/"} ($lines > $budget)"
     has_violation=1
@@ -29,12 +29,9 @@ check_file() {
 }
 
 if [ -d "$SKILLS_DIR" ]; then
-  skill_files=("$SKILLS_DIR"/*/SKILL.md)
-  if [ -e "${skill_files[0]}" ]; then
-    for skill_file in "${skill_files[@]}"; do
-      check_file "$skill_file" "$SKILL_BUDGET"
-    done
-  fi
+  while IFS= read -r -d '' skill_file; do
+    check_file "$skill_file" "$SKILL_BUDGET"
+  done < <(find "$SKILLS_DIR" -name 'SKILL.md' -print0)
 fi
 
 if [ -d "$AGENTS_DIR" ]; then
