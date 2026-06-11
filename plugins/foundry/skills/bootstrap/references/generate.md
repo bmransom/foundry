@@ -142,7 +142,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - <stack toolchain setup: dtolnay/rust-toolchain / setup-python / setup-node>
+      - <stack toolchain setup + dependency install: dtolnay/rust-toolchain / setup-python + pip install -e '.[dev]' / setup-node + npm ci>
       - run: scripts/check-fast.sh
   docs-build:
     runs-on: ubuntu-latest
