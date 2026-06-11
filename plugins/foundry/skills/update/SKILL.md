@@ -50,16 +50,17 @@ is on disk at install or refresh time.
 
 ## 3 · Compare seeds
 
-Seeds are repo-owned; divergence is the point. Compare the `foundry-seed:
-<name> v<N>` marker in the repo file vs the plugin's copy. Plugin newer →
-**announced**: show the seed-vs-seed diff so the repo can adopt what it wants.
-Never write to a repo seed.
+Seeds are repo-owned; divergence is the point. Compare the seed marker in the
+repo file vs the plugin's copy — `foundry-seed: <name> v<N>` in markdown, the
+`"_foundry_seed"` key in JSON seeds. Plugin newer → **announced**: show the
+repo-copy-vs-plugin-seed diff so the repo can adopt what it wants. Never write
+to a repo seed.
 
 ## 4 · Report
 
 One table before anything is written — a row per template: path | class
 (verbatim / seed) | verdict (current / refreshed / customized / new /
-announced).
+announced; Legacy mode adds pristine-backfilled / needs-review).
 
 Then apply: refreshes and new installs only — copy byte-exact from the
 template, keep scripts executable, update each entry in the manifest.
@@ -84,6 +85,9 @@ sides, the idiom foundry's own check-byte-identity.sh uses:
 
 - identical → record as pristine at the current template version;
 - different → flag for human review with the diff; no manifest entry, no write.
+
+Seeds need no manifest — run 3 · Compare seeds as usual; announcements work in
+Legacy mode too.
 
 Write `.foundry-manifest.json` from the verified entries plus the plugin
 version, report, and finish with 5 · Verify — the backfill is a write, so it

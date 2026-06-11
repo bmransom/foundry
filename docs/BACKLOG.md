@@ -13,3 +13,4 @@ then it becomes a card on `docs/ROADMAP.md`.
 
 | Idea | Why | Source |
 |---|---|---|
+| Plugin-side seed changelog (per-seed version history) | A seed announcement can only diff repo-copy vs current plugin seed, burying the upstream change in repo-owned divergence | Wave 5 update smoke, design question 5 |

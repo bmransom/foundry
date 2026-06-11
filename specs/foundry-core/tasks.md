@@ -555,3 +555,13 @@ consumer gate stays green after refresh.
 ### Task 5.4: record the gate, move the card
 
 Evals L1–L2 promoted to Ready.
+
+### Wave 5 smoke findings → Wave 6 eval cases (accretion, continued)
+
+Update-skill fixes shipped pre-harness become Wave 6 cases: legacy mode routes
+through Verify (a backfill is a write needing a PASS); the manifest JSON shape
+is pinned in both writer and reader; legacy mode announces seeds; JSON seeds
+match by `"_foundry_seed"` key. Fixture assertions: bootstrap writes the
+manifest with all verbatim entries; update on a pristine fixture refreshes a
+bumped template and the gate stays green; a customized file survives an update
+byte-for-byte; a bumped seed is announced and untouched.
