@@ -90,6 +90,28 @@ mechanically (grep driven by the debt column). **Polarity is per-repo**: an engi
 repo excludes consumer vocabulary (octant's case); a product repo embraces domain
 terms. The interview asks; the mechanism is identical.
 
+**Naming with prior art.** The glossary layers enforce consistency with chosen
+terms; this convention governs how a term gets chosen. Before coining any canonical
+name — a glossary term, a public type or field, a config knob — search the prior
+art: the domain's literature, the stack's naming conventions (PEP 8, the Rust API
+Guidelines, ecosystem idiom), and what leading comparable tools call the same
+concept (web search when local knowledge runs out). Prefer the established name; an
+invented one records why prior art doesn't fit. Enforced at four points: the
+glossary preamble states the rule; the `spec-conventions` rule mandates the search
+at the coining moment; `spec-reviewer` flags new terms that name no prior art and
+no reason; the lifecycle Spec stage carries the step. Foundry's own glossary
+complies: COE is AWS vocabulary, wide event is Stripe/Honeycomb's, fixture is
+xUnit's, seeded defect is mutation testing's.
+
+**Context-economy prose.** Skills, agents, rules, AGENTS.md, and doc templates load
+into context windows; every needless word costs tokens in every session that loads
+it. The writing standard is Strunk & White — above all: omit needless words, use
+the active voice, make definite assertions. Plugin-resident prose is held to it
+hardest: when Wave 3 lands skills, `check-fast.sh` gains a context-budget lint
+(flag a SKILL.md body, agent, or rule exceeding its size budget — budgets set in
+Wave 3 when real files calibrate them). `spec-reviewer`'s prose scope extends
+beyond specs to skill/agent/rule changes.
+
 **Lifecycle.** Frame routes by work size (bug fix and refactor skip the spec —
 the ceremony-scaling answer to the known SDD failure mode); Spec gates on approval +
 spec-reviewer; Plan claims the card; Build is feature-file-first then TDD; Verify
@@ -207,4 +229,5 @@ agents are used *inside* the design where context isolation pays: spec-reviewer)
 CI mirroring and explicit versioning added after best-practice review · COE and
 self-hosting adopted 2026-06-10 · structured logging (wide events + OTel correlation
 + glossary field names) and the script-over-MCP tooling decision with `docs.py
-outline`/`section` added 2026-06-10.
+outline`/`section` added 2026-06-10 · naming-with-prior-art and Strunk & White
+context-economy prose adopted 2026-06-10.

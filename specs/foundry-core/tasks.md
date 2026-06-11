@@ -16,11 +16,11 @@
 |---|---|---|---|
 | 1 | Plugin skeleton + self-host gate + CI | design §Shape, AC-5.1 (gate + byte-identity), AC-2.3 (version field) | below |
 | 2 | Template extraction from octant: `docs.py` (config block; new `outline` + `section` subcommands per design §Tooling decisions) + `test_docs.py`, `board.sh`, vitepress scaffold, `ROADMAP`/`BACKLOG`/`glossary`/`validation`/`index`/`specs-README`/`features-README`/`spec-conventions`/COE templates, `worktree-retire.sh`; foundry adopts each as it lands | AC-1.1, AC-1.6, AC-6.1, design §Split | at claim |
-| 3 | `code` lifecycle skill + `spec-reviewer` agent, generalized (commands/paths/entity model read from consumer repo files) | US-3, US-4 | at claim |
+| 3 | `code` lifecycle skill + `spec-reviewer` agent, generalized (commands/paths/entity model read from consumer repo files); prior-art naming step in the Spec stage; context-budget lint added to `check-fast.sh` once skill/agent prose exists | US-3 (incl. AC-3.4), US-4 (incl. AC-4.3) | at claim |
 | 4 | `bootstrap` skill: inspect → interview → copy → generate → verify | US-1 (all ACs), design §Bootstrap flow, §Isolation | at claim |
 | 5 | `update` skill: version-marker diff + refresh, flag customized files | AC-2.1, AC-2.2 | at claim |
 | 6 | Evals L1–L2: fixtures (rust-cli, python-service, ts-monorepo) with seeded-defect branches, headless harness, gate-discrimination grading | AC-5.2, AC-5.4, AC-6.3 | at claim |
-| 7 | Evals L3 + v1.0.0: spec-reviewer precision/recall vs answer keys, lifecycle artifact checks, version-bump rule | AC-5.3, AC-2.3 | at claim |
+| 7 | Evals L3 + v1.0.0: spec-reviewer precision/recall vs answer keys (seeded violations incl. uncited coined terms and wordy context-resident prose), lifecycle artifact checks, version-bump rule | AC-5.3, AC-2.3 | at claim |
 
 Octant retrofit is outside this spec (board card, spec to write).
 

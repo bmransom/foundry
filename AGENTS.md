@@ -33,6 +33,10 @@ from CI (`.github/workflows/check-fast.yml`) — same script, two triggers.
   defect must make the gate fail — never by green-ness alone.
 
 **Always**
+- Before coining a canonical name (glossary term, public type or field, config
+  knob), search the prior art — domain literature, stack naming conventions,
+  comparable tools. Prefer the established term; record provenance in
+  `docs/glossary.md`.
 - Keep foundry's own copies of verbatim-template files byte-identical to
   `plugins/foundry/templates/` (modulo the version marker) — the self-host gate.
 - A template or skill change that alters behavior needs an eval case before it ships.
@@ -44,9 +48,12 @@ from CI (`.github/workflows/check-fast.yml`) — same script, two triggers.
 
 ## Writing style
 
-Prose in docs and comments: omit needless words; lead with the point; one idea per
-sentence; active and imperative; concrete commands, paths, and names; say it once and
-link to depth. Prefer a table, list, or code block when denser than a sentence.
+The standard is Strunk & White: omit needless words; use the active voice; make
+definite assertions. Lead with the point; one idea per sentence; concrete commands,
+paths, and names; say it once and link to depth. Prefer a table, list, or code block
+when denser than a sentence. Plugin-resident prose (skills, agents, rules, templates)
+loads into context windows — every needless word costs tokens in every session that
+loads it; cut hardest there.
 
 ## Task tracking
 

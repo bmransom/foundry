@@ -68,6 +68,10 @@ skill holds me to the staged lifecycle with mechanical gates.
   the full spec path (the ceremony-scaling rule).
 - AC-3.3 WHEN new observable behavior is built, THE skill SHALL require its
   Scenario in `features/` before its implementation.
+- AC-3.4 WHEN the Spec stage coins a canonical name (glossary term, public type or
+  field, config knob), THE skill SHALL require a prior-art search (domain
+  literature, stack naming conventions, comparable tools) and SHALL record the
+  name's provenance — or the reason no prior art fits — in the glossary entry.
 
 **US-4 Spec review.** As a spec author, the spec-reviewer agent checks naming and
 prose against my repo's contract files.
@@ -77,6 +81,9 @@ prose against my repo's contract files.
   from files, not the agent's priors.
 - AC-4.2 THE agent SHALL flag debt-column terms, entity-model misfits, and prose
   violations; it SHALL be read-only.
+- AC-4.3 THE agent SHALL flag a new canonical term that names neither prior art
+  nor a reason none fits, and SHALL apply the prose standard to context-resident
+  files (skills, agents, rules) as well as specs.
 
 **US-5 Evals.** As the maintainer, I can tell whether a foundry change is an
 improvement before shipping it.
