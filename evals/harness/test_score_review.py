@@ -30,6 +30,9 @@ ANSWER_KEY = {
     ],
 }
 
+# Full-recall findings under the FLAGGED-footer protocol: all 5 violation
+# signatures appear in FLAGGED lines; decoy signatures appear only in
+# praise-of-clean-content prose above the footer.
 FULL_RECALL_FINDINGS = """\
 ## specs/widget-pricing/design.md
 
@@ -40,7 +43,15 @@ FULL_RECALL_FINDINGS = """\
 - L50: the field run ending in rounding_residue should be a table.
 
 Clean files: AGENTS.md, docs/glossary.md.
+Note: Snapshot is a coined term with recorded prior art (clean).
+Note: estimate is used correctly in the replaces context (clean).
 Highest-priority fix: replace the debt terms with glossary vocabulary.
+
+FLAGGED: basket
+FLAGGED: row item
+FLAGGED: PriceLattice
+FLAGGED: very basically
+FLAGGED: rounding_residue
 """
 
 
@@ -116,7 +127,18 @@ class FullRecallTest(unittest.TestCase):
             )
 
     def test_detection_is_case_insensitive(self):
-        shouting = FULL_RECALL_FINDINGS.upper()
+        # FLAGGED lines with uppercase violation signatures — should still detect
+        shouting = """\
+## specs/widget-pricing/design.md
+
+- BASKET is glossary debt.
+
+FLAGGED: BASKET
+FLAGGED: ROW ITEM
+FLAGGED: PRICELATTICE
+FLAGGED: VERY BASICALLY
+FLAGGED: ROUNDING_RESIDUE
+"""
         completed, records = run_scorer([shouting])
         self.assertEqual(completed.returncode, 0, completed.stdout + completed.stderr)
         self.assertEqual(summary_of(records)["mean_recall"], 1.0)
@@ -124,7 +146,13 @@ class FullRecallTest(unittest.TestCase):
 
 class RecallBarTest(unittest.TestCase):
     def test_missed_violations_below_bar_fail(self):
-        three_of_five = "basket, row item, PriceLattice — nothing else to flag."
+        three_of_five = """\
+Review findings.
+
+FLAGGED: basket
+FLAGGED: row item
+FLAGGED: PriceLattice
+"""
         completed, records = run_scorer([three_of_five])
         self.assertNotEqual(completed.returncode, 0)
         summary = summary_of(records)
@@ -134,7 +162,14 @@ class RecallBarTest(unittest.TestCase):
         self.assertEqual(verdict_of(records, 1, "violation:V5"), "fail")
 
     def test_recall_exactly_at_bar_passes(self):
-        four_of_five = "basket, row item, PriceLattice, very basically."
+        four_of_five = """\
+Review findings.
+
+FLAGGED: basket
+FLAGGED: row item
+FLAGGED: PriceLattice
+FLAGGED: very basically
+"""
         completed, records = run_scorer([four_of_five])
         self.assertEqual(completed.returncode, 0, completed.stdout + completed.stderr)
         summary = summary_of(records)
@@ -151,8 +186,9 @@ class RecallBarTest(unittest.TestCase):
 
 class DecoyTest(unittest.TestCase):
     def test_decoy_hit_fails_despite_full_recall(self):
-        findings = FULL_RECALL_FINDINGS + "\n- Snapshot is an uncited coined term.\n"
-        completed, records = run_scorer([findings])
+        # Decoy signature appears inside a FLAGGED line — should register as a hit
+        findings_with_flagged_decoy = FULL_RECALL_FINDINGS + "FLAGGED: Snapshot\n"
+        completed, records = run_scorer([findings_with_flagged_decoy])
         self.assertNotEqual(completed.returncode, 0)
         summary = summary_of(records)
         self.assertEqual(summary["verdict"], "fail")
@@ -161,10 +197,92 @@ class DecoyTest(unittest.TestCase):
         self.assertEqual(verdict_of(records, 1, "decoy:D1"), "fail")
         self.assertEqual(verdict_of(records, 1, "decoy:D2"), "pass")
 
+    def test_decoy_in_praise_prose_not_in_flagged_is_not_a_hit(self):
+        # Agent correctly praises Snapshot and estimate as clean — mentions them
+        # in prose but NOT in FLAGGED lines — should yield recall 1.0, decoys 0
+        findings = """\
+## specs/widget-pricing/design.md
+
+- L17: "basket" is glossary debt; use Order.
+- L28: "row item" is glossary debt; use Line.
+- L36: PriceLattice is coined with no prior art; cite one.
+- L20: "very basically" — needless qualifier.
+- L50: rounding_residue should be a table.
+
+Note: Snapshot is a coined term with recorded prior art — no flag needed.
+Note: estimate is used correctly in the replaces context — no flag needed.
+
+FLAGGED: basket
+FLAGGED: row item
+FLAGGED: PriceLattice
+FLAGGED: very basically
+FLAGGED: rounding_residue
+"""
+        completed, records = run_scorer([findings])
+        self.assertEqual(completed.returncode, 0, completed.stdout + completed.stderr)
+        summary = summary_of(records)
+        self.assertEqual(summary["mean_recall"], 1.0)
+        self.assertEqual(summary["decoy_hits"], 0)
+        self.assertEqual(verdict_of(records, 1, "decoy:D1"), "pass")
+        self.assertEqual(verdict_of(records, 1, "decoy:D2"), "pass")
+
+    def test_decoy_inside_flagged_line_registers_as_hit(self):
+        # Explicit test: a decoy signature appearing in a FLAGGED: line is a hit
+        findings = """\
+Findings.
+
+FLAGGED: basket
+FLAGGED: row item
+FLAGGED: PriceLattice
+FLAGGED: very basically
+FLAGGED: rounding_residue
+FLAGGED: Snapshot
+"""
+        completed, records = run_scorer([findings])
+        self.assertNotEqual(completed.returncode, 0)
+        summary = summary_of(records)
+        self.assertEqual(summary["decoy_hits"], 1)
+        self.assertEqual(verdict_of(records, 1, "decoy:D1"), "fail")
+
+    def test_missing_flagged_block_is_protocol_fail(self):
+        # No FLAGGED: lines at all — scorer must emit a protocol eval_case fail
+        # and score the run recall 0
+        findings = """\
+## specs/widget-pricing/design.md
+
+- basket is glossary debt.
+- row item is glossary debt.
+- PriceLattice is coined.
+- very basically is needless.
+- rounding_residue should be a table.
+"""
+        completed, records = run_scorer([findings])
+        self.assertNotEqual(completed.returncode, 0)
+        summary = summary_of(records)
+        self.assertEqual(summary["verdict"], "fail")
+        self.assertEqual(summary["mean_recall"], 0.0)
+        # A protocol eval_case record must be emitted for the run
+        protocol_cases = [
+            r
+            for r in case_records(records)
+            if r["case"] == "protocol" and r["verdict"] == "fail"
+        ]
+        self.assertEqual(
+            len(protocol_cases),
+            1,
+            f"expected one protocol fail, got {case_records(records)}",
+        )
+
 
 class MultiRunTest(unittest.TestCase):
     def test_mean_and_min_recall_across_runs(self):
-        three_of_five = "basket, row item, PriceLattice."
+        three_of_five = """\
+Findings.
+
+FLAGGED: basket
+FLAGGED: row item
+FLAGGED: PriceLattice
+"""
         completed, records = run_scorer([FULL_RECALL_FINDINGS, three_of_five])
         self.assertEqual(completed.returncode, 0, completed.stdout + completed.stderr)
         summary = summary_of(records)
@@ -177,7 +295,7 @@ class MultiRunTest(unittest.TestCase):
         self.assertEqual(verdict_of(records, 2, "violation:V4"), "fail")
 
     def test_decoy_hits_sum_across_runs(self):
-        with_decoy = FULL_RECALL_FINDINGS + "\nSnapshot looks coined. estimate too.\n"
+        with_decoy = FULL_RECALL_FINDINGS + "FLAGGED: Snapshot\nFLAGGED: estimate\n"
         completed, records = run_scorer([with_decoy, with_decoy])
         self.assertNotEqual(completed.returncode, 0)
         self.assertEqual(summary_of(records)["decoy_hits"], 4)

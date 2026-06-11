@@ -669,3 +669,16 @@ once per version bump.
 
 On green 7.2 + 7.3: plugin.json → 1.0.0; validation.md L3 rows; board — Epic 0
 wraps with only the octant retrofit remaining (own spec).
+
+### Calibration (2026-06-11)
+
+First 3-run eval: recall 1.0/1.0/1.0, decoy_hits=7. Adjudication showed every
+decoy hit was the agent praising clean content — output format mandates "note
+clean files", so decoy signatures appeared in prose like "Snapshot is a coined
+term with recorded prior art (clean)". Full-text signature-presence was an
+invalid precision proxy. Scoring moved to the FLAGGED-footer protocol:
+after findings the agent must output one `FLAGGED: <term>` line per flagged
+item only; scorer checks recall and decoy hits against those lines exclusively;
+prose outside the block is ignored. Agent prompt unchanged — the footer
+instruction is in the harness prompt suffix. Protocol failure (no FLAGGED
+block) scores recall 0 and emits a `protocol` eval_case fail.

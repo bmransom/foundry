@@ -14,16 +14,17 @@ per decoy per run, then one summary record:
      "per_run_recall": [...], "mean_recall": ..., "min_recall": ...,
      "decoy_hits": ..., "verdict": "pass|fail"}
 
-Detection proxy: a violation is DETECTED when its signature appears in the
-findings text (case-insensitive substring); a decoy is HIT the same way.
+Detection protocol (FLAGGED-footer): the agent must append a machine-readable
+footer — one line per flagged item in the form "FLAGGED: <term>". Recall is
+measured by whether a violation's signature appears (case-insensitive) in any
+FLAGGED line. A decoy is hit when its signature appears in a FLAGGED line.
+Prose outside the FLAGGED block is ignored for scoring purposes.
 
-Known v1 limitation: signature presence is the whole test. The agent "notes
-clean files", so a decoy signature quoted in a clean-file note would count as
-a hit; decoy signatures are therefore tokens the agent would only repeat when
-flagging them. Calibrate against the first real runs (Task 7.2) before
-trusting close calls.
+If a run contains NO FLAGGED lines the run cannot be scored: an eval_case
+record with case="protocol" and verdict="fail" is emitted and the run scores
+recall 0.
 
-Pass bar (provisional, calibrate in Task 7.2): mean recall >= 4/5 AND zero
+Pass bar (provisional, calibrated in Task 7.2): mean recall >= 4/5 AND zero
 decoy hits. Exits 1 on FAIL, 2 on bad input. Pure stdlib.
 """
 
@@ -34,6 +35,8 @@ from fractions import Fraction
 
 RECALL_BAR = Fraction(4, 5)
 MAX_DECOY_HITS = 0
+
+FLAGGED_PREFIX = "flagged:"
 
 
 def fail_usage(message):
@@ -49,28 +52,68 @@ def read_findings(path):
         fail_usage(f"cannot read findings file: {error}")
 
 
-def signature_present(signature, findings_text):
-    return signature.lower() in findings_text.lower()
+def extract_flagged_terms(findings_text):
+    """Return the list of lowercased values from FLAGGED: lines, or None if absent."""
+    flagged = []
+    for line in findings_text.splitlines():
+        stripped = line.strip()
+        if stripped.lower().startswith(FLAGGED_PREFIX):
+            term = stripped[len(FLAGGED_PREFIX) :].strip()
+            flagged.append(term.lower())
+    return flagged if flagged else None
+
+
+def signature_in_flagged(signature, flagged_terms):
+    """Return True when the signature (case-insensitive) appears in any flagged term."""
+    needle = signature.lower()
+    return any(needle in term for term in flagged_terms)
 
 
 def score_run(answer_key, run_number, findings_text):
-    """Yield (case, verdict_ok, detail) per violation and decoy for one run."""
+    """Yield (case, verdict_ok, detail) per violation, decoy, and protocol check."""
+    flagged_terms = extract_flagged_terms(findings_text)
+
+    if flagged_terms is None:
+        yield (
+            "protocol",
+            False,
+            (
+                "no FLAGGED: lines found in findings — run cannot be scored; "
+                "check the headless prompt suffix"
+            ),
+        )
+        # Score all violations as missed and all decoys as not hit for this run
+        for violation in answer_key["violations"]:
+            yield (
+                f"violation:{violation['id']}",
+                False,
+                f"signature {violation['signature']!r} not checked — protocol fail (no FLAGGED block)",
+            )
+        for decoy in answer_key["decoys"]:
+            yield (
+                f"decoy:{decoy['id']}",
+                True,
+                f"decoy {decoy['signature']!r} not checked — protocol fail (no FLAGGED block)",
+            )
+        return
+
     for violation in answer_key["violations"]:
         signature = violation["signature"]
-        detected = signature_present(signature, findings_text)
+        detected = signature_in_flagged(signature, flagged_terms)
         detail = (
-            f"signature {signature!r} present in findings ({violation['kind']})"
+            f"signature {signature!r} present in FLAGGED lines ({violation['kind']})"
             if detected
-            else f"signature {signature!r} absent from findings ({violation['kind']})"
+            else f"signature {signature!r} absent from FLAGGED lines ({violation['kind']})"
         )
         yield f"violation:{violation['id']}", detected, detail
+
     for decoy in answer_key["decoys"]:
         signature = decoy["signature"]
-        hit = signature_present(signature, findings_text)
+        hit = signature_in_flagged(signature, flagged_terms)
         detail = (
-            f"decoy signature {signature!r} present in findings - precision failure"
+            f"decoy signature {signature!r} present in FLAGGED lines - precision failure"
             if hit
-            else f"decoy signature {signature!r} absent from findings"
+            else f"decoy signature {signature!r} absent from FLAGGED lines"
         )
         yield f"decoy:{decoy['id']}", not hit, detail
 
@@ -108,7 +151,7 @@ def main():
         ):
             if case.startswith("violation:"):
                 detected_count += 1 if verdict_ok else 0
-            else:
+            elif case.startswith("decoy:"):
                 decoy_hits += 0 if verdict_ok else 1
             emit(
                 {
