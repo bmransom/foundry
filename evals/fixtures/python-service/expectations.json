@@ -1,0 +1,54 @@
+{
+  "fixture": "python-service",
+  "gate_command": "scripts/check-fast.sh",
+  "files": [
+    {"path": "AGENTS.md", "class": "generated"},
+    {"path": "CLAUDE.md", "class": "symlink", "target": "AGENTS.md"},
+    {"path": ".foundry-manifest.json", "class": "generated"},
+    {"path": "scripts/check-fast.sh", "class": "generated"},
+    {"path": ".github/workflows/check-fast.yml", "class": "generated"},
+    {"path": "scripts/vocab-lint.sh", "class": "generated"},
+    {"path": "tests/test_acceptance.py", "class": "generated"},
+    {"path": ".githooks/pre-push", "class": "verbatim"},
+    {"path": "scripts/docs.py", "class": "verbatim"},
+    {"path": "scripts/test_docs.py", "class": "verbatim"},
+    {"path": "scripts/board.sh", "class": "verbatim"},
+    {"path": "scripts/install-hooks.sh", "class": "verbatim"},
+    {"path": "scripts/worktree-retire.sh", "class": "verbatim"},
+    {"path": "docs/.vitepress/config.ts", "class": "verbatim"},
+    {"path": "docs/package.json", "class": "verbatim"},
+    {"path": "docs/tsconfig.json", "class": "verbatim"},
+    {"path": "docs/.vitepress/site.json", "class": "seed"},
+    {"path": "docs/docs-config.json", "class": "seed"},
+    {"path": "docs/README.md", "class": "seed"},
+    {"path": "docs/index.md", "class": "seed"},
+    {"path": "docs/ROADMAP.md", "class": "seed"},
+    {"path": "docs/BACKLOG.md", "class": "seed"},
+    {"path": "docs/glossary.md", "class": "seed"},
+    {"path": "docs/validation.md", "class": "seed"},
+    {"path": "docs/coe-template.md", "class": "seed"},
+    {"path": "specs/README.md", "class": "seed"},
+    {"path": "features/README.md", "class": "seed"},
+    {"path": ".claude/rules/spec-conventions.md", "class": "seed"},
+    {"path": "features", "class": "dir"},
+    {"path": "scripts/verify.sh", "class": "absent"},
+    {"path": "scripts/agent-env.sh", "class": "absent"}
+  ],
+  "agents_md": {
+    "path": "AGENTS.md",
+    "required_sections": ["Commands", "Boundaries", "Writing style", "Testing", "Contracts", "Logging", "Task tracking", "Deeper docs"],
+    "forbidden_sections": []
+  },
+  "content": [
+    {"name": "app-emits-structured-wide-event", "path": "src/catalog/main.py", "pattern": "structlog", "must_exist": true},
+    {"name": "ci-installs-deps-before-gate", "path": ".github/workflows/check-fast.yml", "pattern": "pip install.*check-fast\\.sh", "must_exist": true},
+    {"name": "roadmap-has-epic-0", "path": "docs/ROADMAP.md", "pattern": "^### Epic 0", "must_exist": true},
+    {"name": "gate-runs-vocab-lint", "path": "scripts/check-fast.sh", "pattern": "vocab-lint", "must_exist": true},
+    {"name": "gate-runs-pytest", "path": "scripts/check-fast.sh", "pattern": "pytest", "must_exist": true}
+  ],
+  "manifest": {"path": ".foundry-manifest.json", "min_files": 8},
+  "defects": [
+    {"name": "failing-test", "expectation": "gate_fails"},
+    {"name": "debt-term", "expectation": "gate_fails"}
+  ]
+}
