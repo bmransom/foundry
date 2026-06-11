@@ -4,12 +4,20 @@
     "collapsed": false,
     "items": [
       {
+        "text": "Backlog",
+        "link": "/BACKLOG"
+      },
+      {
         "text": "Foundry Roadmap",
         "link": "/ROADMAP"
       },
       {
         "text": "Foundry glossary \u2014 the ubiquitous language",
         "link": "/glossary"
+      },
+      {
+        "text": "Validation",
+        "link": "/validation"
       }
     ]
   }
