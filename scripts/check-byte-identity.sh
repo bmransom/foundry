@@ -11,6 +11,11 @@ has_violation=0
 while IFS= read -r -d '' template_file; do
   relative_path="${template_file#"$TEMPLATES/"}"
   repo_copy="$REPO/$relative_path"
+  if ! grep -qvF 'foundry-template:' "$template_file"; then
+    echo "byte-identity: EMPTY-TEMPLATE $relative_path (no content besides the marker)"
+    has_violation=1
+    continue
+  fi
   if [ ! -f "$repo_copy" ]; then
     echo "byte-identity: MISSING $relative_path"
     has_violation=1

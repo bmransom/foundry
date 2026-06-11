@@ -30,4 +30,9 @@ make_fixture
 rm "$fixture/scripts/tool.sh"
 if "$SCRIPT" "$fixture" >/dev/null 2>&1; then fail "missing copy should fail"; fi
 
+make_fixture
+printf '# foundry-template: tool v1\n' > "$fixture/plugins/foundry/templates/scripts/tool.sh"
+: > "$fixture/scripts/tool.sh"
+if "$SCRIPT" "$fixture" >/dev/null 2>&1; then fail "marker-only template should fail"; fi
+
 echo "byte_identity_test: PASS"
