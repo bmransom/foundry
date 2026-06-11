@@ -40,7 +40,7 @@ model, forbidden terms, standing rules, or gate commands.
 | `code` lifecycle skill, generalized (reads repo AGENTS.md for commands/paths) (@main) | Done — gate recorded 2026-06-11: check-fast: PASS | `specs/foundry-core/` | template extraction |
 | `spec-reviewer` agent, generalized (entity model read from repo glossary) (@main) | Done — gate recorded 2026-06-11: check-fast: PASS | `specs/foundry-core/` | template extraction |
 | `bootstrap` skill: inspect → interview → copy → generate → verify (@main) | Done — gate recorded 2026-06-11: check-fast: PASS; smoke bootstrap of /tmp/wclip green end-to-end | `specs/foundry-core/` | template extraction |
-| `update` skill: version-marker diff + refresh | Ready | `specs/foundry-core/` | bootstrap skill |
+| `update` skill: version-marker diff + refresh (@main) | In progress | `specs/foundry-core/` | bootstrap skill |
 | Evals L1–L2: fixtures (Rust CLI, Python service, TS monorepo), harness, seeded defects, gate-discrimination checks | Planned | `specs/foundry-core/` | bootstrap skill |
 | Evals L3: spec-reviewer precision/recall suite; lifecycle artifact checks | Planned | `specs/foundry-core/` | Evals L1–L2 |
 | COE mechanism: template (landed Wave 2), promote-upstream flow, eval-accretion rule (@main) | Done — gate recorded 2026-06-11: check-fast: PASS | `specs/foundry-core/` | plugin skeleton |

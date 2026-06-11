@@ -513,3 +513,45 @@ the python-service fixture asserts F1/F4 (inventory + epic present), F3
 installs deps before the gate); the resolved design questions (no Logging for
 a CLI; symlink after AGENTS.md; repo-portable gate commands) get one assertion
 each in the rust-cli fixture.
+
+---
+
+## Wave 5 — Update skill (claimed @main 2026-06-11)
+
+Design refinement at claim: AC-2.2 must distinguish "locally customized" from
+"older pristine template" — undecidable from content alone since the plugin
+ships only current templates. Mechanism: bootstrap writes
+`.foundry-manifest.json` (per verbatim file: template name, version, sha256 of
+installed content; plus the plugin version). Update compares hashes: manifest
+hash == file hash → pristine → refresh and re-record; differs → customized →
+flag with the diff, never overwrite. Seeds carry versions in their markers;
+update announces newer seeds and never touches them. Repos bootstrapped before
+the manifest (e.g. /tmp/wclip) get legacy mode: files identical-modulo-marker
+to the current template are recorded as pristine; differing files are flagged
+for human review — no guessing.
+
+### Task 5.1: manifest mechanism
+
+Design.md §Update mechanism rewritten; AC-1.1 gains `.foundry-manifest.json`;
+glossary gains **Manifest** (package-manager vocabulary); bootstrap SKILL.md
+Copy phase writes it; verify.md inventory row added.
+
+### Task 5.2: update skill
+
+`plugins/foundry/skills/update/SKILL.md` (≤ 120 lines): read the manifest
+(absent → legacy mode); per verbatim template compare plugin version vs
+manifest version, hash-check pristine vs customized, refresh or flag; announce
+newer seeds; finish by updating the manifest, running the repo's gate, and
+proposing the commit (ask first).
+
+### Task 5.3: smoke update
+
+Against /tmp/wclip (pre-manifest, so legacy mode first): backfill manifest;
+then against a scratch COPY of the plugin with (a) a bumped verbatim template →
+pristine file refreshed, (b) a second bump + local customization → flagged not
+overwritten, (c) a bumped seed → announced not touched. Grade by outcomes; the
+consumer gate stays green after refresh.
+
+### Task 5.4: record the gate, move the card
+
+Evals L1–L2 promoted to Ready.
