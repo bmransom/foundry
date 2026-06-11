@@ -7,7 +7,7 @@ claim without pasted output does not pass.
 
 ```bash
 ls -la AGENTS.md CLAUDE.md .githooks/pre-push .github/workflows/check-fast.yml
-ls scripts docs docs/.vitepress specs features
+ls scripts docs docs/.vitepress specs features .claude/rules
 ```
 
 Expected — every row present (plus whatever the repo already had):
@@ -17,7 +17,7 @@ Expected — every row present (plus whatever the repo already had):
 | `AGENTS.md` · `CLAUDE.md -> AGENTS.md` (symlink) | generated |
 | `docs/{README,index,ROADMAP,BACKLOG,glossary,validation,coe-template}.md` · `docs/docs-config.json` | seeds, filled |
 | `docs/.vitepress/{config.ts,site.json}` · `docs/{package.json,tsconfig.json}` | verbatim (`site.json` is a seed) |
-| `specs/README.md` · `features/README.md` | seeds |
+| `specs/README.md` · `features/README.md` · `.claude/rules/spec-conventions.md` | seeds |
 | `features/<name>.feature` + its runner wiring | generated |
 | `scripts/{docs.py,test_docs.py,board.sh,install-hooks.sh,worktree-retire.sh}` · `.githooks/pre-push` | verbatim |
 | `scripts/check-fast.sh` · `.github/workflows/check-fast.yml` | generated |
@@ -72,7 +72,8 @@ paths — never `git add -A`:
 
 ```bash
 git add AGENTS.md CLAUDE.md .gitignore .githooks .github/workflows/check-fast.yml \
-  docs features scripts specs/README.md <stack manifests: Cargo.toml / pyproject.toml / package.json>
+  .claude docs features scripts specs/README.md <the runner wiring: tests/… or the cucumber config> \
+  <stack manifests: Cargo.toml / pyproject.toml / package.json>
 git commit -m "feat: bootstrap the foundry engineering setup"
 ```
 
