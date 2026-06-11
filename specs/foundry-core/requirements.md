@@ -23,8 +23,9 @@ proven working — so a new project starts with the discipline octant evolved.
   validation skeleton + COE template), `specs/`
   with format README, `features/` with a walking-skeleton Scenario wired to a
   stack-appropriate BDD runner, `scripts/` (docs.py, board.sh, check-fast.sh,
-  install-hooks.sh, worktree-retire.sh), `.githooks/pre-push`, and a CI workflow
-  running the same quick gate.
+  install-hooks.sh, worktree-retire.sh), `.githooks/pre-push`, a CI workflow
+  running the same quick gate, and `.foundry-manifest.json` recording each
+  installed verbatim file's template name, version, and content hash.
 - AC-1.2 WHEN bootstrap finishes, THE SYSTEM SHALL have verified its own output:
   hooks installed, vitepress builds, the walking-skeleton Scenario passes, and the
   quick gate passes — a recorded PASS, not a claim.

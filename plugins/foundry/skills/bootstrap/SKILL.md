@@ -61,6 +61,9 @@ when the caller supplies them. The questions:
   column, and polarity statement; the first ROADMAP epic; the
   `docs/.vitepress/site.json` title and description. Keep the `foundry-seed:`
   markers.
+- Write `.foundry-manifest.json`: the plugin version, plus per verbatim file its
+  template name, marker version, and `shasum -a 256` of the installed content —
+  `/foundry:update` tells pristine from customized by these hashes.
 
 ## 4 · Generate
 

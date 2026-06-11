@@ -180,9 +180,17 @@ a search index would be machinery without a failure it prevents.
 
 ## Update mechanism
 
-Skills/agents: plugin install propagates. Templates: `/foundry:update` diffs each
-version-marked file against the current template; refreshes unmodified files;
-flags customized ones with the diff instead of overwriting. Explicit `version` in
+Skills/agents: plugin install propagates. Templates: `/foundry:update` compares
+each verbatim file against the plugin's current template — but "locally
+customized" vs "older pristine version" is undecidable from content alone, so
+bootstrap writes `.foundry-manifest.json`: the plugin version plus, per verbatim
+file, its template name, version, and the sha256 of the installed content. Update
+hash-checks each file: hash matches the manifest → pristine → refresh to the new
+template and re-record; differs → customized → flag with the diff, never
+overwrite. Seeds carry versions in their `foundry-seed:` markers; update announces
+a newer seed and never touches the repo's copy. Pre-manifest repos get legacy
+mode: files identical-modulo-marker to the current template are recorded pristine;
+anything else is flagged for human review — no guessing. Explicit `version` in
 `plugin.json`; a bump requires a green Layer-3 run (AC-2.3), so versions mean
 something.
 

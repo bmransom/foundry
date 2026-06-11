@@ -24,6 +24,7 @@ Expected — every row present (plus whatever the repo already had):
 | `scripts/verify.sh` (+ lock) | generated — only when an expensive validation exists |
 | `scripts/vocab-lint.sh` | generated — only when the glossary debt column has entries |
 | `scripts/agent-env.sh` | generated — only for service/app + parallel agents |
+| `.foundry-manifest.json` | generated — plugin version + per-verbatim-file name, version, sha256 |
 
 Version markers (AC-1.6):
 
