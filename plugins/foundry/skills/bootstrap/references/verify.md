@@ -1,7 +1,6 @@
 # Verify — the acceptance checklist
 
-Reference for bootstrap phase 5. Run every command and paste its output. A
-claim without pasted output does not pass.
+Run every command and paste its output — no pasted output, no pass.
 
 ## 1 · File inventory (AC-1.1)
 
@@ -40,7 +39,7 @@ Expected: every verbatim copy above appears.
 | Walking skeleton | the feature-runner command `check-fast.sh` names | the Scenario passes |
 | The quick gate | `scripts/check-fast.sh` | `check-fast: PASS` |
 
-Paste all four outputs into the reply.
+Paste all four outputs.
 
 ## 3 · Discrimination probe
 
@@ -77,5 +76,4 @@ git add AGENTS.md CLAUDE.md .gitignore .githooks .github/workflows/check-fast.ym
 git commit -m "feat: bootstrap the foundry engineering setup"
 ```
 
-**Ask before running the commit.** Report alongside the proposal any
-pre-existing file Inspect merged or skipped.
+Ask before running the commit. Name any pre-existing file Inspect merged or skipped.

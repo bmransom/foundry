@@ -1,7 +1,6 @@
 # Generate — the per-stack cookbook
 
-Reference for bootstrap phase 4. Every command below is the stack default; the
-repo's detected and interview-confirmed commands win.
+Every command below is the stack default; detected and interview-confirmed commands win.
 
 ## AGENTS.md skeleton
 
@@ -69,8 +68,8 @@ machine-global lock from §Isolation.
 ## BDD wiring
 
 One runner per production entrypoint the repo actually has. Steps drive the
-REAL entrypoint — the built binary, the installed console script, the served
-app — never an internal function, never a mock.
+production entrypoint — the built binary, the installed console script, the
+served app — never an internal function, never a mock.
 
 | Stack | Runner | Wiring |
 |---|---|---|
@@ -97,15 +96,14 @@ Feature: <core capability>
 | Python | pydantic |
 | Rust | serde + schemars, or utoipa for HTTP |
 
-Section rule text: the schema is written first and types derive from it — never
+Section rule text: write the schema first; derive types from it — never
 parallel hand-written types; validate at every boundary (parse, don't trust);
 feature Scenarios exercise the contract through the production entrypoint.
 
 ## Logging — repo shape is app or service
 
 A plain CLI gets no Logging section: its unit of work ends at the process
-boundary, and its structured output IS its result. Wire logging where work
-outlives a request or run (services, apps, daemons).
+boundary, and its structured output IS its result.
 
 | Stack | Library |
 |---|---|
@@ -132,8 +130,8 @@ work in the production entrypoint, so the walking skeleton exercises it.
 
 ## CI workflow
 
-`.github/workflows/check-fast.yml`, two jobs mirroring foundry's own — the
-same gate as pre-push, on the non-bypassable trigger:
+`.github/workflows/check-fast.yml`, two jobs — gate and docs-build — on push
+and pull_request:
 
 ```yaml
 name: check-fast
@@ -162,8 +160,7 @@ jobs:
 
 Gitignore the docs build artifacts (`docs/node_modules/`,
 `docs/.vitepress/cache/`, `docs/.vitepress/dist/`,
-`docs/.vitepress/sidebar.generated.json`); track `docs/package-lock.json` —
-CI's `npm ci` needs it.
+`docs/.vitepress/sidebar.generated.json`); track `docs/package-lock.json`.
 
 ## vocab-lint — glossary debt column has entries
 

@@ -8,15 +8,14 @@ description: Use when explicitly asked to bootstrap, install, or set up the
 
 # Bootstrap
 
-Install the foundry setup into the current repo in five phases. The Skill
-invocation supplies this skill's base directory; the templates ship with the
-plugin at `<base dir>/../../templates/` — `verbatim/` (byte-exact tooling) and
-`seeds/` (content starting points the repo will own).
+Install the foundry setup into the current repo in five phases. Templates ship
+with the plugin at `<base dir>/../../templates/` — `verbatim/` (byte-exact
+tooling) and `seeds/` (content starting points the repo will own).
 
-Copy this checklist into your reply and check off each phase. A gate is a
-**prohibition**: do not start a later phase until the prior gate is met.
+Copy into your reply; check off as you go. A gate is a **prohibition**: do not
+start a later phase until the prior gate is met.
 
-- [ ] **1 Inspect** — detect the stack, entrypoints, repo shape. GATE: no questions until the detection report is written.
+- [ ] **1 Inspect** — detect the stack, entrypoints, repo shape. GATE: write the detection report before asking any questions.
 - [ ] **2 Interview** — collect the repo's content. GATE: no files written until every answer is recorded.
 - [ ] **3 Copy** — verbatim templates byte-exact; seeds filled. GATE: no edits inside a verbatim copy.
 - [ ] **4 Generate** — the stack-aware files per `references/generate.md`. GATE: no invented commands — every gate command was detected or confirmed.
@@ -74,7 +73,7 @@ every per-stack mapping. Produce:
   repo-portable: discover project-local toolchains (venv, `node_modules/.bin`)
   at runtime; never hardcode machine paths. CI installs dependencies first.
 - `scripts/verify.sh` + machine-global lock — only when an expensive validation
-  exists (long benchmark, full integration suite).
+  exists — see `references/generate.md` §verify.sh.
 - `features/` + the stack's BDD runner + one walking-skeleton Scenario through
   a real production entrypoint — no mocks.
 - A CI workflow running the same gate, plus a docs-build job.
@@ -91,8 +90,7 @@ output: file inventory, hooks installed, vitepress build, walking-skeleton
 Scenario green, `check-fast: PASS`.
 
 The gate must also **discriminate**: seed a failing check, watch the gate fail,
-remove the seed, watch it pass. Never ship a gate you have not seen fail — a
-vacuous gate self-certifies.
+remove the seed, watch it pass.
 
-Then review `git status`, propose the commit with explicit paths — never
-`git add -A` — and **ask before committing**.
+Then review `git status`, propose the commit with explicit paths, and **ask
+before committing**.
