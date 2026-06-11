@@ -21,7 +21,7 @@ has_violation=0
 check_file() {
   local path="$1" budget="$2"
   local lines
-  lines="$(wc -l < "$path")"
+  lines="$(wc -l < "$path" | tr -d ' ')"
   if [ "$lines" -gt "$budget" ]; then
     echo "context-budget: OVER ${path#"$REPO/"} ($lines > $budget)"
     has_violation=1
