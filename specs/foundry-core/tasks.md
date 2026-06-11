@@ -458,3 +458,45 @@ Gate: `python3 scripts/docs.py check` green.
 ### Task 3.5: Record the gate, move the cards
 
 Full gate PASS recorded on all three cards; bootstrap card promoted to Ready.
+
+---
+
+## Wave 4 — Bootstrap skill (claimed @main 2026-06-11)
+
+The centerpiece: `/foundry:bootstrap` installs the setup into a consumer repo.
+The skill is prose guidance for the five phases (design §Bootstrap flow); the
+SKILL.md carries the flow within its 120-line budget and defers per-stack detail
+to reference files in the skill directory (progressive disclosure — references
+load on demand, only SKILL.md is always-in-context). Templates are found relative
+to the skill's base directory (`../../templates/{verbatim,seeds}`).
+
+### Task 4.1: bootstrap skill + references
+
+`plugins/foundry/skills/bootstrap/SKILL.md` — the five phases with their gates:
+Inspect (stack, entrypoints, repo shape), Interview (description; 5–10 domain
+terms + wrong names; vocabulary polarity; API surface?; existing gate commands;
+parallel agents?; unit of work), Copy (verbatim with markers + seeds; CLAUDE.md
+symlink), Generate (AGENTS.md from the skeleton reference; check-fast.sh wired to
+real commands; optional verify.sh + lock; features/ + BDD runner + walking
+skeleton; CI workflow; Contracts/Logging sections per interview; optional
+vocab-lint; isolation per repo shape), Verify (hooks installed; vitepress builds;
+Scenario green; check-fast.sh PASS — pasted, then propose the commit and ask).
+References: `references/generate.md` (AGENTS.md skeleton; per-stack gate command
+and BDD wiring: cargo+cucumber-rs / pytest-bdd+ruff / cucumber-js+tsc; contracts
+stack mapping; logging stack mapping + wide-event rules; isolation patterns),
+`references/verify.md` (the acceptance checklist mirroring AC-1.1/1.2).
+Gate: plugin validate; context budget (SKILL.md ≤ 120); compliance audit vs
+US-1 ACs; prose review.
+
+### Task 4.2: smoke bootstrap
+
+Follow the skill end-to-end against a scratch Python CLI repo (canned interview
+answers; solo dev, no API surface — the simplest generate path; full stack matrix
+is Wave 6). Grade by outcomes, not claims: generated check-fast.sh PASS; walking
+skeleton green through the real entrypoint; hooks installed; docs site builds;
+a seeded defect (failing test) makes the generated gate fail. Fix what breaks;
+re-run until green.
+
+### Task 4.3: record the gate, move the card
+
+Full gate PASS recorded; `update` skill promoted to Ready.

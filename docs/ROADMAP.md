@@ -39,7 +39,7 @@ model, forbidden terms, standing rules, or gate commands.
 | Template extraction from octant (@main): docs.py (parameterized), board.sh, vitepress scaffold, ROADMAP/glossary/spec-conventions/COE templates, githooks, worktree-retire | Done — gate recorded 2026-06-10: check-fast: PASS | `specs/foundry-core/` | plugin skeleton |
 | `code` lifecycle skill, generalized (reads repo AGENTS.md for commands/paths) (@main) | Done — gate recorded 2026-06-11: check-fast: PASS | `specs/foundry-core/` | template extraction |
 | `spec-reviewer` agent, generalized (entity model read from repo glossary) (@main) | Done — gate recorded 2026-06-11: check-fast: PASS | `specs/foundry-core/` | template extraction |
-| `bootstrap` skill: inspect → interview → copy → generate → verify | Ready | `specs/foundry-core/` | template extraction |
+| `bootstrap` skill: inspect → interview → copy → generate → verify (@main) | In progress | `specs/foundry-core/` | template extraction |
 | `update` skill: version-marker diff + refresh | Planned | `specs/foundry-core/` | bootstrap skill |
 | Evals L1–L2: fixtures (Rust CLI, Python service, TS monorepo), harness, seeded defects, gate-discrimination checks | Planned | `specs/foundry-core/` | bootstrap skill |
 | Evals L3: spec-reviewer precision/recall suite; lifecycle artifact checks | Planned | `specs/foundry-core/` | Evals L1–L2 |
