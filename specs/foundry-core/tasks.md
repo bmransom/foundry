@@ -565,3 +565,61 @@ match by `"_foundry_seed"` key. Fixture assertions: bootstrap writes the
 manifest with all verbatim entries; update on a pristine fixture refreshes a
 bumped template and the gate stays green; a customized file survives an update
 byte-for-byte; a bumped seed is announced and untouched.
+
+---
+
+## Wave 6 — Evals L1–L2 (claimed @main 2026-06-11)
+
+L1 already runs (template tests, byte-identity, context budget, in check-fast +
+CI). This wave builds L2: bootstrap each fixture headless, grade by
+harness-owned invariants plus gate discrimination (AC-5.2, AC-5.4) — never a
+generated gate's green-ness alone. The Wave 4/5 accretion docket becomes
+fixture assertions. Results are NDJSON wide events, one per case (design
+§Structured logging applied to foundry itself).
+
+Cost note: a headless bootstrap run is minutes and real tokens; the harness
+takes one fixture or the full sweep, runs locally or via a manual-dispatch CI
+job — not on every PR push.
+
+### Task 6.1: fixtures
+
+`evals/fixtures/<name>/{repo/,defects/,expectations.json}` for rust-cli (solo
+CLI: asserts no-Logging-for-CLI, symlink-after-AGENTS.md, repo-portable
+commands), python-service (FastAPI + pydantic, no parallel agents: asserts
+Contracts + Logging + wide event, plus the wclip docket — manifest written,
+epic present, vocab-lint discriminates, CI installs deps, template-owned code
+green under the consumer's linter), ts-monorepo (vitest + tsc, library).
+Each repo/ is self-sufficient pre-bootstrap (entrypoint + passing test).
+defects/ holds overlay files; expectations.json drives the grader.
+
+### Task 6.2: harness
+
+`evals/harness/bootstrap-eval.sh <fixture|all>`: copy repo/ to a scratch dir,
+git init + commit, run the bootstrap headless (`claude -p` + `--plugin-dir`,
+canned answers from the fixture), then grade: `evals/harness/grade.py` asserts
+the expectations (inventory, markers, manifest, special assertions), runs the
+generated gate (PASS required), applies each defect overlay (generated gate
+must FAIL), reverts (PASS again). One NDJSON record per case to
+`evals/results/<fixture>-<run>.ndjson` (gitignored). grade.py gets TDD unit
+tests against a fake bootstrapped tree — the grader itself must discriminate.
+
+### Task 6.3: prove the harness
+
+One full headless run on python-service; fix what breaks; record the NDJSON
+verdicts. The rust-cli and ts-monorepo sweeps are runnable by the same command;
+run if the first is clean, otherwise record status honestly.
+
+### Task 6.4: update-eval mode
+
+`evals/harness/update-eval.sh`: from a bootstrapped scratch repo, bump a
+template + a seed in a plugin copy, run the update headless, assert refresh /
+customized-protection / seed-announce (the Wave 5 docket). Prove once.
+
+### Task 6.5: wiring
+
+CI `workflow_dispatch` job for the sweep; validation.md row; docs/README
+pointer; .gitignore evals/results/.
+
+### Task 6.6: record the gate, move the card
+
+Evals L3 promoted to Ready.
