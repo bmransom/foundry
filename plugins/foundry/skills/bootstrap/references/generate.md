@@ -166,7 +166,8 @@ CI's `npm ci` needs it.
 `scripts/vocab-lint.sh`: read the terms from the "Replaces (now debt)" column
 of `docs/glossary.md` at run time (the glossary stays the single source); grep
 the surfaces the polarity answer names (docs and specs — plus code identifiers
-for an excluding engine); fail on any hit:
+for an excluding engine), excluding the glossary itself — its debt column
+contains every term; fail on any hit:
 
 ```
 vocab-lint: DEBT <term> <path>:<line>
