@@ -8,9 +8,7 @@ kind: reference
 
 # Feature files
 
-Feature files are the executable spec: behavior is specified once, as Gherkin
-Scenarios, and verified through the production entrypoints. The Scenario precedes
-the code.
+Gherkin Scenarios specify behavior once; the production entrypoints verify it. The Scenario precedes the code.
 
 **New feature → add a Scenario. Enhancement → update it. Refactor → don't touch.**
 
@@ -21,8 +19,9 @@ the code.
 - **Process contracts** — entrypoint-specific Scenarios for how one entrypoint
   behaves: its flags, errors, exit codes, exceptions.
 
+Behavior no entrypoint exposes belongs in unit tests, not feature files.
+
 ## Runners
 
 One runner per production entrypoint, each executing the shared Scenarios through
-its own surface — the same contract, proven everywhere it ships. Internal detail
-no entrypoint exposes stays in unit tests.
+its own surface — the same contract, proven everywhere it ships.

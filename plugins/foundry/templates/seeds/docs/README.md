@@ -30,7 +30,7 @@ Every doc carries frontmatter — `title`, `description`, and one `kind`:
 
 ## Index
 
-Add an index pointer here for every new doc.
+<!-- Add an index pointer here for every new doc. -->
 
 - `ROADMAP.md` — the board; the single source of truth for cross-spec status.
 - `BACKLOG.md` — the idea pool.

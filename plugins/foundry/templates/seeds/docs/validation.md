@@ -13,12 +13,13 @@ done-ness — the gate decides, never the author's assertion.
 
 Every gate fires from two triggers: `.githooks/pre-push` (fast feedback; bypass
 once with `git push --no-verify`) and CI (the non-bypassable backstop) — the same
-script both times, so the two can never disagree.
+script both times.
 
 ## Gates
 
-Add a row for every gate. A heavy gate (long benchmark, full suite) stays manual;
-document its command and when to run it.
+Add a row for every gate.
+
+- Heavy gates (long benchmarks, full suites) stay manual; add a row with trigger "manual".
 
 | Gate | Command | Catches | Trigger |
 |---|---|---|---|

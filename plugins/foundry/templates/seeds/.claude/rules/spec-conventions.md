@@ -9,8 +9,7 @@ paths:
 
 # Spec conventions
 
-Specs decide names and prose, which then propagate to code. Hold them to the repo
-contract.
+Specs decide names and prose. Hold them to the repo contract.
 
 ## Names
 

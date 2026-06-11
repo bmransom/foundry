@@ -19,7 +19,7 @@ non-bypassable backstop) — the same script both times, so the two can never di
 
 | Gate | Command | Catches | Trigger |
 |---|---|---|---|
-| Quick gate | `scripts/check-fast.sh` | everything below, in one run | pre-push + CI |
+| Quick gate | `scripts/check-fast.sh` | runs all gates below | pre-push + CI |
 | Plugin validate | `claude plugin validate plugins/foundry` (and the marketplace root) | manifest errors | inside the quick gate |
 | Byte identity | `scripts/check-byte-identity.sh` | foundry's own copies drifting from `plugins/foundry/templates/verbatim/` | inside the quick gate |
 | Docs | `python3 scripts/docs.py check` + `python3 scripts/test_docs.py` | missing or invalid frontmatter; docs.py regressions | inside the quick gate |

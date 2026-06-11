@@ -12,11 +12,11 @@ kind: decision
 **Severity:** `<low | medium | high>` ·
 **Status:** `<open | root-caused | closed>`
 
-Copy this template to `docs/<slug>-coe.md`; keep the headings.
+*Copy this template to `docs/<slug>-coe.md`; keep the headings.*
 
 ## What happened
 
-*The observable failure, concrete and dated: what broke, who or what caught it.*
+*State the observable failure — what broke, when, who or what caught it.*
 
 ## Root cause
 

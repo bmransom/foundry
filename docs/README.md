@@ -37,5 +37,4 @@ Add an index pointer here for every new doc.
 - `glossary.md` — foundry's vocabulary contract.
 - `validation.md` — foundry's verification gates.
 
-Per-feature requirements, design, and tasks live in `../specs/`
-(format: `../specs/README.md`).
+Per-feature requirements, design, and tasks live in `../specs/`; see `../specs/README.md` for the format.

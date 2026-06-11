@@ -20,7 +20,9 @@ Every spec file opens with a status header that points to the board:
 
 > **Status:** Ready (2026-01-15) — tracked on the [board](../../docs/ROADMAP.md).
 
-When a spec and the board disagree, the board wins. Use the board's status taxonomy.
+When a spec and the board disagree, the board wins.
+
+Use the board's status taxonomy.
 
 ## EARS acceptance criteria
 

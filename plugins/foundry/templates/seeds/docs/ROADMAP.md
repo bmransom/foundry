@@ -8,13 +8,9 @@ kind: reference
 
 # Roadmap
 
-This board is the single source of truth for cross-spec status, sequencing, and
-ownership. When a per-feature spec and this board disagree, the board wins; every
-spec carries a status header that points here.
-
 ## Board conventions
 
-Render the board with `scripts/board.sh` (filter to one epic: `scripts/board.sh "Epic 0"`).
+Run `scripts/board.sh` to render the board; `scripts/board.sh "Epic 0"` filters to one epic.
 
 - A **card** is one table row: `Work | Status | Spec | Depends on`. Claim a card by
   adding `(@<owner>)` to its Work cell; never take a card another agent owns.
@@ -32,7 +28,7 @@ Use these words in board tables and spec status headers.
 
 | Status | Meaning |
 |---|---|
-| Done | Implemented and verified by a recorded gate PASS; no active follow-up beyond normal maintenance. |
+| Done | Implemented and verified by a recorded gate PASS. |
 | Validating | Code landed; the repo's canonical gate is running. |
 | In progress | Partially implemented, being hardened, or recently landed with known follow-up. |
 | Ready | Spec'd — `specs/<feature>/` design and tasks approved, prerequisites met; claimable. |
@@ -41,12 +37,11 @@ Use these words in board tables and spec status headers.
 | Blocked | Direction known; work waits on an external dependency or an earlier workstream. |
 | Superseded | Preserved for history or rationale; no longer the forward plan. |
 
-Use `Done`, never "complete", for implementation state.
-
 ## Standing rules
 
-**Naming.** `docs/glossary.md` is the vocabulary contract. Inline the most-violated
-glossary rules here as they emerge.
+**Naming.** `docs/glossary.md` is the vocabulary contract. Use `Done`, never "complete", for implementation state. Inline the most-violated glossary rules here as they emerge.
+- The board wins over any per-feature spec.
+- Every spec status header points here.
 
 ## Status Dashboard
 
