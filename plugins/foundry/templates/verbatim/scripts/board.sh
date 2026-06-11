@@ -35,6 +35,6 @@ echo ""
 echo "Columns (rows per ### section):"
 echo "$dashboard" | awk '
   /^### / {name=substr($0,5); next}
-  /^\| / && name != "" && $0 !~ /^\|[ -]*\|/ && $0 !~ /Work|Evidence|Current state|Why/ {count[name]++}
+  /^\| / && name != "" && $0 !~ /^\|[ -]*\|/ && $0 !~ /Work/ {count[name]++}
   END {for (c in count) printf "  %-14s %d\n", c, count[c]}
 '
