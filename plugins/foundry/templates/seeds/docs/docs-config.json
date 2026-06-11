@@ -1,0 +1,11 @@
+{
+  "_foundry_seed": "docs-config v1",
+  "kinds": ["reference", "architecture", "guide", "decision"],
+  "lifecycles": ["current", "superseded", "historical"],
+  "required_fields": ["title", "description", "kind"],
+  "doc_globs": ["docs/*.md", "docs/**/*.md"],
+  "exclude_substrings": ["/node_modules/", "/.vitepress/"],
+  "exclude_prefixes": ["docs/crates/"],
+  "exclude_paths": ["docs/README.md", "docs/index.md"],
+  "skill_ref_prefixes": ["scripts/", "docs/", "specs/", ".claude/"]
+}

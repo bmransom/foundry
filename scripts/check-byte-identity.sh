@@ -26,7 +26,10 @@ while IFS= read -r -d '' template_file; do
     echo "byte-identity: DRIFT $relative_path"
     has_violation=1
   fi
-done < <(find "$TEMPLATES" -type f -print0)
+done < <(find "$TEMPLATES" -type f \
+  -not -path '*/__pycache__/*' \
+  -not -path '*/.pytest_cache/*' \
+  -print0)
 
 [ "$has_violation" -eq 0 ] && echo "byte-identity: PASS"
 exit "$has_violation"
