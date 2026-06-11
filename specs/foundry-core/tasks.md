@@ -348,3 +348,65 @@ In `docs/ROADMAP.md`: plugin-skeleton card → `Done — gate recorded <date>: c
 git add docs/ROADMAP.md specs/foundry-core/tasks.md
 git commit -m "chore(board): record wave 1 gate PASS, promote template extraction"
 ```
+
+---
+
+## Wave 2 — Template extraction from octant (claimed @main 2026-06-10)
+
+Design refinement recorded at claim: template classes split into
+`templates/verbatim/` (byte-checked tooling) and `templates/seeds/` (copied once,
+repo-owned content) — see design §Template classes. Sources live in
+`~/dev/workspace/octant`; every extraction passes the mechanisms-not-content audit
+(no octant entities, terms, or standing rules in any template).
+
+### Task 2.1: verbatim/ and seeds/ split
+
+Move `templates/.githooks/pre-push` and `templates/scripts/install-hooks.sh` to
+`templates/verbatim/...`; point `check-byte-identity.sh` at
+`plugins/foundry/templates/verbatim`; update the test fixture paths to match.
+Gate: byte-identity still covers both files; full test suite green.
+
+### Task 2.2: board.sh + worktree-retire.sh (verbatim)
+
+Copy from octant `scripts/`, add `# foundry-template:` markers, replace the one
+octant-specific string (the `Octant board` echo header → `Board`); install
+foundry's own copies; both runnable against foundry's ROADMAP/worktrees.
+Gate: byte-identity green; `scripts/board.sh` renders foundry's dashboard.
+
+### Task 2.3: docs.py + test_docs.py (verbatim tool + seed config) + outline/section
+
+Port octant `scripts/docs.py`: octant-specific constants (doc globs, excluded
+paths) move to a `docs/docs-config.json` seed the script loads; port
+`test_docs.py`; add `outline <doc>` (heading tree) and `section <doc> <heading>`
+(print one section) subcommands with tests. Foundry adopts: frontmatter on all
+foundry docs, config seed present, `python3 scripts/docs.py check` + the python
+tests wired into `check-fast.sh`.
+Gate: docs.py check green on foundry's own docs; new subcommand tests green.
+
+### Task 2.4: vitepress scaffold (verbatim config + seed site config)
+
+From octant `docs/.vitepress/`: `config.ts` generalized to read title/description
+from a `docs/.vitepress/site.json` seed; `package.json` + `tsconfig.json`
+verbatim; sidebar generation (docs.py already emits it) wired. Foundry adopts:
+its docs site builds. CI gains a docs-build step; the pre-push gate does NOT run
+the build (too slow for the fast gate).
+Gate: `npm ci && npm run docs:build` (or equivalent) succeeds under `docs/`.
+
+### Task 2.5: Seed templates
+
+Author under `templates/seeds/`, each with a `foundry-seed:` marker, generic per
+the mechanisms-not-content rule: `docs/ROADMAP.md`, `docs/BACKLOG.md`,
+`docs/glossary.md`, `docs/validation.md`, `docs/index.md`, `docs/README.md`,
+`specs/README.md`, `features/README.md`, `.claude/rules/spec-conventions.md`,
+`docs/coe-template.md`. Modeled on octant's equivalents; the glossary seed
+carries the debt column, prior-art preamble, and empty entity-model section; the
+ROADMAP seed carries conventions + status taxonomy + empty dashboard;
+spec-conventions carries the naming/prose/prior-art rules with the
+spec-reviewer dispatch. Foundry adopts the ones it lacks: `docs/index.md`,
+`docs/README.md`, `docs/BACKLOG.md`, `docs/validation.md`, `specs/README.md`.
+Gate: docs.py check green over the adopted files; seeds audit clean.
+
+### Task 2.6: Record the gate, move the card
+
+Run the full gate, record PASS on the template-extraction card, promote the
+Wave 3 card (lifecycle skill + spec-reviewer) and the COE-mechanism card to Ready.

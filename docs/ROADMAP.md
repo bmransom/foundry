@@ -36,7 +36,7 @@ model, forbidden terms, standing rules, or gate commands.
 |---|---|---|---|
 | foundry-core spec: requirements + design | Done — spec approved 2026-06-10 | `specs/foundry-core/` | — |
 | Plugin skeleton: marketplace.json, plugin.json, repo self-host scaffold, `check-fast.sh` + self-host byte-identity gate | Done — gate recorded 2026-06-10: check-fast: PASS | `specs/foundry-core/` | spec approval |
-| Template extraction from octant: docs.py (parameterized), board.sh, vitepress scaffold, ROADMAP/glossary/spec-conventions/COE templates, githooks, worktree-retire | Ready | `specs/foundry-core/` | plugin skeleton |
+| Template extraction from octant (@main): docs.py (parameterized), board.sh, vitepress scaffold, ROADMAP/glossary/spec-conventions/COE templates, githooks, worktree-retire | In progress | `specs/foundry-core/` | plugin skeleton |
 | `code` lifecycle skill, generalized (reads repo AGENTS.md for commands/paths) | Backlog | `specs/foundry-core/` | template extraction |
 | `spec-reviewer` agent, generalized (entity model read from repo glossary) | Backlog | `specs/foundry-core/` | template extraction |
 | `bootstrap` skill: inspect → interview → copy → generate → verify | Backlog | `specs/foundry-core/` | template extraction |

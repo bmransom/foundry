@@ -37,6 +37,16 @@ degrades gracefully for non-Claude tools.
 
 ## The split
 
+**Template classes.** `templates/verbatim/` holds tooling that stays byte-identical
+in every repo — gates, hooks, scripts, vitepress config; the self-host byte-identity
+gate enforces it. `templates/seeds/` holds content starting points — board, glossary,
+doc stubs, rules, the COE template — copied once at bootstrap, then owned by the
+repo; never byte-checked, divergence is the point. Seeds carry `foundry-seed:`
+markers so `/foundry:update` can announce a newer seed without overwriting. Any
+per-repo variation a verbatim tool needs lives in a seed config file (docs.py reads
+`docs/docs-config.json`; the vitepress config reads `docs/.vitepress/site.json`),
+keeping the tool itself byte-stable.
+
 | Plugin (shared, auto-propagates) | Verbatim templates (version-marked) | Generated per-repo (stack-aware) |
 |---|---|---|
 | `code` lifecycle skill | `scripts/docs.py` + `test_docs.py` (DOC_GLOBS in a config block) | `AGENTS.md` + `CLAUDE.md` symlink |

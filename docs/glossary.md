@@ -17,7 +17,8 @@ records why none fits.
 |---|---|---|
 | **Bootstrap** | The one-time act of installing the setup into a consumer repo: inspect → interview → copy → generate → verify. | scaffold (as a verb), init |
 | **Consumer repo** | A repo that received the setup via bootstrap. Octant is consumer #1. | target repo, client repo |
-| **Template** | A file foundry installs into a consumer repo. *Verbatim* templates copy byte-identically (stamped with a version marker); *generated* files are produced per-repo by the bootstrap skill. | boilerplate, scaffold (as a noun) |
+| **Template** | A file foundry installs into a consumer repo. Three classes: *verbatim* (byte-identical everywhere, byte-checked), *seed* (copied once, then repo-owned), *generated* (produced per-repo by the bootstrap skill). | boilerplate, scaffold (as a noun) |
+| **Seed** | A template copied once at bootstrap and then owned by the consumer repo (board, glossary, doc stubs, rules). Never byte-checked — divergence is the point. Database-seeding vocabulary. | starter, stub (as a class name) |
 | **Version marker** | The `foundry-template: <name> v<N>` comment stamped into every verbatim template copy; what `/foundry:update` diffs against. | header, watermark |
 | **Gate** | A verification command whose recorded PASS is the evaluator for done-ness. The quick gate runs pre-push and in CI; a heavy gate is optional and repo-specific. | check, validation step |
 | **Fixture** | A small repo under `evals/fixtures/` that bootstrap evals run against. xUnit vocabulary. | sample repo, test repo |
