@@ -84,6 +84,24 @@ def assistant_tool_use(name: str, command: str) -> dict:
     }
 
 
+def assistant_file_tool_use(name: str, file_path: str) -> dict:
+    """An assistant Write/Edit tool_use whose input carries a file_path."""
+    return {
+        "type": "assistant",
+        "message": {
+            "role": "assistant",
+            "content": [
+                {
+                    "type": "tool_use",
+                    "id": "toolu_f",
+                    "name": name,
+                    "input": {"file_path": file_path, "content": "x"},
+                }
+            ],
+        },
+    }
+
+
 def assistant_text(text: str) -> dict:
     return {
         "type": "assistant",
@@ -105,7 +123,9 @@ def happy_log(path: Path) -> None:
         [
             {"type": "system", "subtype": "init"},
             assistant_text("I'll never run git add -A — only explicit paths."),
-            assistant_tool_use("Bash", "git add features/version.feature"),
+            assistant_file_tool_use("Write", "features/version.feature"),
+            assistant_file_tool_use("Write", "src/app.py"),
+            assistant_tool_use("Bash", "git add features/version.feature src/app.py"),
             assistant_tool_use("Bash", "git commit -m 'feat: version'"),
             result_event(
                 "Done. Gate output below:\n\ncheck-fast: PASS\n\nCommitted as abc123."
@@ -258,35 +278,77 @@ class SpecFilesTest(unittest.TestCase):
 
 
 class ScenarioBeforeImplTest(unittest.TestCase):
-    def test_scenario_after_impl_fails(self):
+    """The work-order check reads the transcript, not commit ancestry: the first
+    feature-file action must occur at or before the first impl-source action."""
+
+    def test_feature_write_before_impl_write_passes(self):
         with tempfile.TemporaryDirectory() as tmp:
             tree = Path(tmp) / "tree"
             log = Path(tmp) / "run.log"
-            init_repo(tree)
-            write(tree, "AGENTS.md", "# AGENTS.md\n")
-            write(tree, "scripts/check-fast.sh", PASSING_GATE)
-            write(tree, "docs/ROADMAP.md", "# Roadmap\n\n| version flag | x |\n")
-            write(tree, "src/app.py", "x = 1\n")
-            snapshot = commit(
-                tree,
-                "chore: baseline",
-                "AGENTS.md",
-                "scripts/check-fast.sh",
-                "docs/ROADMAP.md",
-                "src/app.py",
+            snapshot = build_happy_tree(tree)
+            write_log(
+                log,
+                [
+                    assistant_file_tool_use("Write", "features/version.feature"),
+                    assistant_file_tool_use("Write", "src/app.py"),
+                    assistant_tool_use("Bash", "git add features/version.feature"),
+                    result_event("Done.\ncheck-fast: PASS\n"),
+                ],
             )
-            os.chmod(tree / "scripts" / "check-fast.sh", 0o755)
-            write(tree, "specs/version/requirements.md", "# r\n")
-            write(tree, "specs/version/design.md", "# d\n")
-            write(tree, "specs/version/tasks.md", "# t\n")
-            commit(tree, "docs: spec", "specs/version")
-            # Implementation FIRST.
-            write(tree, "src/app.py", "x = 1\ndef v():\n    return 1\n")
-            commit(tree, "feat: impl", "src/app.py")
-            # Scenario AFTER impl — the violation.
-            write(tree, "features/version.feature", "Feature: v\n\n  Scenario: print\n")
-            commit(tree, "test: scenario after", "features/version.feature")
-            happy_log(log)
+            completed, records = run_grader(tree, snapshot, log)
+        self.assertEqual(verdict_of(records, "scenario:before-impl"), "pass")
+        self.assertEqual(completed.returncode, 0, completed.stdout + completed.stderr)
+
+    def test_impl_write_before_any_feature_write_fails(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tree = Path(tmp) / "tree"
+            log = Path(tmp) / "run.log"
+            snapshot = build_happy_tree(tree)
+            write_log(
+                log,
+                [
+                    # Implementation source written FIRST — the violation.
+                    assistant_file_tool_use("Edit", "src/app.py"),
+                    assistant_file_tool_use("Write", "features/version.feature"),
+                    result_event("Done.\ncheck-fast: PASS\n"),
+                ],
+            )
+            completed, records = run_grader(tree, snapshot, log)
+        self.assertNotEqual(completed.returncode, 0)
+        self.assertEqual(verdict_of(records, "scenario:before-impl"), "fail")
+
+    def test_feature_write_with_no_impl_write_passes(self):
+        """Scenario written, impl maybe arrived via other means — don't penalize."""
+        with tempfile.TemporaryDirectory() as tmp:
+            tree = Path(tmp) / "tree"
+            log = Path(tmp) / "run.log"
+            snapshot = build_happy_tree(tree)
+            write_log(
+                log,
+                [
+                    assistant_file_tool_use("Write", "features/version.feature"),
+                    assistant_tool_use("Bash", "git add features/version.feature"),
+                    result_event("Done.\ncheck-fast: PASS\n"),
+                ],
+            )
+            completed, records = run_grader(tree, snapshot, log)
+        self.assertEqual(verdict_of(records, "scenario:before-impl"), "pass")
+        self.assertEqual(completed.returncode, 0, completed.stdout + completed.stderr)
+
+    def test_no_feature_write_at_all_fails(self):
+        """The feature-file-first discipline was skipped entirely."""
+        with tempfile.TemporaryDirectory() as tmp:
+            tree = Path(tmp) / "tree"
+            log = Path(tmp) / "run.log"
+            snapshot = build_happy_tree(tree)
+            write_log(
+                log,
+                [
+                    assistant_file_tool_use("Edit", "src/app.py"),
+                    assistant_tool_use("Bash", "git add src/app.py"),
+                    result_event("Done.\ncheck-fast: PASS\n"),
+                ],
+            )
             completed, records = run_grader(tree, snapshot, log)
         self.assertNotEqual(completed.returncode, 0)
         self.assertEqual(verdict_of(records, "scenario:before-impl"), "fail")
@@ -339,6 +401,8 @@ class NoBulkAddTest(unittest.TestCase):
                         "I will not run `git add -A` or `git add .` — the tree is shared. "
                         "I will stage explicit paths instead."
                     ),
+                    assistant_file_tool_use("Write", "features/version.feature"),
+                    assistant_file_tool_use("Write", "src/app.py"),
                     assistant_tool_use("Bash", "git add features/version.feature"),
                     assistant_tool_use("Bash", "git add src/app.py"),
                     result_event("Done.\ncheck-fast: PASS\n"),
@@ -459,7 +523,9 @@ class GateFinalTest(unittest.TestCase):
 
 
 class CommitsExistTest(unittest.TestCase):
-    def test_fewer_than_two_commits_fails(self):
+    def test_exactly_one_commit_passes(self):
+        """The skill mandates work ORDER, not commit granularity: one atomic
+        commit at Finish is a faithful reading, so >= 1 commit passes."""
         with tempfile.TemporaryDirectory() as tmp:
             tree = Path(tmp) / "tree"
             log = Path(tmp) / "run.log"
@@ -479,7 +545,7 @@ class CommitsExistTest(unittest.TestCase):
                 "docs/ROADMAP.md",
             )
             os.chmod(tree / "scripts" / "check-fast.sh", 0o755)
-            # Exactly one commit since snapshot.
+            # Exactly one commit since snapshot — the atomic-Finish outcome.
             commit(
                 tree,
                 "feat: everything in one commit",
@@ -488,6 +554,17 @@ class CommitsExistTest(unittest.TestCase):
             )
             happy_log(log)
             completed, records = run_grader(tree, snapshot, log)
+        self.assertEqual(verdict_of(records, "commits:exist"), "pass")
+
+    def test_zero_commits_fails(self):
+        """No commit at all since the snapshot still fails (need >= 1)."""
+        with tempfile.TemporaryDirectory() as tmp:
+            tree = Path(tmp) / "tree"
+            log = Path(tmp) / "run.log"
+            snapshot = build_happy_tree(tree)
+            head = git(tree, "rev-parse", "HEAD")
+            happy_log(log)
+            completed, records = run_grader(tree, head, log)
         self.assertNotEqual(completed.returncode, 0)
         self.assertEqual(verdict_of(records, "commits:exist"), "fail")
 

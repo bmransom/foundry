@@ -695,3 +695,19 @@ three runs. Backlogged: signature matching should accept any of several tokens
 per violation, or match by line, so a correct flag quoting a different substring
 still scores. Weekly-limit-killed runs (the earlier run 3) are excluded by hand,
 not handled in the harness — per owner decision, an edge case not worth code.
+
+### Result (2026-06-12) — Task 7.3 grader fix, re-grade PASS
+
+First real lifecycle run scored 6/7: the agent did everything right (spec dir,
+feature-file-first work order, gate green, board card, no bulk-add) but committed
+it as ONE atomic commit at Finish — a faithful reading of the code skill, whose
+Finish stage commits once and never mandates separate Scenario/impl commits. Two
+grader checks encoded a false assumption: `commits:exist` required >= 2 (the skill
+mandates work ORDER, not commit granularity), and `scenario:before-impl` checked
+commit ancestry (vacuous under one commit — a sha is its own ancestor). Fix:
+relaxed `commits:exist` to >= 1, and replaced the ancestry check with a transcript
+work-order check — the first features/*.feature Write/Edit must occur at or before
+the first impl-source Write/Edit (impl = tracked path not under specs/, features/,
+docs/, not a test). No feature write → fail (discipline skipped); feature but no
+impl write → pass (don't penalize). Re-grade of the retained run (snapshot
+`b31d050`) → all 7 PASS, `lifecycle-eval: PASS`.

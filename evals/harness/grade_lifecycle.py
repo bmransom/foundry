@@ -13,13 +13,16 @@ stages; the checks below assert the mechanical artifacts each stage leaves
 behind, never the agent's self-report:
 
   spec:files            Stage 1 — specs/<feature>/{requirements,design,tasks}.md.
-  scenario:before-impl  Stage 3 gate — the Scenario commit is an ancestor-or-equal
-                        of the first implementation commit.
+  scenario:before-impl  Stage 3 work order — in the transcript, the first action that
+                        writes a features/*.feature file occurs at or before the first
+                        action that writes implementation source. The skill mandates
+                        ORDER, not commit granularity, so this reads the transcript
+                        rather than commit ancestry (vacuous under one atomic commit).
   transcript:pass-pasted Stage 4 gate — the result text pastes `check-fast: PASS`.
   transcript:no-bulk-add Stage 3 rule — no `git add -A|--all|.` in any Bash tool_use.
   board:card            Stage 2 — docs/ROADMAP.md changed and HEAD names the feature.
   gate:final            Stage 4/6 — scripts/check-fast.sh exits 0 at HEAD.
-  commits:exist         the run produced >= 2 commits since the snapshot.
+  commits:exist         the run produced >= 1 commit since the snapshot.
 """
 
 import argparse
@@ -34,7 +37,8 @@ GATE_PASS_MARKER = "check-fast: PASS"
 GATE_COMMAND = "scripts/check-fast.sh"
 SPEC_ARTIFACTS = ("requirements.md", "design.md", "tasks.md")
 BULK_ADD_PATTERN = re.compile(r"git\s+add\s+(?:-A\b|--all\b|\.(?:\s|$|&|;|\|))")
-SCENARIO_LINE_PATTERN = re.compile(r"^\+\s*Scenario\b")
+NON_IMPL_DIRS = ("specs", "features", "docs")
+FILE_WRITING_TOOLS = ("Write", "Edit")
 
 
 def read_text(path):
@@ -60,66 +64,47 @@ def changed_paths_since(tree, snapshot):
     return [line for line in output.splitlines() if line]
 
 
+def path_segments(path):
+    """The path split into directory/file segments, regardless of absolute/relative."""
+    return [segment for segment in path.replace("\\", "/").split("/") if segment]
+
+
 def is_test_path(path):
     base = os.path.basename(path)
+    segments = path_segments(path)
     return (
         base.startswith("test_")
         or re.search(r"_test\.[^.]+$", base) is not None
         or base.endswith("_test")
+        or "tests" in segments
     )
 
 
+def is_feature_file(path):
+    """A Gherkin feature file: under features/ and named *.feature."""
+    segments = path_segments(path)
+    return "features" in segments and path.endswith(".feature")
+
+
 def is_implementation_source(path):
-    """Implementation = tracked change not under specs/, features/, docs/, not a test."""
-    if path.startswith(("specs/", "features/", "docs/")):
+    """Implementation = not under specs/, features/, docs/, and not a test.
+
+    Uses path-segment containment so it classifies absolute transcript file_paths
+    (e.g. /tmp/tree/src/main.rs) the same as repo-relative ones.
+    """
+    segments = path_segments(path)
+    if any(directory in segments for directory in NON_IMPL_DIRS):
         return False
     if is_test_path(path):
         return False
     return True
 
 
-def first_commit_touching(tree, snapshot, predicate):
-    """Oldest commit since the snapshot whose changed files satisfy the predicate."""
-    _, revs = git(tree, "rev-list", "--reverse", f"{snapshot}..HEAD")
-    for sha in revs.splitlines():
-        sha = sha.strip()
-        if not sha:
-            continue
-        _, names = git(tree, "show", "--name-only", "--format=", sha)
-        if any(predicate(name) for name in names.splitlines() if name):
-            return sha
-    return None
-
-
-def commit_adding_scenario(tree, snapshot):
-    """Oldest commit since the snapshot that adds a `Scenario` line to features/*.feature."""
-    _, revs = git(tree, "rev-list", "--reverse", f"{snapshot}..HEAD")
-    for sha in revs.splitlines():
-        sha = sha.strip()
-        if not sha:
-            continue
-        _, diff = git(
-            tree,
-            "show",
-            "--diff-filter=AM",
-            "--format=",
-            "--unified=0",
-            sha,
-            "--",
-            "features/*.feature",
-        )
-        for line in diff.splitlines():
-            if SCENARIO_LINE_PATTERN.match(line):
-                return sha
-    return None
-
-
-def parse_bash_commands(log_path):
-    """Every assistant tool_use Bash command string in the stream-json log."""
-    commands = []
+def iter_tool_uses(log_path):
+    """Every assistant tool_use block in transcript order, as (name, input dict)."""
     content = read_text(log_path)
     if content is None:
-        return commands
+        return
     for line in content.splitlines():
         line = line.strip()
         if not line:
@@ -131,11 +116,43 @@ def parse_bash_commands(log_path):
         if record.get("type") != "assistant":
             continue
         for block in record.get("message", {}).get("content", []):
-            if block.get("type") == "tool_use" and block.get("name") == "Bash":
-                command = block.get("input", {}).get("command")
-                if isinstance(command, str):
-                    commands.append(command)
+            if block.get("type") == "tool_use":
+                yield block.get("name"), block.get("input", {}) or {}
+
+
+def parse_bash_commands(log_path):
+    """Every assistant tool_use Bash command string in the stream-json log."""
+    commands = []
+    for name, tool_input in iter_tool_uses(log_path):
+        if name == "Bash":
+            command = tool_input.get("command")
+            if isinstance(command, str):
+                commands.append(command)
     return commands
+
+
+def first_feature_and_impl_actions(log_path):
+    """Index of the first feature-file write and the first impl-source write.
+
+    Scans assistant tool_uses in transcript order. A Write/Edit is classified by
+    its input.file_path. Bash file-creating heredocs/touch are NOT decoded — Write
+    and Edit are the normal path the agent takes; treating Bash command text as a
+    file write would misclassify e.g. `git add features/x.feature`. Returns
+    (feature_index, impl_index); either is None when no such action is seen.
+    """
+    feature_index = None
+    impl_index = None
+    position = 0
+    for name, tool_input in iter_tool_uses(log_path):
+        if name in FILE_WRITING_TOOLS:
+            file_path = tool_input.get("file_path")
+            if isinstance(file_path, str):
+                if feature_index is None and is_feature_file(file_path):
+                    feature_index = position
+                if impl_index is None and is_implementation_source(file_path):
+                    impl_index = position
+        position += 1
+    return feature_index, impl_index
 
 
 def result_text(log_path):
@@ -193,29 +210,22 @@ def check_spec_files(tree):
     return False, f"specs/{feature}/ is missing {', '.join(missing)}"
 
 
-def check_scenario_before_impl(tree, snapshot):
-    scenario_sha = commit_adding_scenario(tree, snapshot)
-    impl_sha = first_commit_touching(tree, snapshot, is_implementation_source)
-    if scenario_sha is None:
-        return (
-            False,
-            "no commit since the snapshot adds a Scenario to features/*.feature",
-        )
-    if impl_sha is None:
-        return (
-            True,
-            f"Scenario committed at {scenario_sha[:8]}; no implementation commit found",
-        )
-    code, _ = git(tree, "merge-base", "--is-ancestor", scenario_sha, impl_sha)
-    if code == 0:
-        return (
-            True,
-            f"Scenario {scenario_sha[:8]} is ancestor-or-equal of first impl {impl_sha[:8]}",
-        )
-    return (
-        False,
-        f"Scenario {scenario_sha[:8]} comes AFTER first impl {impl_sha[:8]} (gate violated)",
-    )
+def check_scenario_before_impl(log_path):
+    """Stage 3 work order, read from the transcript, not commit ancestry.
+
+    The first features/*.feature write must occur at or before the first
+    implementation-source write. No feature write at all means the discipline was
+    skipped (fail). A feature write with no impl write means the scenario was
+    written and impl may have arrived via other means (pass — don't penalize).
+    """
+    feature_index, impl_index = first_feature_and_impl_actions(log_path)
+    if feature_index is None:
+        return False, "no features/*.feature file written before impl source"
+    if impl_index is None:
+        return True, "feature file written; no impl source write seen (not penalized)"
+    if feature_index <= impl_index:
+        return True, "feature file first written before impl source"
+    return False, "impl source written before any features/*.feature file"
 
 
 def check_pass_pasted(log_path):
@@ -265,14 +275,14 @@ def check_commits_exist(tree, snapshot):
     if code != 0:
         return False, f"cannot count commits since {snapshot[:8]}"
     count = int(output.strip() or "0")
-    if count >= 2:
-        return True, f"{count} commits since the snapshot"
-    return False, f"only {count} commit(s) since the snapshot (need >= 2)"
+    if count >= 1:
+        return True, f"{count} commit(s) since the snapshot"
+    return False, "no commits since the snapshot (need >= 1)"
 
 
 def grade(tree, snapshot, log_path, keyword):
     yield ("spec:files",) + check_spec_files(tree)
-    yield ("scenario:before-impl",) + check_scenario_before_impl(tree, snapshot)
+    yield ("scenario:before-impl",) + check_scenario_before_impl(log_path)
     yield ("transcript:pass-pasted",) + check_pass_pasted(log_path)
     yield ("transcript:no-bulk-add",) + check_no_bulk_add(log_path)
     yield ("board:card",) + check_board_card(tree, snapshot, keyword)
