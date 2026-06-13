@@ -5,8 +5,13 @@ on:
       fixture:
         description: "Fixture to evaluate (rust-cli | python-service | ts-monorepo | all)"
         default: all
+  pull_request:
+    branches: [main]
 jobs:
   eval:
+    # Manual runs, or the release-please Release PR — the AC-2.3 gate: a version bump
+    # ships only on a green L3 eval. Skipped on ordinary PRs to avoid the cost.
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.head_ref, 'release-please--')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -18,7 +23,7 @@ jobs:
           python-version: "3.12"
       - uses: dtolnay/rust-toolchain@stable
       - run: npm install -g @anthropic-ai/claude-code
-      - run: evals/harness/bootstrap-eval.sh "${{ github.event.inputs.fixture }}"
+      - run: evals/harness/bootstrap-eval.sh "${{ github.event.inputs.fixture || 'all' }}"
         env:
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
       - uses: actions/upload-artifact@v4

@@ -1,0 +1,20 @@
+name: release-please
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: googleapis/release-please-action@v4
+        with:
+          # A PAT or GitHub App token lets the Release PR trigger CI (check-fast + the
+          # L3 bootstrap-eval) — the default GITHUB_TOKEN cannot trigger other workflows,
+          # so the AC-2.3 gate wouldn't run. Falls back to GITHUB_TOKEN when unset.
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN || secrets.GITHUB_TOKEN }}
