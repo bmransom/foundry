@@ -682,3 +682,16 @@ item only; scorer checks recall and decoy hits against those lines exclusively;
 prose outside the block is ignored. Agent prompt unchanged — the footer
 instruction is in the harness prompt suffix. Protocol failure (no FLAGGED
 block) scores recall 0 and emits a `protocol` eval_case fail.
+
+### Result (2026-06-12) — Task 7.2 PASS
+
+Re-run after the FLAGGED-footer fix: per-run recall [1.0, 0.9, 1.0], mean 0.967,
+decoy_hits 0 → PASS (bar: mean ≥ 0.8, decoys == 0). The lone 0.9 is run 2 missing
+V9's `rounding_residue` signature — the agent flagged the run-on-paragraph
+violation correctly (its finding #9), but quoted a different substring of the
+sentence than the answer key's token. Known harness brittleness, not an agent
+miss; the agent's effective recall is ~1.0 with zero false positives across all
+three runs. Backlogged: signature matching should accept any of several tokens
+per violation, or match by line, so a correct flag quoting a different substring
+still scores. Weekly-limit-killed runs (the earlier run 3) are excluded by hand,
+not handled in the harness — per owner decision, an edge case not worth code.
