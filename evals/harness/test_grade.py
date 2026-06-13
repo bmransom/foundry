@@ -21,8 +21,8 @@ BASE_EXPECTATIONS = {
         {"path": "AGENTS.md", "class": "generated"},
         {"path": "CLAUDE.md", "class": "symlink", "target": "AGENTS.md"},
         {"path": "scripts/docs.py", "class": "verbatim"},
-        {"path": "docs/ROADMAP.md", "class": "seed"},
-        {"path": "docs/docs-config.json", "class": "seed"},
+        {"path": "roadmap/ROADMAP.md", "class": "seed"},
+        {"path": "knowledge/docs-config.json", "class": "seed"},
         {"path": "features", "class": "dir"},
         {"path": "scripts/agent-env.sh", "class": "absent"},
     ],
@@ -40,7 +40,7 @@ BASE_EXPECTATIONS = {
         },
         {
             "name": "roadmap-epic",
-            "path": "docs/ROADMAP.md",
+            "path": "roadmap/ROADMAP.md",
             "pattern": "^### Epic 0",
             "must_exist": True,
         },
@@ -51,7 +51,8 @@ BASE_EXPECTATIONS = {
 
 def build_complete_tree(root: Path) -> None:
     (root / "scripts").mkdir(parents=True)
-    (root / "docs").mkdir(parents=True)
+    (root / "knowledge").mkdir(parents=True)
+    (root / "roadmap").mkdir(parents=True)
     (root / "features").mkdir(parents=True)
     (root / "AGENTS.md").write_text(
         "# AGENTS.md — fake\n\nIntro.\n\n## Commands\n\n`scripts/check-fast.sh`\n"
@@ -60,10 +61,10 @@ def build_complete_tree(root: Path) -> None:
     (root / "scripts" / "docs.py").write_text(
         "# foundry-template: docs v1\nprint('hi')\n"
     )
-    (root / "docs" / "ROADMAP.md").write_text(
+    (root / "roadmap" / "ROADMAP.md").write_text(
         "<!-- foundry-seed: roadmap v1 -->\n# Roadmap\n\n### Epic 0 — fake epic\n"
     )
-    (root / "docs" / "docs-config.json").write_text(
+    (root / "knowledge" / "docs-config.json").write_text(
         json.dumps({"_foundry_seed": "docs-config v1", "kinds": []})
     )
     (root / "scripts" / "check-fast.sh").write_text(
@@ -158,11 +159,11 @@ class GradeDiscriminationTest(unittest.TestCase):
 
     def test_seed_file_without_marker_fails(self):
         records = self.grade_broken(
-            lambda tree: (tree / "docs" / "ROADMAP.md").write_text(
+            lambda tree: (tree / "roadmap" / "ROADMAP.md").write_text(
                 "# Roadmap\n\n### Epic 0 — fake epic\n"
             )
         )
-        self.assertEqual(verdict_of(records, "file:docs/ROADMAP.md"), "fail")
+        self.assertEqual(verdict_of(records, "file:roadmap/ROADMAP.md"), "fail")
 
     def test_symlink_replaced_by_regular_file_fails(self):
         def break_tree(tree):
@@ -175,7 +176,7 @@ class GradeDiscriminationTest(unittest.TestCase):
     def test_symlink_to_wrong_target_fails(self):
         def break_tree(tree):
             (tree / "CLAUDE.md").unlink()
-            os.symlink("docs/ROADMAP.md", tree / "CLAUDE.md")
+            os.symlink("roadmap/ROADMAP.md", tree / "CLAUDE.md")
 
         records = self.grade_broken(break_tree)
         self.assertEqual(verdict_of(records, "file:CLAUDE.md"), "fail")
@@ -208,7 +209,7 @@ class GradeDiscriminationTest(unittest.TestCase):
 
     def test_required_content_pattern_missing_fails(self):
         records = self.grade_broken(
-            lambda tree: (tree / "docs" / "ROADMAP.md").write_text(
+            lambda tree: (tree / "roadmap" / "ROADMAP.md").write_text(
                 "<!-- foundry-seed: roadmap v1 -->\n# Roadmap\n"
             )
         )

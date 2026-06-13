@@ -6,7 +6,7 @@ Run every command and paste its output — no pasted output, no pass.
 
 ```bash
 ls -la AGENTS.md CLAUDE.md .githooks/pre-push .github/workflows/check-fast.yml
-ls scripts docs docs/.vitepress specs features .claude/rules
+ls scripts knowledge knowledge/.vitepress roadmap/specs features .claude/rules
 ```
 
 Expected — every row present (plus whatever the repo already had):
@@ -14,10 +14,10 @@ Expected — every row present (plus whatever the repo already had):
 | Path | Class |
 |---|---|
 | `AGENTS.md` · `CLAUDE.md -> AGENTS.md` (symlink) | generated |
-| `docs/{README,index,ROADMAP,BACKLOG,glossary,validation,coe-template}.md` | seeds, filled |
-| `docs/docs-config.json` | seed (generic config — nothing to fill) |
-| `docs/.vitepress/{config.ts,site.json}` · `docs/{package.json,tsconfig.json}` | verbatim (`site.json` is a seed) |
-| `specs/README.md` · `features/README.md` · `.claude/rules/spec-conventions.md` | seeds |
+| `knowledge/{README,index,glossary,validation,coe-template}.md` · `roadmap/{ROADMAP,BACKLOG}.md` | seeds, filled |
+| `knowledge/docs-config.json` | seed (generic config — nothing to fill) |
+| `knowledge/.vitepress/{config.ts,site.json}` · `knowledge/{package.json,tsconfig.json}` | verbatim (`site.json` is a seed) |
+| `roadmap/specs/README.md` · `features/README.md` · `.claude/rules/spec-conventions.md` | seeds |
 | `features/<name>.feature` + its runner wiring | generated |
 | `scripts/{docs.py,test_docs.py,board.sh,install-hooks.sh,worktree-retire.sh}` · `.githooks/pre-push` | verbatim |
 | `scripts/check-fast.sh` · `.github/workflows/check-fast.yml` | generated |
@@ -29,7 +29,7 @@ Expected — every row present (plus whatever the repo already had):
 Version markers (AC-1.6):
 
 ```bash
-grep -rl 'foundry-template:' scripts .githooks docs | sort
+grep -rl 'foundry-template:' scripts .githooks knowledge | sort
 ```
 
 Expected: every verbatim copy above appears.
@@ -39,7 +39,7 @@ Expected: every verbatim copy above appears.
 | Check | Command | Expected final output |
 |---|---|---|
 | Hooks installed | `scripts/install-hooks.sh && git config core.hooksPath` | `hooks installed (core.hooksPath=.githooks, N hook(s))` · `.githooks` |
-| Docs site builds | `cd docs && npm install && npm run build` | vitepress `build complete` |
+| Docs site builds | `cd knowledge && npm install && npm run build` | vitepress `build complete` |
 | Walking skeleton | the feature-runner command `check-fast.sh` names | the Scenario passes |
 | The quick gate | `scripts/check-fast.sh` | `check-fast: PASS` |
 
@@ -70,12 +70,12 @@ git status
 ```
 
 Review every new and modified path — nothing unexplained; build artifacts
-gitignored; `docs/package-lock.json` tracked. Propose the commit with explicit
+gitignored; `knowledge/package-lock.json` tracked. Propose the commit with explicit
 paths — never `git add -A`:
 
 ```bash
 git add AGENTS.md CLAUDE.md .gitignore .githooks .github/workflows/check-fast.yml \
-  .claude docs features scripts specs/README.md <the runner wiring: tests/… or the cucumber config> \
+  .claude knowledge roadmap features scripts <the runner wiring: tests/… or the cucumber config> \
   <stack manifests: Cargo.toml / pyproject.toml / package.json>
 git commit -m "feat: bootstrap the foundry engineering setup"
 ```

@@ -50,7 +50,7 @@ DECOY_DOCS = {
 DOCS_CONFIG = (
     '{\n  "kinds": ["reference", "architecture", "guide", "decision"],\n'
     '  "required_fields": ["title", "description", "kind"],\n'
-    '  "doc_globs": ["docs/*.md"],\n'
+    '  "doc_globs": ["knowledge/*.md"],\n'
     '  "exclude_substrings": ["/node_modules/", "/.vitepress/"]\n}\n'
 )
 
@@ -76,7 +76,7 @@ def main():
     args = parser.parse_args()
     count = max(args.count, 3)
 
-    docs_dir = os.path.join(args.out, "docs")
+    docs_dir = os.path.join(args.out, "knowledge")
     if os.path.isdir(docs_dir):
         shutil.rmtree(docs_dir)  # rebuild so the corpus size is exact
     os.makedirs(docs_dir)

@@ -4,7 +4,7 @@
   "tasks": [
     {
       "id": "B1",
-      "gold_spans": [{ "file": "docs/gateway.md", "heading": "Production gateway profile" }],
+      "gold_spans": [{ "file": "knowledge/gateway.md", "heading": "Production gateway profile" }],
       "correct_signature": "90",
       "decoys": [
         { "id": "BD1", "signature": "30", "note": "staging gateway profile" },

@@ -12,7 +12,7 @@ The lifecycle skill (plugins/foundry/skills/code/SKILL.md) runs seven ordered
 stages; the checks below assert the mechanical artifacts each stage leaves
 behind, never the agent's self-report:
 
-  spec:files            Stage 1 — specs/<feature>/{requirements,design,tasks}.md.
+  spec:files            Stage 1 — roadmap/specs/<feature>/{requirements,design,tasks}.md.
   scenario:before-impl  Stage 3 work order — in the transcript, the first action that
                         writes a features/*.feature file occurs at or before the first
                         action that writes implementation source. The skill mandates
@@ -20,7 +20,7 @@ behind, never the agent's self-report:
                         rather than commit ancestry (vacuous under one atomic commit).
   transcript:pass-pasted Stage 4 gate — the result text pastes `check-fast: PASS`.
   transcript:no-bulk-add Stage 3 rule — no `git add -A|--all|.` in any Bash tool_use.
-  board:card            Stage 2 — docs/ROADMAP.md changed and HEAD names the feature.
+  board:card            Stage 2 — roadmap/ROADMAP.md changed and HEAD names the feature.
   gate:final            Stage 4/6 — scripts/check-fast.sh exits 0 at HEAD.
   commits:exist         the run produced >= 1 commit since the snapshot.
 """
@@ -37,7 +37,7 @@ GATE_PASS_MARKER = "check-fast: PASS"
 GATE_COMMAND = "scripts/check-fast.sh"
 SPEC_ARTIFACTS = ("requirements.md", "design.md", "tasks.md")
 BULK_ADD_PATTERN = re.compile(r"git\s+add\s+(?:-A\b|--all\b|\.(?:\s|$|&|;|\|))")
-NON_IMPL_DIRS = ("specs", "features", "docs")
+NON_IMPL_DIRS = ("roadmap", "features", "knowledge")
 FILE_WRITING_TOOLS = ("Write", "Edit")
 
 
@@ -87,7 +87,7 @@ def is_feature_file(path):
 
 
 def is_implementation_source(path):
-    """Implementation = not under specs/, features/, docs/, and not a test.
+    """Implementation = not under roadmap/, features/, knowledge/, and not a test.
 
     Uses path-segment containment so it classifies absolute transcript file_paths
     (e.g. /tmp/tree/src/main.rs) the same as repo-relative ones.
@@ -175,8 +175,8 @@ def result_text(log_path):
 
 
 def find_spec_dir(tree):
-    """First specs/<feature>/ holding all three artifacts; (name, missing-list)."""
-    specs_root = os.path.join(tree, "specs")
+    """First roadmap/specs/<feature>/ holding all three artifacts; (name, missing-list)."""
+    specs_root = os.path.join(tree, "roadmap", "specs")
     if not os.path.isdir(specs_root):
         return None, list(SPEC_ARTIFACTS)
     best_missing = None
@@ -201,13 +201,13 @@ def find_spec_dir(tree):
 def check_spec_files(tree):
     feature, missing = find_spec_dir(tree)
     if feature is not None and not missing:
-        return True, f"specs/{feature}/ has {', '.join(SPEC_ARTIFACTS)}"
+        return True, f"roadmap/specs/{feature}/ has {', '.join(SPEC_ARTIFACTS)}"
     if feature is None:
         return (
             False,
-            "no specs/<feature>/ dir with all of requirements.md, design.md, tasks.md",
+            "no roadmap/specs/<feature>/ dir with all of requirements.md, design.md, tasks.md",
         )
-    return False, f"specs/{feature}/ is missing {', '.join(missing)}"
+    return False, f"roadmap/specs/{feature}/ is missing {', '.join(missing)}"
 
 
 def check_scenario_before_impl(log_path):
@@ -243,7 +243,7 @@ def check_no_bulk_add(log_path):
 
 
 def check_board_card(tree, snapshot, keyword):
-    roadmap = "docs/ROADMAP.md"
+    roadmap = "roadmap/ROADMAP.md"
     changed = roadmap in changed_paths_since(tree, snapshot)
     if not changed:
         return False, f"{roadmap} did not change since the snapshot"

@@ -110,7 +110,7 @@ case "$RUNS" in (*[!0-9]*|"") usage ;; esac
 echo "reviewer-eval: runs=$RUNS tree=$TREE"
 echo "reviewer-eval: results=$results"
 
-prompt="Read $AGENT_FILE and follow it exactly. Review specs/widget-pricing/design.md. After the findings, output a footer block — one line per flagged item in the form: FLAGGED: <the exact offending term, identifier, or quoted phrase>. Include FLAGGED lines for flagged items only — anything noted as clean must NOT appear in a FLAGGED line."
+prompt="Read $AGENT_FILE and follow it exactly. Review roadmap/specs/widget-pricing/design.md. After the findings, output a footer block — one line per flagged item in the form: FLAGGED: <the exact offending term, identifier, or quoted phrase>. Include FLAGGED lines for flagged items only — anything noted as clean must NOT appear in a FLAGGED line."
 findings_files=()
 for ((run_number = 1; run_number <= RUNS; run_number++)); do
   log="$RESULTS_DIR/reviewer-$stamp-run$run_number.log"

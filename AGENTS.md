@@ -6,8 +6,8 @@ vitepress doc site, a tracked kanban board, a glossary-as-contract, verification
 and COE-driven eval accretion. Foundry ships the mechanisms; repos supply the content.
 
 Foundry is self-hosted — developed under its own conventions. The board is
-`docs/ROADMAP.md`; per-feature detail lives in `specs/<feature>/`; vocabulary in
-`docs/glossary.md`.
+`roadmap/ROADMAP.md`; per-feature detail lives in `roadmap/specs/<feature>/`; vocabulary in
+`knowledge/glossary.md`.
 
 ## Commands
 
@@ -26,13 +26,13 @@ one script, two triggers. Bypass once with `git push --no-verify`.
 - Put repo-specific content in a template. Templates carry mechanisms and patterns;
   entity models, forbidden terms, standing rules, and gate commands come from the
   bootstrap interview or accrete in the consumer repo (the mechanisms-not-content rule,
-  `specs/foundry-core/design.md` §Audit).
+  `roadmap/specs/foundry-core/design.md` §Audit).
 - Let a generated gate grade itself. Evals judge gates by discrimination — a seeded
   defect must make the gate fail — never by green-ness alone.
 
 **Always**
 - Before coining a canonical name (glossary term, public type or field, config knob),
-  search the prior art and record provenance in `docs/glossary.md`.
+  search the prior art and record provenance in `knowledge/glossary.md`.
 - Keep foundry's verbatim-template copies byte-identical to
   `plugins/foundry/templates/verbatim/` (modulo the version marker) — the self-host gate.
 - Give a behavior-changing template or skill an eval case before it ships.
@@ -52,11 +52,11 @@ needless word costs tokens each time; cut hardest there.
 
 ## Task tracking
 
-`docs/ROADMAP.md` is the board — the single source of truth for cross-spec status. Claim
+`roadmap/ROADMAP.md` is the board — the single source of truth for cross-spec status. Claim
 a card by setting its owner; `Done` requires a recorded gate PASS. Specs live in
-`specs/<feature>/`.
+`roadmap/specs/<feature>/`.
 
 ## Deeper docs
 
-`docs/releasing.md` — how releases work · `specs/foundry-core/` — v1 requirements and
-design · `docs/glossary.md` — vocabulary · `docs/ROADMAP.md` — the board.
+`knowledge/releasing.md` — how releases work · `roadmap/specs/foundry-core/` — v1 requirements and
+design · `knowledge/glossary.md` — vocabulary · `roadmap/ROADMAP.md` — the board.

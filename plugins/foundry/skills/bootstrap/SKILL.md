@@ -59,7 +59,7 @@ when the caller supplies them. The questions:
   depend on them. Keep scripts executable.
 - Copy `seeds/` files, then fill them from the interview: glossary terms, debt
   column, and polarity statement; the first ROADMAP epic; the
-  `docs/.vitepress/site.json` title and description. Keep the `foundry-seed:`
+  `knowledge/.vitepress/site.json` title and description. Keep the `foundry-seed:`
   markers.
 - Write `.foundry-manifest.json`: the plugin version, plus per verbatim file its
   template name, marker version, and `shasum -a 256` of the installed content —

@@ -1,0 +1,713 @@
+# Foundry core — tasks
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+
+**Status:** Waves 1–7 done (2026-06-12) — foundry v1.0.0; only the reference-repo retrofit remains in Epic 0 (own spec), each planned at claim time per the lifecycle Plan stage — tracked on the [board](../../ROADMAP.md). Wave 1 code blocks below were synced with the post-review fixes (marketplace validate in the gate, EMPTY-TEMPLATE check, no-tests guard, install-hooks hook-count guard) so the plan remains a faithful account of what shipped.
+
+**Goal:** Ship foundry v1 — an installable Claude Code plugin whose bootstrap installs the setup into any repo, with evals that grade changes.
+
+**Architecture:** A marketplace repo containing one plugin (skills + agent + verbatim templates), self-hosted: foundry develops under its own conventions, and a byte-identity gate keeps its own copies of verbatim templates in sync with `plugins/foundry/templates/`. The template tree mirrors consumer-repo layout (`templates/scripts/docs.py` installs to `scripts/docs.py`).
+
+**Tech Stack:** Bash (gates, hooks), Python 3 (docs.py), Claude Code plugin manifests (JSON), vitepress (docs), GitHub Actions (CI backstop).
+
+## Wave map (spec coverage)
+
+| Wave | Scope | Spec coverage | Detail |
+|---|---|---|---|
+| 1 | Plugin skeleton + self-host gate + CI | design §Shape, AC-5.1 (gate + byte-identity), AC-2.3 (version field) | below |
+| 2 | Template extraction from the reference repo: `docs.py` (config block; new `outline` + `section` subcommands per design §Tooling decisions) + `test_docs.py`, `board.sh`, vitepress scaffold, `ROADMAP`/`BACKLOG`/`glossary`/`validation`/`index`/`specs-README`/`features-README`/`spec-conventions`/COE templates, `worktree-retire.sh`; foundry adopts each as it lands | AC-1.1, AC-1.6, AC-6.1, design §Split | at claim |
+| 3 | `code` lifecycle skill + `spec-reviewer` agent, generalized (commands/paths/entity model read from consumer repo files); prior-art naming step in the Spec stage; context-budget lint added to `check-fast.sh` once skill/agent prose exists | US-3 (incl. AC-3.4), US-4 (incl. AC-4.3) | at claim |
+| 4 | `bootstrap` skill: inspect → interview → copy → generate → verify | US-1 (all ACs), design §Bootstrap flow, §Isolation | at claim |
+| 5 | `update` skill: version-marker diff + refresh, flag customized files | AC-2.1, AC-2.2 | at claim |
+| 6 | Evals L1–L2: fixtures (rust-cli, python-service, ts-monorepo) with seeded-defect branches, headless harness, gate-discrimination grading | AC-5.2, AC-5.4, AC-6.3 | at claim |
+| 7 | Evals L3 + v1.0.0: spec-reviewer precision/recall vs answer keys (seeded violations incl. uncited coined terms and wordy context-resident prose), lifecycle artifact checks, version-bump rule | AC-5.3, AC-2.3 | at claim |
+
+Reference-repo retrofit is outside this spec (board card, spec to write).
+
+---
+
+## Wave 1 — Plugin skeleton + self-host gate
+
+### Task 1: Plugin and marketplace manifests
+
+**Files:**
+- Create: `plugins/foundry/.claude-plugin/plugin.json`
+- Create: `.claude-plugin/marketplace.json`
+
+- [x] **Step 1: Write the plugin manifest**
+
+```json
+{
+  "name": "foundry",
+  "description": "Bootstrap an AI-assisted engineering setup into any repo: specs, gherkin features, vitepress docs, kanban board, glossary contract, gates, COE-driven evals.",
+  "version": "0.1.0",
+  "author": { "name": "Brandon Ransom" }
+}
+```
+
+- [x] **Step 2: Write the marketplace manifest**
+
+```json
+{
+  "name": "foundry",
+  "owner": { "name": "Brandon Ransom" },
+  "plugins": [
+    {
+      "name": "foundry",
+      "source": "./plugins/foundry",
+      "description": "Bootstrap an AI-assisted engineering setup into any repo."
+    }
+  ]
+}
+```
+
+- [x] **Step 3: Validate both**
+
+Run: `claude plugin validate plugins/foundry && claude plugin validate .`
+Expected: both report valid. If the marketplace form of the command differs in the installed CLI version, check `claude plugin validate --help` and use the documented invocation; record the working invocation in this file.
+
+- [x] **Step 4: Commit**
+
+```bash
+git add plugins/foundry/.claude-plugin/plugin.json .claude-plugin/marketplace.json
+git commit -m "feat(plugin): add plugin and marketplace manifests"
+```
+
+### Task 2: Byte-identity check (the self-host gate)
+
+**Files:**
+- Create: `scripts/check-byte-identity.sh`
+- Test: `tests/byte_identity_test.sh`
+
+- [x] **Step 1: Write the failing test**
+
+```bash
+#!/usr/bin/env bash
+# Tests for scripts/check-byte-identity.sh against a fixture tree.
+set -euo pipefail
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT="$HERE/../scripts/check-byte-identity.sh"
+FIXTURE_ROOT="$(mktemp -d)"
+trap 'rm -rf "$FIXTURE_ROOT"' EXIT
+
+make_fixture() {
+  fixture="$(mktemp -d "$FIXTURE_ROOT/case.XXXXXX")"
+  mkdir -p "$fixture/plugins/foundry/templates/scripts" "$fixture/scripts"
+  printf '# foundry-template: tool v1\necho hello\n' > "$fixture/plugins/foundry/templates/scripts/tool.sh"
+  printf '# foundry-template: tool v1\necho hello\n' > "$fixture/scripts/tool.sh"
+}
+
+fail() { echo "FAIL: $1"; exit 1; }
+
+make_fixture
+"$SCRIPT" "$fixture" >/dev/null || fail "identical copy should pass"
+
+make_fixture
+printf 'echo hello\n' > "$fixture/scripts/tool.sh"   # marker line absent locally
+"$SCRIPT" "$fixture" >/dev/null || fail "marker-only difference should pass"
+
+make_fixture
+printf '# foundry-template: tool v1\necho changed\n' > "$fixture/scripts/tool.sh"
+if "$SCRIPT" "$fixture" >/dev/null 2>&1; then fail "drifted copy should fail"; fi
+
+make_fixture
+rm "$fixture/scripts/tool.sh"
+if "$SCRIPT" "$fixture" >/dev/null 2>&1; then fail "missing copy should fail"; fi
+
+make_fixture
+printf '# foundry-template: tool v1\n' > "$fixture/plugins/foundry/templates/scripts/tool.sh"
+: > "$fixture/scripts/tool.sh"
+if "$SCRIPT" "$fixture" >/dev/null 2>&1; then fail "marker-only template should fail"; fi
+
+echo "byte_identity_test: PASS"
+```
+
+- [x] **Step 2: Run it to verify it fails**
+
+Run: `bash tests/byte_identity_test.sh`
+Expected: FAIL — `check-byte-identity.sh` does not exist.
+
+- [x] **Step 3: Implement the check**
+
+```bash
+#!/usr/bin/env bash
+# Self-host gate: foundry's own copies of verbatim templates must be
+# byte-identical to plugins/foundry/templates/ (modulo the version-marker line).
+# Usage: check-byte-identity.sh [repo-root]   (defaults to this repo)
+set -euo pipefail
+REPO="${1:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+TEMPLATES="$REPO/plugins/foundry/templates"
+[ -d "$TEMPLATES" ] || { echo "byte-identity: PASS (no templates yet)"; exit 0; }
+
+has_violation=0
+while IFS= read -r -d '' template_file; do
+  relative_path="${template_file#"$TEMPLATES/"}"
+  repo_copy="$REPO/$relative_path"
+  if ! grep -qvF 'foundry-template:' "$template_file"; then
+    echo "byte-identity: EMPTY-TEMPLATE $relative_path (no content besides the marker)"
+    has_violation=1
+    continue
+  fi
+  if [ ! -f "$repo_copy" ]; then
+    echo "byte-identity: MISSING $relative_path"
+    has_violation=1
+    continue
+  fi
+  if ! diff -q <(grep -vF 'foundry-template:' "$template_file") \
+               <(grep -vF 'foundry-template:' "$repo_copy") >/dev/null; then
+    echo "byte-identity: DRIFT $relative_path"
+    has_violation=1
+  fi
+done < <(find "$TEMPLATES" -type f -print0)
+
+[ "$has_violation" -eq 0 ] && echo "byte-identity: PASS"
+exit "$has_violation"
+```
+
+- [x] **Step 4: Run the test to verify it passes**
+
+Run: `chmod +x scripts/check-byte-identity.sh tests/byte_identity_test.sh && bash tests/byte_identity_test.sh`
+Expected: `byte_identity_test: PASS`
+
+- [x] **Step 5: Commit**
+
+```bash
+git add scripts/check-byte-identity.sh tests/byte_identity_test.sh
+git commit -m "feat(gate): add byte-identity self-host check with tests"
+```
+
+### Task 3: The quick gate (`check-fast.sh`)
+
+**Files:**
+- Create: `scripts/check-fast.sh`
+
+This is foundry's own per-repo gate (generated-class, not a template — consumer repos get theirs from the bootstrap skill).
+
+- [x] **Step 1: Write the gate**
+
+```bash
+#!/usr/bin/env bash
+# The quick gate: lock-free; runs from .githooks/pre-push and CI.
+set -euo pipefail
+REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+echo "== plugin validate"
+claude plugin validate "$REPO/plugins/foundry"
+claude plugin validate "$REPO"
+
+echo "== byte identity"
+"$REPO/scripts/check-byte-identity.sh"
+
+echo "== script tests"
+test_files=("$REPO"/tests/*_test.sh)
+[ -e "${test_files[0]}" ] || { echo "check-fast: no test files found in tests/" >&2; exit 1; }
+for test_file in "${test_files[@]}"; do
+  bash "$test_file"
+done
+
+echo "check-fast: PASS"
+```
+
+- [x] **Step 2: Run it end to end**
+
+Run: `chmod +x scripts/check-fast.sh && scripts/check-fast.sh`
+Expected: final line `check-fast: PASS`.
+
+- [x] **Step 3: Commit**
+
+```bash
+git add scripts/check-fast.sh
+git commit -m "feat(gate): add check-fast quick gate"
+```
+
+### Task 4: Pre-push hook — the first verbatim templates
+
+**Files:**
+- Create: `plugins/foundry/templates/.githooks/pre-push`
+- Create: `plugins/foundry/templates/scripts/install-hooks.sh`
+- Create: `.githooks/pre-push` (foundry's own copy)
+- Create: `scripts/install-hooks.sh` (foundry's own copy)
+
+- [x] **Step 1: Write the template hook**
+
+`plugins/foundry/templates/.githooks/pre-push`:
+
+```bash
+#!/usr/bin/env bash
+# foundry-template: pre-push v1
+# Pre-push gate; bypass once with `git push --no-verify`.
+exec "$(git rev-parse --show-toplevel)/scripts/check-fast.sh"
+```
+
+- [x] **Step 2: Write the template installer**
+
+`plugins/foundry/templates/scripts/install-hooks.sh`:
+
+```bash
+#!/usr/bin/env bash
+# foundry-template: install-hooks v1
+# One-time per clone: route git hooks through .githooks/.
+set -euo pipefail
+cd "$(git rev-parse --show-toplevel)"
+hook_count="$(find .githooks -maxdepth 1 -type f | wc -l | tr -d ' ')"
+[ "$hook_count" -gt 0 ] || { echo "install-hooks: no hook files in .githooks/ — nothing to install" >&2; exit 1; }
+git config core.hooksPath .githooks
+find .githooks -maxdepth 1 -type f -exec chmod +x {} +
+echo "hooks installed (core.hooksPath=.githooks, $hook_count hook(s))"
+```
+
+- [x] **Step 3: Install foundry's own copies (byte-identical)**
+
+```bash
+mkdir -p .githooks
+cp plugins/foundry/templates/.githooks/pre-push .githooks/pre-push
+cp plugins/foundry/templates/scripts/install-hooks.sh scripts/install-hooks.sh
+chmod +x .githooks/pre-push scripts/install-hooks.sh plugins/foundry/templates/.githooks/pre-push plugins/foundry/templates/scripts/install-hooks.sh
+scripts/install-hooks.sh
+```
+
+Expected: `hooks installed (core.hooksPath=.githooks, 2 hook(s))` (count reflects files present)
+
+- [x] **Step 4: Run the gate — byte-identity now checks real templates**
+
+Run: `scripts/check-fast.sh`
+Expected: `byte-identity: PASS` (two files compared) and `check-fast: PASS`.
+
+- [x] **Step 5: Prove the gate discriminates (manual seeded defect)**
+
+```bash
+echo '# drift' >> scripts/install-hooks.sh
+scripts/check-fast.sh; echo "exit=$?"
+git checkout scripts/install-hooks.sh
+```
+
+Expected: `byte-identity: DRIFT scripts/install-hooks.sh` and `exit=1`, then clean after checkout.
+
+- [x] **Step 6: Commit**
+
+```bash
+git add plugins/foundry/templates .githooks/pre-push scripts/install-hooks.sh
+git commit -m "feat(templates): add pre-push hook and installer as first verbatim templates"
+```
+
+### Task 5: CI backstop
+
+**Files:**
+- Create: `.github/workflows/check-fast.yml`
+
+- [x] **Step 1: Write the workflow**
+
+```yaml
+name: check-fast
+on:
+  push:
+    branches: [main]
+  pull_request:
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install -g @anthropic-ai/claude-code
+      - run: scripts/check-fast.sh
+```
+
+- [x] **Step 2: Verify locally what CI will run**
+
+Run: `scripts/check-fast.sh`
+Expected: `check-fast: PASS`. (The workflow itself is exercised on first push once a remote exists; if `claude plugin validate` needs auth in CI, gate that section on `CLAUDE_CODE_OAUTH_TOKEN` being present and record the finding here — do not delete the check.)
+
+Finding (2026-06-10): `claude plugin validate` runs unauthenticated — probed with
+`HOME="$(mktemp -d)" claude plugin validate plugins/foundry` → `✔ Validation passed`, exit 0.
+No CI token gating needed.
+
+- [x] **Step 3: Commit**
+
+```bash
+git add .github/workflows/check-fast.yml
+git commit -m "ci: run the quick gate on push and pull request"
+```
+
+### Task 6: Record the gate and move the card
+
+- [x] **Step 1: Run the full gate and capture the PASS**
+
+Run: `scripts/check-fast.sh 2>&1 | tail -3`
+Expected: `check-fast: PASS` — paste the output into the board card.
+
+- [x] **Step 2: Update the board**
+
+In `roadmap/ROADMAP.md`: plugin-skeleton card → `Done — gate recorded <date>: check-fast: PASS`; template-extraction card → `Ready`.
+
+- [x] **Step 3: Commit**
+
+```bash
+git add roadmap/ROADMAP.md roadmap/specs/foundry-core/tasks.md
+git commit -m "chore(board): record wave 1 gate PASS, promote template extraction"
+```
+
+---
+
+## Wave 2 — Template extraction from the reference repo (claimed @main 2026-06-10)
+
+Design refinement recorded at claim: template classes split into
+`templates/verbatim/` (byte-checked tooling) and `templates/seeds/` (copied once,
+repo-owned content) — see design §Template classes. Sources live in
+the reference repo; every extraction passes the mechanisms-not-content audit
+(no reference-repo entities, terms, or standing rules in any template).
+
+### Task 2.1: verbatim/ and seeds/ split
+
+Move `templates/.githooks/pre-push` and `templates/scripts/install-hooks.sh` to
+`templates/verbatim/...`; point `check-byte-identity.sh` at
+`plugins/foundry/templates/verbatim`; update the test fixture paths to match.
+Gate: byte-identity still covers both files; full test suite green.
+
+### Task 2.2: board.sh + worktree-retire.sh (verbatim)
+
+Copy from the reference repo's `scripts/`, add `# foundry-template:` markers, replace the one
+repo-specific string (the repo-named board header → `Board`); install
+foundry's own copies; both runnable against foundry's ROADMAP/worktrees.
+Gate: byte-identity green; `scripts/board.sh` renders foundry's dashboard.
+
+### Task 2.3: docs.py + test_docs.py (verbatim tool + seed config) + outline/section
+
+Port the reference repo's `scripts/docs.py`: repo-specific constants (doc globs, excluded
+paths) move to a `knowledge/docs-config.json` seed the script loads; port
+`test_docs.py`; add `outline <doc>` (heading tree) and `section <doc> <heading>`
+(print one section) subcommands with tests. Foundry adopts: frontmatter on all
+foundry docs, config seed present, `python3 scripts/docs.py check` + the python
+tests wired into `check-fast.sh`.
+Gate: docs.py check green on foundry's own docs; new subcommand tests green.
+
+### Task 2.4: vitepress scaffold (verbatim config + seed site config)
+
+From the reference repo's `knowledge/.vitepress/`: `config.ts` generalized to read title/description
+from a `knowledge/.vitepress/site.json` seed; `package.json` + `tsconfig.json`
+verbatim; sidebar generation (docs.py already emits it) wired. Foundry adopts:
+its docs site builds. CI gains a docs-build step; the pre-push gate does NOT run
+the build (too slow for the fast gate).
+Gate: `npm ci && npm run docs:build` (or equivalent) succeeds under `knowledge/`.
+
+### Task 2.5: Seed templates
+
+Author under `templates/seeds/`, each with a `foundry-seed:` marker, generic per
+the mechanisms-not-content rule: `roadmap/ROADMAP.md`, `roadmap/BACKLOG.md`,
+`knowledge/glossary.md`, `knowledge/validation.md`, `knowledge/index.md`, `knowledge/README.md`,
+`roadmap/specs/README.md`, `features/README.md`, `.claude/rules/spec-conventions.md`,
+`knowledge/coe-template.md`. Modeled on the reference repo's equivalents; the glossary seed
+carries the debt column, prior-art preamble, and empty entity-model section; the
+ROADMAP seed carries conventions + status taxonomy + empty dashboard;
+spec-conventions carries the naming/prose/prior-art rules with the
+spec-reviewer dispatch. Foundry adopts the ones it lacks: `knowledge/index.md`,
+`knowledge/README.md`, `roadmap/BACKLOG.md`, `knowledge/validation.md`, `roadmap/specs/README.md`.
+Gate: docs.py check green over the adopted files; seeds audit clean.
+
+### Task 2.6: Record the gate, move the card
+
+Run the full gate, record PASS on the template-extraction card, promote the
+Wave 3 card (lifecycle skill + spec-reviewer) and the COE-mechanism card to Ready.
+
+---
+
+## Wave 3 — Skills, agent, context budget, COE closure (claimed @main 2026-06-11)
+
+First plugin-resident prose: held hardest to Strunk & White (design §Context-economy
+prose) and budget-linted. Reference-repo sources: `.claude/skills/code/SKILL.md`,
+`.claude/agents/spec-reviewer.md`. Generalization rule: the skill/agent name no
+repo specifics — commands, paths, and the entity model come from the consumer
+repo's AGENTS.md, glossary, and seeds (AC-3.1, AC-4.1).
+
+### Task 3.1: `code` lifecycle skill
+
+`plugins/foundry/skills/code/SKILL.md`, generalized from the reference repo's: the 7-stage
+checklist (Frame → Spec → Plan → Build → Verify → Docs → Finish) with gate
+prohibitions; Frame routes by work size (AC-3.2); feature-file-first (AC-3.3);
+prior-art naming step in the Spec stage (AC-3.4); board claim at Plan, card move +
+recorded gate PASS at Finish; COE on field failures the setup permitted; the
+"Don't rationalize past a gate" table; the Enhancement rule (prefer a more
+specialized skill per stage). All repo specifics read from AGENTS.md/seeds.
+Gate: `claude plugin validate plugins/foundry` green; prose review applied.
+
+### Task 3.2: `spec-reviewer` agent
+
+`plugins/foundry/agents/spec-reviewer.md`, generalized: criteria from files at
+review time (repo glossary + entity model, AGENTS.md writing style) — never the
+agent's priors; flags non-canonical and debt-column terms, entity-model misfits,
+near-duplicate names, coined terms with no prior art or reason (AC-4.3), prose
+violations; scope covers specs AND context-resident files; read-only tools.
+Gate: plugin validate green; smoke-run the agent on a foundry spec.
+
+### Task 3.3: context-budget lint
+
+`scripts/check-context-budget.sh` (foundry-internal, not a template) + test:
+fail when plugin-resident prose exceeds its budget — budgets calibrated from the
+real Wave 3 files and recorded in the script. Wire into `check-fast.sh`.
+Gate: TDD red→green; seeded oversize file fails the lint.
+
+### Task 3.4: COE mechanism closure
+
+Foundry adopts `knowledge/coe-template.md` from the seed; `knowledge/README.md` index
+pointer. The promote-upstream flow and eval-accretion rule are already recorded
+(design §COE, AGENTS.md); this closes the card.
+Gate: `python3 scripts/docs.py check` green.
+
+### Task 3.5: Record the gate, move the cards
+
+Full gate PASS recorded on all three cards; bootstrap card promoted to Ready.
+
+---
+
+## Wave 4 — Bootstrap skill (claimed @main 2026-06-11)
+
+The centerpiece: `/foundry:bootstrap` installs the setup into a consumer repo.
+The skill is prose guidance for the five phases (design §Bootstrap flow); the
+SKILL.md carries the flow within its 120-line budget and defers per-stack detail
+to reference files in the skill directory (progressive disclosure — references
+load on demand, only SKILL.md is always-in-context). Templates are found relative
+to the skill's base directory (`../../templates/{verbatim,seeds}`).
+
+### Task 4.1: bootstrap skill + references
+
+`plugins/foundry/skills/bootstrap/SKILL.md` — the five phases with their gates:
+Inspect (stack, entrypoints, repo shape), Interview (description; 5–10 domain
+terms + wrong names; vocabulary polarity; API surface?; existing gate commands;
+parallel agents?; unit of work), Copy (verbatim with markers + seeds; CLAUDE.md
+symlink), Generate (AGENTS.md from the skeleton reference; check-fast.sh wired to
+real commands; optional verify.sh + lock; features/ + BDD runner + walking
+skeleton; CI workflow; Contracts/Logging sections per interview; optional
+vocab-lint; isolation per repo shape), Verify (hooks installed; vitepress builds;
+Scenario green; check-fast.sh PASS — pasted, then propose the commit and ask).
+References: `references/generate.md` (AGENTS.md skeleton; per-stack gate command
+and BDD wiring: cargo+cucumber-rs / pytest-bdd+ruff / cucumber-js+tsc; contracts
+stack mapping; logging stack mapping + wide-event rules; isolation patterns),
+`references/verify.md` (the acceptance checklist mirroring AC-1.1/1.2).
+Gate: plugin validate; context budget (SKILL.md ≤ 120); compliance audit vs
+US-1 ACs; prose review.
+
+### Task 4.2: smoke bootstrap
+
+Follow the skill end-to-end against a scratch Python CLI repo (canned interview
+answers; solo dev, no API surface — the simplest generate path; full stack matrix
+is Wave 6). Grade by outcomes, not claims: generated check-fast.sh PASS; walking
+skeleton green through the real entrypoint; hooks installed; docs site builds;
+a seeded defect (failing test) makes the generated gate fail. Fix what breaks;
+re-run until green.
+
+### Task 4.3: record the gate, move the card
+
+Full gate PASS recorded; `update` skill promoted to Ready.
+
+### Wave 4 smoke findings → Wave 6 eval cases (the accretion rule)
+
+The six smoke fixes (F1 epic question, F2 CLI isolation row, F3 vocab-lint
+glossary self-hit, F4 inventory omissions, F5 template code failing a stricter
+consumer linter, F6 CI dependency install) shipped before the eval harness
+exists. Per the eval-accretion rule each becomes a mandatory Wave 6 case:
+the python-service fixture asserts F1/F4 (inventory + epic present), F3
+(vocab-lint passes on a fresh bootstrap, fails on a seeded debt term), F5
+(consumer gate green on template-owned code out of the box), F6 (CI workflow
+installs deps before the gate); the resolved design questions (no Logging for
+a CLI; symlink after AGENTS.md; repo-portable gate commands) get one assertion
+each in the rust-cli fixture.
+
+---
+
+## Wave 5 — Update skill (claimed @main 2026-06-11)
+
+Design refinement at claim: AC-2.2 must distinguish "locally customized" from
+"older pristine template" — undecidable from content alone since the plugin
+ships only current templates. Mechanism: bootstrap writes
+`.foundry-manifest.json` (per verbatim file: template name, version, sha256 of
+installed content; plus the plugin version). Update compares hashes: manifest
+hash == file hash → pristine → refresh and re-record; differs → customized →
+flag with the diff, never overwrite. Seeds carry versions in their markers;
+update announces newer seeds and never touches them. Repos bootstrapped before
+the manifest (e.g. /tmp/wclip) get legacy mode: files identical-modulo-marker
+to the current template are recorded as pristine; differing files are flagged
+for human review — no guessing.
+
+### Task 5.1: manifest mechanism
+
+Design.md §Update mechanism rewritten; AC-1.1 gains `.foundry-manifest.json`;
+glossary gains **Manifest** (package-manager vocabulary); bootstrap SKILL.md
+Copy phase writes it; verify.md inventory row added.
+
+### Task 5.2: update skill
+
+`plugins/foundry/skills/update/SKILL.md` (≤ 120 lines): read the manifest
+(absent → legacy mode); per verbatim template compare plugin version vs
+manifest version, hash-check pristine vs customized, refresh or flag; announce
+newer seeds; finish by updating the manifest, running the repo's gate, and
+proposing the commit (ask first).
+
+### Task 5.3: smoke update
+
+Against /tmp/wclip (pre-manifest, so legacy mode first): backfill manifest;
+then against a scratch COPY of the plugin with (a) a bumped verbatim template →
+pristine file refreshed, (b) a second bump + local customization → flagged not
+overwritten, (c) a bumped seed → announced not touched. Grade by outcomes; the
+consumer gate stays green after refresh.
+
+### Task 5.4: record the gate, move the card
+
+Evals L1–L2 promoted to Ready.
+
+### Wave 5 smoke findings → Wave 6 eval cases (accretion, continued)
+
+Update-skill fixes shipped pre-harness become Wave 6 cases: legacy mode routes
+through Verify (a backfill is a write needing a PASS); the manifest JSON shape
+is pinned in both writer and reader; legacy mode announces seeds; JSON seeds
+match by `"_foundry_seed"` key. Fixture assertions: bootstrap writes the
+manifest with all verbatim entries; update on a pristine fixture refreshes a
+bumped template and the gate stays green; a customized file survives an update
+byte-for-byte; a bumped seed is announced and untouched.
+
+---
+
+## Wave 6 — Evals L1–L2 (claimed @main 2026-06-11)
+
+L1 already runs (template tests, byte-identity, context budget, in check-fast +
+CI). This wave builds L2: bootstrap each fixture headless, grade by
+harness-owned invariants plus gate discrimination (AC-5.2, AC-5.4) — never a
+generated gate's green-ness alone. The Wave 4/5 accretion docket becomes
+fixture assertions. Results are NDJSON wide events, one per case (design
+§Structured logging applied to foundry itself).
+
+Cost note: a headless bootstrap run is minutes and real tokens; the harness
+takes one fixture or the full sweep, runs locally or via a manual-dispatch CI
+job — not on every PR push.
+
+### Task 6.1: fixtures
+
+`evals/fixtures/<name>/{repo/,defects/,expectations.json}` for rust-cli (solo
+CLI: asserts no-Logging-for-CLI, symlink-after-AGENTS.md, repo-portable
+commands), python-service (FastAPI + pydantic, no parallel agents: asserts
+Contracts + Logging + wide event, plus the wclip docket — manifest written,
+epic present, vocab-lint discriminates, CI installs deps, template-owned code
+green under the consumer's linter), ts-monorepo (vitest + tsc, library).
+Each repo/ is self-sufficient pre-bootstrap (entrypoint + passing test).
+defects/ holds overlay files; expectations.json drives the grader.
+
+### Task 6.2: harness
+
+`evals/harness/bootstrap-eval.sh <fixture|all>`: copy repo/ to a scratch dir,
+git init + commit, run the bootstrap headless (`claude -p` + `--plugin-dir`,
+canned answers from the fixture), then grade: `evals/harness/grade.py` asserts
+the expectations (inventory, markers, manifest, special assertions), runs the
+generated gate (PASS required), applies each defect overlay (generated gate
+must FAIL), reverts (PASS again). One NDJSON record per case to
+`evals/results/<fixture>-<run>.ndjson` (gitignored). grade.py gets TDD unit
+tests against a fake bootstrapped tree — the grader itself must discriminate.
+
+### Task 6.3: prove the harness
+
+One full headless run on python-service; fix what breaks; record the NDJSON
+verdicts. The rust-cli and ts-monorepo sweeps are runnable by the same command;
+run if the first is clean, otherwise record status honestly.
+
+### Task 6.4: update-eval mode
+
+`evals/harness/update-eval.sh`: from a bootstrapped scratch repo, bump a
+template + a seed in a plugin copy, run the update headless, assert refresh /
+customized-protection / seed-announce (the Wave 5 docket). Prove once.
+
+### Task 6.5: wiring
+
+CI `workflow_dispatch` job for the sweep; validation.md row; knowledge/README
+pointer; .gitignore evals/results/.
+
+### Task 6.6: record the gate, move the card
+
+Evals L3 promoted to Ready.
+
+---
+
+## Wave 7 — Evals L3 + v1.0.0 (claimed @main 2026-06-11)
+
+Behavioral evals for the prompt artifacts (AC-5.3), then the version-bump rule
+(AC-2.3): 1.0.0 ships only on a green L3 run. Honest framing per design
+§Evals: at affordable N these are smoke alarms for large regressions, not
+statistics — report scores and variance, never pretend precision.
+
+### Task 7.1: reviewer eval
+
+`evals/fixtures/reviewer/`: a fake consumer tree (glossary with canonical
+terms + debt column + a small entity model; AGENTS.md writing style) and a
+spec `design.md` carrying ~10 seeded violations — debt terms, an entity-model
+misfit, an uncited coined term, passive/wordy prose — each with a unique
+greppable signature, PLUS 2–3 decoys (correct usages a sloppy reviewer would
+flag, e.g. a coined term WITH recorded prior art). `answer-key.json` lists
+violation signatures and decoy signatures. `evals/harness/reviewer-eval.sh`:
+N headless runs (default 3) of the spec-reviewer agent over the fixture;
+mechanical scoring — recall = seeded signatures present in the findings,
+decoy hits = precision failures; NDJSON per case + a summary record with
+mean/min recall and decoy count; provisional pass bar: mean recall ≥ 0.8 AND
+zero decoy hits (calibrate against the first real runs and record actuals).
+Scorer logic TDD'd against canned findings text.
+
+### Task 7.2: run the reviewer eval
+
+Three runs; calibrate; fix fixture/agent defects found; record scores on the
+board.
+
+### Task 7.3: lifecycle eval
+
+`evals/harness/lifecycle-eval.sh <bootstrapped-tree>`: one scripted small
+feature ("add a --version flag" class) executed headless under the code
+skill with canned approvals; artifact graders (mechanical): the Scenario's
+commit precedes or equals the implementation commit; the transcript carries a
+pasted gate PASS line; no `git add -A`/`git add .` in the transcript;
+`roadmap/specs/<feature>/{requirements,design,tasks}.md` exist; gate green at HEAD.
+One run against a fresh `bootstrap-eval.sh --keep` tree — a smoke alarm, run
+once per version bump.
+
+### Task 7.4: v1.0.0
+
+On green 7.2 + 7.3: plugin.json → 1.0.0; validation.md L3 rows; board — Epic 0
+wraps with only the reference-repo retrofit remaining (own spec).
+
+### Calibration (2026-06-11)
+
+First 3-run eval: recall 1.0/1.0/1.0, decoy_hits=7. Adjudication showed every
+decoy hit was the agent praising clean content — output format mandates "note
+clean files", so decoy signatures appeared in prose like "Snapshot is a coined
+term with recorded prior art (clean)". Full-text signature-presence was an
+invalid precision proxy. Scoring moved to the FLAGGED-footer protocol:
+after findings the agent must output one `FLAGGED: <term>` line per flagged
+item only; scorer checks recall and decoy hits against those lines exclusively;
+prose outside the block is ignored. Agent prompt unchanged — the footer
+instruction is in the harness prompt suffix. Protocol failure (no FLAGGED
+block) scores recall 0 and emits a `protocol` eval_case fail.
+
+### Result (2026-06-12) — Task 7.2 PASS
+
+Re-run after the FLAGGED-footer fix: per-run recall [1.0, 0.9, 1.0], mean 0.967,
+decoy_hits 0 → PASS (bar: mean ≥ 0.8, decoys == 0). The lone 0.9 is run 2 missing
+V9's `rounding_residue` signature — the agent flagged the run-on-paragraph
+violation correctly (its finding #9), but quoted a different substring of the
+sentence than the answer key's token. Known harness brittleness, not an agent
+miss; the agent's effective recall is ~1.0 with zero false positives across all
+three runs. Backlogged: signature matching should accept any of several tokens
+per violation, or match by line, so a correct flag quoting a different substring
+still scores. Weekly-limit-killed runs (the earlier run 3) are excluded by hand,
+not handled in the harness — per owner decision, an edge case not worth code.
+
+### Result (2026-06-12) — Task 7.3 grader fix, re-grade PASS
+
+First real lifecycle run scored 6/7: the agent did everything right (spec dir,
+feature-file-first work order, gate green, board card, no bulk-add) but committed
+it as ONE atomic commit at Finish — a faithful reading of the code skill, whose
+Finish stage commits once and never mandates separate Scenario/impl commits. Two
+grader checks encoded a false assumption: `commits:exist` required >= 2 (the skill
+mandates work ORDER, not commit granularity), and `scenario:before-impl` checked
+commit ancestry (vacuous under one commit — a sha is its own ancestor). Fix:
+relaxed `commits:exist` to >= 1, and replaced the ancestry check with a transcript
+work-order check — the first features/*.feature Write/Edit must occur at or before
+the first impl-source Write/Edit (impl = tracked path not under roadmap/, features/,
+knowledge/, not a test). No feature write → fail (discipline skipped); feature but no
+impl write → pass (don't penalize). Re-grade of the retained run (snapshot
+`b31d050`) → all 7 PASS, `lifecycle-eval: PASS`.

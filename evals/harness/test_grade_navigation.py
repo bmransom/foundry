@@ -20,7 +20,7 @@ DOC = (
 
 TASK_KEY = {
     "id": "T1",
-    "gold_spans": [{"file": "docs/small.md", "heading": "Retry policy"}],
+    "gold_spans": [{"file": "knowledge/small.md", "heading": "Retry policy"}],
     "correct_signature": "5 attempts",
     "decoys": [{"id": "D1", "signature": "3 attempts"}],
 }
@@ -73,7 +73,7 @@ def bash_block(command):
 class GradeNavigationTest(unittest.TestCase):
     def setUp(self):
         self.tree = tempfile.mkdtemp()
-        docs_dir = os.path.join(self.tree, "docs")
+        docs_dir = os.path.join(self.tree, "knowledge")
         os.makedirs(docs_dir)
         with open(os.path.join(docs_dir, "small.md"), "w", encoding="utf-8") as handle:
             handle.write(DOC)
@@ -87,7 +87,7 @@ class GradeNavigationTest(unittest.TestCase):
     def test_full_read_of_gold_scores_success_and_recall_one(self):
         path = self._transcript_file(
             transcript(
-                read_block("docs/small.md"),  # full read — no offset/limit
+                read_block("knowledge/small.md"),  # full read — no offset/limit
                 result_record(
                     "The current policy allows 5 attempts.\nANSWER: 5 attempts"
                 ),
@@ -104,7 +104,7 @@ class GradeNavigationTest(unittest.TestCase):
         path = self._transcript_file(
             transcript(
                 read_block(
-                    "docs/small.md", offset=1, limit=5
+                    "knowledge/small.md", offset=1, limit=5
                 ),  # only the top — not the gold section
                 result_record("Looks like 3 attempts.\nANSWER: 3 attempts"),
             )
@@ -125,19 +125,19 @@ class GradeNavigationTest(unittest.TestCase):
         # value must match word-boundary, while "15" must not match "5".
         key = {
             "id": "T1",
-            "gold_spans": [{"file": "docs/small.md", "heading": "Retry policy"}],
+            "gold_spans": [{"file": "knowledge/small.md", "heading": "Retry policy"}],
             "correct_signature": "5",
             "decoys": [{"id": "D1", "signature": "3"}],
         }
         terse = self._transcript_file(
             transcript(
-                read_block("docs/small.md"), result_record("It allows 5.\nANSWER: 5")
+                read_block("knowledge/small.md"), result_record("It allows 5.\nANSWER: 5")
             )
         )
         self.assertTrue(nav.grade_transcript(terse, key, self.tree)["success"])
         wrong = self._transcript_file(
             transcript(
-                read_block("docs/small.md"), result_record("Maybe 15.\nANSWER: 15")
+                read_block("knowledge/small.md"), result_record("Maybe 15.\nANSWER: 15")
             )
         )
         self.assertFalse(nav.grade_transcript(wrong, key, self.tree)["success"])
@@ -146,7 +146,7 @@ class GradeNavigationTest(unittest.TestCase):
         path = self._transcript_file(
             transcript(
                 bash_block(
-                    'python3 scripts/docs.py section docs/small.md "Retry policy"'
+                    'python3 scripts/docs.py section knowledge/small.md "Retry policy"'
                 ),
                 result_record("ANSWER: 5 attempts"),
             )

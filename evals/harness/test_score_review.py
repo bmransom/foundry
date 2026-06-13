@@ -34,7 +34,7 @@ ANSWER_KEY = {
 # signatures appear in FLAGGED lines; decoy signatures appear only in
 # praise-of-clean-content prose above the footer.
 FULL_RECALL_FINDINGS = """\
-## specs/widget-pricing/design.md
+## roadmap/specs/widget-pricing/design.md
 
 - L17: "basket" is glossary debt; use Order.
 - L28: "row item" is glossary debt; use Line.
@@ -42,7 +42,7 @@ FULL_RECALL_FINDINGS = """\
 - L20: "very basically" — needless qualifier; delete it.
 - L50: the field run ending in rounding_residue should be a table.
 
-Clean files: AGENTS.md, docs/glossary.md.
+Clean files: AGENTS.md, knowledge/glossary.md.
 Note: Snapshot is a coined term with recorded prior art (clean).
 Note: estimate is used correctly in the replaces context (clean).
 Highest-priority fix: replace the debt terms with glossary vocabulary.
@@ -129,7 +129,7 @@ class FullRecallTest(unittest.TestCase):
     def test_detection_is_case_insensitive(self):
         # FLAGGED lines with uppercase violation signatures — should still detect
         shouting = """\
-## specs/widget-pricing/design.md
+## roadmap/specs/widget-pricing/design.md
 
 - BASKET is glossary debt.
 
@@ -201,7 +201,7 @@ class DecoyTest(unittest.TestCase):
         # Agent correctly praises Snapshot and estimate as clean — mentions them
         # in prose but NOT in FLAGGED lines — should yield recall 1.0, decoys 0
         findings = """\
-## specs/widget-pricing/design.md
+## roadmap/specs/widget-pricing/design.md
 
 - L17: "basket" is glossary debt; use Order.
 - L28: "row item" is glossary debt; use Line.
@@ -248,7 +248,7 @@ FLAGGED: Snapshot
         # No FLAGGED: lines at all — scorer must emit a protocol eval_case fail
         # and score the run recall 0
         findings = """\
-## specs/widget-pricing/design.md
+## roadmap/specs/widget-pricing/design.md
 
 - basket is glossary debt.
 - row item is glossary debt.

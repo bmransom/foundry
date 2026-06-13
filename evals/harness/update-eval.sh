@@ -145,12 +145,12 @@ echo "# eval: bumped install-hooks to v$next_hooks_ver" >> "$hooks_tpl"
 echo "update-eval: appended marker comment to install-hooks.sh"
 
 # ── Bump glossary seed version ────────────────────────────────────────────────
-glossary_seed="$vnext/templates/seeds/docs/glossary.md"
+glossary_seed="$vnext/templates/seeds/knowledge/glossary.md"
 
 seed_glossary_ver="$(seed_version "$glossary_seed")"
 # Glossary seed version comes from the seed file itself (seeds not in manifest)
 # Compare against the repo file's seed marker
-repo_glossary="$TREE/docs/glossary.md"
+repo_glossary="$TREE/knowledge/glossary.md"
 if [ -f "$repo_glossary" ]; then
   repo_seed_ver="$(seed_version "$repo_glossary" 2>/dev/null || echo 0)"
 else
@@ -213,7 +213,7 @@ echo "# eval: local customization line $(date +%s)" >> "$TREE/scripts/board.sh"
 echo "update-eval: step 3 — snapshot pre-state"
 snap_board="$(sha256_file "$TREE/scripts/board.sh")"
 snap_hooks="$(sha256_file "$TREE/scripts/install-hooks.sh")"
-snap_glossary="$(sha256_file "$TREE/docs/glossary.md")"
+snap_glossary="$(sha256_file "$TREE/knowledge/glossary.md")"
 
 echo "update-eval: snap board=$snap_board"
 echo "update-eval: snap install-hooks=$snap_hooks"
@@ -301,15 +301,15 @@ else
   eval_failed=1
 fi
 
-# ── 5c: docs/glossary.md untouched ───────────────────────────────────────────
-post_glossary="$(sha256_file "$TREE/docs/glossary.md")"
+# ── 5c: knowledge/glossary.md untouched ───────────────────────────────────────────
+post_glossary="$(sha256_file "$TREE/knowledge/glossary.md")"
 
 if [ "$post_glossary" = "$snap_glossary" ]; then
   emit "update" "seed-protect:glossary:content" "pass" \
-    "docs/glossary.md sha256 unchanged from snapshot (seed never written)"
+    "knowledge/glossary.md sha256 unchanged from snapshot (seed never written)"
 else
   emit "update" "seed-protect:glossary:content" "fail" \
-    "docs/glossary.md sha256 changed: snapshot=$snap_glossary post=$post_glossary"
+    "knowledge/glossary.md sha256 changed: snapshot=$snap_glossary post=$post_glossary"
   eval_failed=1
 fi
 

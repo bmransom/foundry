@@ -139,7 +139,7 @@ def build_happy_tree(tree: Path, gate: str = PASSING_GATE) -> str:
     init_repo(tree)
     write(tree, "AGENTS.md", "# AGENTS.md\n\n## Commands\n\n`scripts/check-fast.sh`\n")
     write(tree, "scripts/check-fast.sh", gate)
-    write(tree, "docs/ROADMAP.md", "# Roadmap\n\n| Work | Status |\n|---|---|\n")
+    write(tree, "roadmap/ROADMAP.md", "# Roadmap\n\n| Work | Status |\n|---|---|\n")
     write(tree, "src/app.py", "VERSION = '0.1.0'\n")
     write(tree, "features/existing.feature", "Feature: existing\n")
     snapshot = commit(
@@ -147,21 +147,21 @@ def build_happy_tree(tree: Path, gate: str = PASSING_GATE) -> str:
         "chore: baseline",
         "AGENTS.md",
         "scripts/check-fast.sh",
-        "docs/ROADMAP.md",
+        "roadmap/ROADMAP.md",
         "src/app.py",
         "features/existing.feature",
     )
     os.chmod(tree / "scripts" / "check-fast.sh", 0o755)
     # Spec dir.
-    write(tree, "specs/version/requirements.md", "# Requirements\n")
-    write(tree, "specs/version/design.md", "# Design\n")
-    write(tree, "specs/version/tasks.md", "# Tasks\n")
+    write(tree, "roadmap/specs/version/requirements.md", "# Requirements\n")
+    write(tree, "roadmap/specs/version/design.md", "# Design\n")
+    write(tree, "roadmap/specs/version/tasks.md", "# Tasks\n")
     commit(
         tree,
         "docs(version): spec",
-        "specs/version/requirements.md",
-        "specs/version/design.md",
-        "specs/version/tasks.md",
+        "roadmap/specs/version/requirements.md",
+        "roadmap/specs/version/design.md",
+        "roadmap/specs/version/tasks.md",
     )
     # Scenario BEFORE implementation (separate commits, scenario first).
     write(
@@ -173,11 +173,11 @@ def build_happy_tree(tree: Path, gate: str = PASSING_GATE) -> str:
     # Board card mentioning the keyword.
     write(
         tree,
-        "docs/ROADMAP.md",
+        "roadmap/ROADMAP.md",
         "# Roadmap\n\n| Work | Status |\n|---|---|\n"
         "| Add a --version flag | In progress |\n",
     )
-    commit(tree, "docs(board): claim version card", "docs/ROADMAP.md")
+    commit(tree, "docs(board): claim version card", "roadmap/ROADMAP.md")
     # Implementation last.
     write(
         tree,
@@ -258,7 +258,7 @@ class SpecFilesTest(unittest.TestCase):
             snapshot = build_happy_tree(tree)
             happy_log(log)
             # Remove the spec dir entirely.
-            git(tree, "rm", "-q", "-r", "specs/version")
+            git(tree, "rm", "-q", "-r", "roadmap/specs/version")
             commit_staged(tree, "chore: drop spec")
             completed, records = run_grader(tree, snapshot, log)
         self.assertNotEqual(completed.returncode, 0)
@@ -270,7 +270,7 @@ class SpecFilesTest(unittest.TestCase):
             log = Path(tmp) / "run.log"
             snapshot = build_happy_tree(tree)
             happy_log(log)
-            git(tree, "rm", "-q", "specs/version/tasks.md")
+            git(tree, "rm", "-q", "roadmap/specs/version/tasks.md")
             commit_staged(tree, "chore: drop tasks")
             completed, records = run_grader(tree, snapshot, log)
         self.assertNotEqual(completed.returncode, 0)
@@ -472,21 +472,21 @@ class BoardCardTest(unittest.TestCase):
             init_repo(tree)
             write(tree, "AGENTS.md", "# AGENTS.md\n")
             write(tree, "scripts/check-fast.sh", PASSING_GATE)
-            write(tree, "docs/ROADMAP.md", "# Roadmap\n\n| existing | done |\n")
+            write(tree, "roadmap/ROADMAP.md", "# Roadmap\n\n| existing | done |\n")
             write(tree, "src/app.py", "x = 1\n")
             snapshot = commit(
                 tree,
                 "chore: baseline",
                 "AGENTS.md",
                 "scripts/check-fast.sh",
-                "docs/ROADMAP.md",
+                "roadmap/ROADMAP.md",
                 "src/app.py",
             )
             os.chmod(tree / "scripts" / "check-fast.sh", 0o755)
-            write(tree, "specs/version/requirements.md", "# r\n")
-            write(tree, "specs/version/design.md", "# d\n")
-            write(tree, "specs/version/tasks.md", "# t\n")
-            commit(tree, "docs: spec", "specs/version")
+            write(tree, "roadmap/specs/version/requirements.md", "# r\n")
+            write(tree, "roadmap/specs/version/design.md", "# d\n")
+            write(tree, "roadmap/specs/version/tasks.md", "# t\n")
+            commit(tree, "docs: spec", "roadmap/specs/version")
             write(tree, "features/version.feature", "Feature: v\n\n  Scenario: s\n")
             commit(tree, "test: scenario", "features/version.feature")
             write(tree, "src/app.py", "x = 1\ndef v():\n    return 1\n")
@@ -532,24 +532,24 @@ class CommitsExistTest(unittest.TestCase):
             init_repo(tree)
             write(tree, "AGENTS.md", "# AGENTS.md\n")
             write(tree, "scripts/check-fast.sh", PASSING_GATE)
-            write(tree, "docs/ROADMAP.md", "# Roadmap\n\n| version | x |\n")
-            write(tree, "specs/version/requirements.md", "# r\n")
-            write(tree, "specs/version/design.md", "# d\n")
-            write(tree, "specs/version/tasks.md", "# t\n")
+            write(tree, "roadmap/ROADMAP.md", "# Roadmap\n\n| version | x |\n")
+            write(tree, "roadmap/specs/version/requirements.md", "# r\n")
+            write(tree, "roadmap/specs/version/design.md", "# d\n")
+            write(tree, "roadmap/specs/version/tasks.md", "# t\n")
             write(tree, "features/version.feature", "Feature: v\n\n  Scenario: s\n")
             snapshot = commit(
                 tree,
                 "chore: baseline",
                 "AGENTS.md",
                 "scripts/check-fast.sh",
-                "docs/ROADMAP.md",
+                "roadmap/ROADMAP.md",
             )
             os.chmod(tree / "scripts" / "check-fast.sh", 0o755)
             # Exactly one commit since snapshot — the atomic-Finish outcome.
             commit(
                 tree,
                 "feat: everything in one commit",
-                "specs/version",
+                "roadmap/specs/version",
                 "features/version.feature",
             )
             happy_log(log)

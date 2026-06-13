@@ -1,7 +1,7 @@
 ---
 name: code
 description: Use when implementing, adding, changing, or fixing a feature in a repo
-  with the foundry setup — a board at docs/ROADMAP.md, specs/, features/ — work that
+  with the foundry setup — a board at roadmap/ROADMAP.md, roadmap/specs/, features/ — work that
   ends in a commit. Covers the lifecycle from first design through shipping.
 ---
 
@@ -12,11 +12,11 @@ Every repo-specific detail comes from:
 
 | Repo specific | Read it from |
 |---|---|
-| Canonical gate command | `AGENTS.md` Commands (gate inventory: `docs/validation.md`) |
-| Spec format | `specs/README.md` |
+| Canonical gate command | `AGENTS.md` Commands (gate inventory: `knowledge/validation.md`) |
+| Spec format | `roadmap/specs/README.md` |
 | Feature-file conventions | `features/README.md` |
-| Vocabulary | `docs/glossary.md` |
-| The board | `docs/ROADMAP.md` |
+| Vocabulary | `knowledge/glossary.md` |
+| The board | `roadmap/ROADMAP.md` |
 
 ## The checklist
 
@@ -24,7 +24,7 @@ Copy this into your reply and check off each stage. A gate is a **prohibition**:
 not start a later stage until the prior gate is met.
 
 - [ ] **0 Frame** — classify the work; pick the path below.
-- [ ] **1 Spec** — `specs/<feature>/{requirements,design,tasks}.md` written + Design reviewed. GATE: no code until the Design is approved.
+- [ ] **1 Spec** — `roadmap/specs/<feature>/{requirements,design,tasks}.md` written + Design reviewed. GATE: no code until the Design is approved.
 - [ ] **2 Plan** — bite-sized TDD tasks in `tasks.md`; board card claimed. GATE: no code until the plan is approved.
 - [ ] **3 Build** — feature-file Scenario first, then TDD red→green. GATE: new behavior has its Scenario before its code.
 - [ ] **4 Verify** — the repo's canonical gate green. GATE: a recorded PASS, pasted — not a claim.
@@ -36,22 +36,22 @@ not start a later stage until the prior gate is met.
 | Work | Path |
 |---|---|
 | **New feature** | All stages 1 → 6. |
-| **Enhancement** of existing behavior | Update the affected Scenario in `features/` + the touched stages; a light spec note, not a full `specs/<feature>/`. |
+| **Enhancement** of existing behavior | Update the affected Scenario in `features/` + the touched stages; a light spec note, not a full `roadmap/specs/<feature>/`. |
 | **Bug fix** | Reproduce → write the failing test → fix → Verify → Finish. Skip 1–2. |
 | **Refactor** (no behavior change) | Build → Verify → Finish; leave `features/` untouched. |
 
 ## 1 · Spec
 
-Write `specs/<feature>/{requirements,design,tasks}.md` in the format `specs/README.md`
-defines, in the vocabulary of `docs/glossary.md`. Before coining any canonical name (glossary term, public type or field, config knob), search the prior art — domain literature, stack naming conventions, comparable tools; record provenance, or why none fits, in the glossary. Dispatch the `spec-reviewer` agent on the Design
+Write `roadmap/specs/<feature>/{requirements,design,tasks}.md` in the format `roadmap/specs/README.md`
+defines, in the vocabulary of `knowledge/glossary.md`. Before coining any canonical name (glossary term, public type or field, config knob), search the prior art — domain literature, stack naming conventions, comparable tools; record provenance, or why none fits, in the glossary. Dispatch the `spec-reviewer` agent on the Design
 before presenting it.
 **Gate:** no implementation until the Design is approved.
 
 ## 2 · Plan
 
-Break the design into bite-sized TDD tasks in `specs/<feature>/tasks.md` — exact
+Break the design into bite-sized TDD tasks in `roadmap/specs/<feature>/tasks.md` — exact
 paths, real code, a test per step. Claim the work by setting the owner on its card in
-`docs/ROADMAP.md` (the board); respect listed dependencies.
+`roadmap/ROADMAP.md` (the board); respect listed dependencies.
 **Gate:** no code until the plan exists and is approved.
 
 ## 3 · Build
@@ -70,14 +70,14 @@ Run the repo's canonical gate — the command `AGENTS.md` Commands names.
 ## 5 · Docs
 
 Run `python3 scripts/docs.py check` (frontmatter lint) on any new or changed doc.
-Update `AGENTS.md` if a convention changed; index a new doc in `docs/README.md`.
+Update `AGENTS.md` if a convention changed; index a new doc in `knowledge/README.md`.
 **Gate:** no finish with a stale or unindexed doc reference.
 
 ## 6 · Finish
 
 Branch first if you are on the default branch. **Ask before you commit or push.**
-Move the card on `docs/ROADMAP.md` Validating → Done. If a real failure showed the
-setup let an agent go wrong, write a COE from `docs/coe-template.md` — a COE is
+Move the card on `roadmap/ROADMAP.md` Validating → Done. If a real failure showed the
+setup let an agent go wrong, write a COE from `knowledge/coe-template.md` — a COE is
 closed only by a mechanical change (gate, lint, rule, or eval case), never prose.
 **Gate:** `Done` requires the recorded gate PASS.
 

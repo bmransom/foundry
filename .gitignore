@@ -1,8 +1,9 @@
-docs/node_modules/
-docs/.vitepress/cache/
-docs/.vitepress/dist/
+knowledge/node_modules/
+knowledge/.vitepress/cache/
+knowledge/.vitepress/dist/
 __pycache__/
 .pytest_cache/
-docs/.vitepress/sidebar.generated.json
+knowledge/.vitepress/sidebar.generated.json
 evals/results/
 evals/fixtures/navigation/tree/
+evals/fixtures/navigation-breadth/tree/

@@ -11,13 +11,13 @@ to the Writing style it declares.
 |---|---|
 | Intro (no heading) | What the repo is, what it ships, who consumes it — ≤ 4 lines, from the interview description. |
 | `## Commands` | A code block of real commands, the canonical gate (`scripts/check-fast.sh`) first; then one line: pre-push runs the same gate (`scripts/install-hooks.sh` once per clone; bypass once with `git push --no-verify`). |
-| `## Boundaries` | **Never** — repo-specific prohibitions from the interview and inspection. **Always** — "Use the `docs/glossary.md` vocabulary in records, APIs, and docs — it is the contract."; "Before coining a canonical name (glossary term, public type or field, config knob), search the prior art and record provenance in the glossary."; "Stage explicit paths, never `git add -A`." **Ask first** — "Commit or push. Branch first if on the default branch." |
+| `## Boundaries` | **Never** — repo-specific prohibitions from the interview and inspection. **Always** — "Use the `knowledge/glossary.md` vocabulary in records, APIs, and docs — it is the contract."; "Before coining a canonical name (glossary term, public type or field, config knob), search the prior art and record provenance in the glossary."; "Stage explicit paths, never `git add -A`." **Ask first** — "Commit or push. Branch first if on the default branch." |
 | `## Writing style` | The block below, verbatim. |
 | `## Testing` | The repo's test-scoping commands; integration over mocks; the feature-file rule: "New feature → add a Scenario; enhancement → update it; refactor → leave it." |
 | `## Contracts` | Only when an API surface exists — §Contracts. |
 | `## Logging` | Apps and services only — §Logging. |
-| `## Task tracking` | `docs/ROADMAP.md` is the board; claim a card by owner; `Done` requires a recorded gate PASS; specs live in `specs/<feature>/`; ideas in `docs/BACKLOG.md`. |
-| `## Deeper docs` | One line: `docs/README.md` indexes everything · glossary · validation · specs. |
+| `## Task tracking` | `roadmap/ROADMAP.md` is the board; claim a card by owner; `Done` requires a recorded gate PASS; specs live in `roadmap/specs/<feature>/`; ideas in `roadmap/BACKLOG.md`. |
+| `## Deeper docs` | One line: `knowledge/README.md` indexes everything · glossary · validation · specs. |
 
 Writing-style block:
 
@@ -114,7 +114,7 @@ boundary, and its structured output IS its result.
 Section rule text: structured key-value events, never prose interpolation; one
 **wide event** per unit of work — the interview named it — carrying identity,
 release metadata, execution cost, and decision inputs; trace/span correlation
-IDs on every record; field names come from `docs/glossary.md` — the log schema
+IDs on every record; field names come from `knowledge/glossary.md` — the log schema
 is the glossary on the wire.
 
 Wire the library and emit one working wide event at the end of the unit of
@@ -151,22 +151,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: 22, cache: npm, cache-dependency-path: docs/package-lock.json }
+        with: { node-version: 22, cache: npm, cache-dependency-path: knowledge/package-lock.json }
       - run: npm ci
-        working-directory: docs
+        working-directory: knowledge
       - run: npm run build
-        working-directory: docs
+        working-directory: knowledge
 ```
 
-Gitignore the docs build artifacts (`docs/node_modules/`,
-`docs/.vitepress/cache/`, `docs/.vitepress/dist/`,
-`docs/.vitepress/sidebar.generated.json`); track `docs/package-lock.json`.
+Gitignore the docs build artifacts (`knowledge/node_modules/`,
+`knowledge/.vitepress/cache/`, `knowledge/.vitepress/dist/`,
+`knowledge/.vitepress/sidebar.generated.json`); track `knowledge/package-lock.json`.
 
 ## vocab-lint — glossary debt column has entries
 
 `scripts/vocab-lint.sh`: read the terms from the "Replaces (now debt)" column
-of `docs/glossary.md` at run time (the glossary stays the single source); grep
-the surfaces the polarity answer names (docs and specs — plus code identifiers
+of `knowledge/glossary.md` at run time (the glossary stays the single source); grep
+the surfaces the polarity answer names (`knowledge/` and `roadmap/specs/` — plus code identifiers
 for an excluding engine), excluding the glossary itself — its debt column
 contains every term; fail on any hit:
 

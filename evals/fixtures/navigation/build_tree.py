@@ -82,7 +82,7 @@ def build_doc(target_lines, title, decoy_heading, decoy_body, gold_heading, gold
 
 
 def main():
-    docs_dir = os.path.join(TREE, "docs")
+    docs_dir = os.path.join(TREE, "knowledge")
     os.makedirs(docs_dir, exist_ok=True)
     sizes = {}
     for name, target, title, decoy_heading, decoy_body, gold_heading, gold_body in DOCS:

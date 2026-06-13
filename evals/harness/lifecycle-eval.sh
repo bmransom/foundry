@@ -31,10 +31,10 @@ usage() { sed -n '2,21p' "${BASH_SOURCE[0]}"; exit 2; }
 preflight() { # tree — fail fast (exit 2) unless the tree is a clean bootstrapped repo
   local tree="$1" path
   [ -d "$tree" ] || { echo "lifecycle-eval: tree not found: $tree" >&2; exit 2; }
-  for path in AGENTS.md docs/ROADMAP.md scripts/check-fast.sh; do
+  for path in AGENTS.md roadmap/ROADMAP.md scripts/check-fast.sh; do
     [ -f "$tree/$path" ] || { echo "lifecycle-eval: missing $path — bootstrap the tree first" >&2; exit 2; }
   done
-  for path in specs features; do
+  for path in roadmap/specs features; do
     [ -d "$tree/$path" ] || { echo "lifecycle-eval: missing $path/ — bootstrap the tree first" >&2; exit 2; }
   done
   git -C "$tree" rev-parse --git-dir >/dev/null 2>&1 \

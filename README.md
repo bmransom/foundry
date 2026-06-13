@@ -83,10 +83,10 @@ proposed commit (asks first): foundry: bootstrap engineering setup
 When it finishes you have, wired to your detected stack and verified green:
 
 - `AGENTS.md` (plus a `CLAUDE.md` symlink) carrying your conventions, gates, and vocabulary;
-- a spec workflow in `specs/` and executable Gherkin features in `features/`, with a
+- a spec workflow in `roadmap/specs/` and executable Gherkin features in `features/`, with a
   walking-skeleton scenario through a real production entrypoint;
-- a vitepress doc site, a tracked kanban board (`docs/ROADMAP.md`), and a
-  glossary-as-contract (`docs/glossary.md`);
+- a vitepress doc site, a tracked kanban board (`roadmap/ROADMAP.md`), and a
+  glossary-as-contract (`knowledge/glossary.md`);
 - a verification gate (`scripts/check-fast.sh`) wired to a pre-push hook and to CI.
 
 A generalized `code` lifecycle skill and a `spec-reviewer` agent ship with the plugin
@@ -95,14 +95,14 @@ and apply in every bootstrapped repo.
 ## Development
 
 Foundry is self-hosted — developed under its own conventions. Start here: `AGENTS.md`
-· the board in `docs/ROADMAP.md` · the v1 spec in `specs/foundry-core/`.
+· the board in `roadmap/ROADMAP.md` · the v1 spec in `roadmap/specs/foundry-core/`.
 
 ## Contributing
 
 Issues and pull requests are welcome. Foundry is self-hosted, so the contributor
 workflow is foundry's own: read `AGENTS.md` for the conventions and boundaries, run
 `scripts/check-fast.sh` before pushing, and add an eval case for any template or skill
-change that alters behavior. The board in `docs/ROADMAP.md` tracks what's planned.
+change that alters behavior. The board in `roadmap/ROADMAP.md` tracks what's planned.
 
 ## Support
 

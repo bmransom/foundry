@@ -1,8 +1,8 @@
 # AGENTS.md — widget-shop
 
 widget-shop sells configurable widgets: a catalog, a pricing engine, and a
-fulfillment pipeline behind a REST API. Vocabulary lives in `docs/glossary.md`;
-per-feature detail lives in `specs/<feature>/`.
+fulfillment pipeline behind a REST API. Vocabulary lives in `knowledge/glossary.md`;
+per-feature detail lives in `roadmap/specs/<feature>/`.
 
 ## Writing style
 

@@ -16,11 +16,11 @@ MINIMAL_CONFIG = {
     "kinds": ["reference", "architecture", "guide", "decision"],
     "lifecycles": ["current", "superseded", "historical"],
     "required_fields": ["title", "description", "kind"],
-    "doc_globs": ["docs/**/*.md", "crates/*/docs/**/*.md"],
+    "doc_globs": ["knowledge/**/*.md", "crates/*/knowledge/**/*.md"],
     "exclude_substrings": ["/node_modules/", "/.vitepress/"],
-    "exclude_prefixes": ["docs/crates/"],
-    "exclude_paths": ["docs/README.md", "docs/index.md"],
-    "skill_ref_prefixes": ["scripts/", "docs/", "crates/", "specs/", ".claude/"],
+    "exclude_prefixes": ["knowledge/crates/"],
+    "exclude_paths": ["knowledge/README.md", "knowledge/index.md"],
+    "skill_ref_prefixes": ["scripts/", "knowledge/", "crates/", "roadmap/specs/", ".claude/"],
 }
 
 
@@ -38,7 +38,7 @@ def _tree_with_config(root, files, config=None):
     _make_tree(
         root,
         {
-            "docs/docs-config.json": json.dumps(cfg),
+            "knowledge/docs-config.json": json.dumps(cfg),
             **files,
         },
     )
@@ -90,16 +90,16 @@ class DiscoverTests(unittest.TestCase):
             _tree_with_config(
                 root,
                 {
-                    "docs/glossary.md": "---\ntitle: G\ndescription: d\nkind: reference\n---\n",
-                    "crates/lp/docs/architecture.md": "---\ntitle: LP\ndescription: d\nkind: architecture\n---\n",
-                    "docs/node_modules/junk.md": "---\ntitle: no\n---\n",
+                    "knowledge/glossary.md": "---\ntitle: G\ndescription: d\nkind: reference\n---\n",
+                    "crates/lp/knowledge/architecture.md": "---\ntitle: LP\ndescription: d\nkind: architecture\n---\n",
+                    "knowledge/node_modules/junk.md": "---\ntitle: no\n---\n",
                 },
             )
             found = docs.discover(root, MINIMAL_CONFIG)
             paths = [d["path"] for d in found]
-            self.assertIn("docs/glossary.md", paths)
-            self.assertIn("crates/lp/docs/architecture.md", paths)
-            self.assertNotIn("docs/node_modules/junk.md", paths)
+            self.assertIn("knowledge/glossary.md", paths)
+            self.assertIn("crates/lp/knowledge/architecture.md", paths)
+            self.assertNotIn("knowledge/node_modules/junk.md", paths)
             lp = next(d for d in found if d["crate"] == "lp")
             self.assertEqual(lp["kind"], "architecture")
 
@@ -108,7 +108,7 @@ class DiscoverTests(unittest.TestCase):
             _tree_with_config(
                 root,
                 {
-                    "docs/a.md": "---\ntitle: A\ndescription: d\nkind: reference\n---\n",
+                    "knowledge/a.md": "---\ntitle: A\ndescription: d\nkind: reference\n---\n",
                 },
             )
             found = docs.discover(root, MINIMAL_CONFIG)
@@ -156,7 +156,7 @@ class ListOutputTests(unittest.TestCase):
     def _docs(self):
         return [
             {
-                "path": "docs/glossary.md",
+                "path": "knowledge/glossary.md",
                 "title": "Glossary",
                 "description": "the contract",
                 "kind": "reference",
@@ -166,7 +166,7 @@ class ListOutputTests(unittest.TestCase):
                 "_meta": {},
             },
             {
-                "path": "crates/lp/docs/p.md",
+                "path": "crates/lp/knowledge/p.md",
                 "title": "pilot",
                 "description": "the plan",
                 "kind": "decision",
@@ -181,17 +181,17 @@ class ListOutputTests(unittest.TestCase):
         out = docs.filter_docs(
             self._docs(), kind="reference", crate=None, lifecycle=None
         )
-        self.assertEqual([d["path"] for d in out], ["docs/glossary.md"])
+        self.assertEqual([d["path"] for d in out], ["knowledge/glossary.md"])
 
     def test_filter_by_crate(self):
         out = docs.filter_docs(self._docs(), kind=None, crate="lp", lifecycle=None)
-        self.assertEqual([d["path"] for d in out], ["crates/lp/docs/p.md"])
+        self.assertEqual([d["path"] for d in out], ["crates/lp/knowledge/p.md"])
 
     def test_list_output_groups_by_kind(self):
         text = docs.format_list(self._docs(), MINIMAL_CONFIG)
         self.assertIn("REFERENCE", text)
         self.assertIn("DECISION (dated)", text)
-        self.assertIn("docs/glossary.md", text)
+        self.assertIn("knowledge/glossary.md", text)
         self.assertIn("[lp · 2026-06-05]", text)
 
     def test_public_view_drops_internal_keys(self):
@@ -212,7 +212,7 @@ class CheckTests(unittest.TestCase):
             _tree_with_config(
                 root,
                 {
-                    "docs/a.md": "---\ntitle: A\ndescription: d\nkind: reference\n---\n",
+                    "knowledge/a.md": "---\ntitle: A\ndescription: d\nkind: reference\n---\n",
                 },
             )
             code, report = docs.run_check(root, MINIMAL_CONFIG)
@@ -223,7 +223,7 @@ class CheckTests(unittest.TestCase):
             _tree_with_config(
                 root,
                 {
-                    "docs/a.md": "---\ntitle: A\nkind: reference\n---\n",
+                    "knowledge/a.md": "---\ntitle: A\nkind: reference\n---\n",
                 },
             )
             code, report = docs.run_check(root, MINIMAL_CONFIG)
@@ -235,8 +235,8 @@ class CheckTests(unittest.TestCase):
             _tree_with_config(
                 root,
                 {
-                    "docs/README.md": "no frontmatter here\n",
-                    "docs/a.md": "---\ntitle: A\ndescription: d\nkind: reference\n---\n",
+                    "knowledge/README.md": "no frontmatter here\n",
+                    "knowledge/a.md": "---\ntitle: A\ndescription: d\nkind: reference\n---\n",
                 },
             )
             code, report = docs.run_check(root, MINIMAL_CONFIG)
@@ -247,7 +247,7 @@ class CheckTests(unittest.TestCase):
             _tree_with_config(
                 root,
                 {
-                    "docs/a.md": "---\ntitle: System overview: crates\ndescription: d\nkind: reference\n---\n",
+                    "knowledge/a.md": "---\ntitle: System overview: crates\ndescription: d\nkind: reference\n---\n",
                 },
             )
             code, report = docs.run_check(root, MINIMAL_CONFIG)
@@ -259,7 +259,7 @@ class CheckTests(unittest.TestCase):
             _tree_with_config(
                 root,
                 {
-                    "docs/a.md": '---\ntitle: "System overview: crates"\ndescription: d\nkind: reference\n---\n',
+                    "knowledge/a.md": '---\ntitle: "System overview: crates"\ndescription: d\nkind: reference\n---\n',
                 },
             )
             code, report = docs.run_check(root, MINIMAL_CONFIG)
@@ -274,25 +274,25 @@ class CheckTests(unittest.TestCase):
 class SiteGenTests(unittest.TestCase):
     def test_site_url_strips_docs_prefix_and_md(self):
         self.assertEqual(
-            docs.site_url("docs/architecture/solver-architecture.md"),
+            docs.site_url("knowledge/architecture/solver-architecture.md"),
             "/architecture/solver-architecture",
         )
 
     def test_site_url_maps_crate_docs(self):
         self.assertEqual(
-            docs.site_url("crates/lp/docs/architecture.md"), "/crates/lp/architecture"
+            docs.site_url("crates/lp/knowledge/architecture.md"), "/crates/lp/architecture"
         )
 
     def test_build_sidebar_groups_by_kind(self):
         docs_list = [
             {
-                "path": "docs/glossary.md",
+                "path": "knowledge/glossary.md",
                 "title": "Glossary",
                 "kind": "reference",
                 "crate": None,
             },
             {
-                "path": "crates/lp/docs/p.md",
+                "path": "crates/lp/knowledge/p.md",
                 "title": "pilot",
                 "kind": "decision",
                 "crate": "lp",
@@ -313,13 +313,13 @@ class SiteGenTests(unittest.TestCase):
             _tree_with_config(
                 root,
                 {
-                    "crates/lp/docs/architecture.md": "---\ntitle: LP\ndescription: d\nkind: architecture\n---\nbody\n",
-                    "docs/glossary.md": "---\ntitle: G\ndescription: d\nkind: reference\n---\nbody\n",
+                    "crates/lp/knowledge/architecture.md": "---\ntitle: LP\ndescription: d\nkind: architecture\n---\nbody\n",
+                    "knowledge/glossary.md": "---\ntitle: G\ndescription: d\nkind: reference\n---\nbody\n",
                 },
             )
             count = docs.sync_site(root, MINIMAL_CONFIG)
             self.assertEqual(count, 1)
-            staged = os.path.join(root, "docs", "crates", "lp", "architecture.md")
+            staged = os.path.join(root, "knowledge", "crates", "lp", "architecture.md")
             self.assertTrue(os.path.exists(staged))
             # the staged copy must not re-enter discovery (no double-count)
             self.assertEqual(len(docs.curated(root, MINIMAL_CONFIG)), 2)
@@ -344,11 +344,11 @@ class SkillRefsTests(unittest.TestCase):
                 root,
                 {
                     ".claude/skills/code/SKILL.md": self._skill(
-                        "See `scripts/real.sh`, the `docs/glossary.md` file, "
-                        "and `specs/<feature>/{requirements,design}.md`.\n"
+                        "See `scripts/real.sh`, the `knowledge/glossary.md` file, "
+                        "and `roadmap/specs/<feature>/{requirements,design}.md`.\n"
                     ),
                     "scripts/real.sh": "#!/bin/sh\n",
-                    "docs/glossary.md": "# Glossary\n",
+                    "knowledge/glossary.md": "# Glossary\n",
                 },
             )
             self.assertEqual(docs.check_skill_refs(root, MINIMAL_CONFIG), [])
@@ -372,12 +372,12 @@ class SkillRefsTests(unittest.TestCase):
                 root,
                 {
                     ".claude/skills/code/SKILL.md": self._skill(
-                        "The `docs/*.md` files.\n"
+                        "The `knowledge/*.md` files.\n"
                     )
                 },
             )
             errors = docs.check_skill_refs(root, MINIMAL_CONFIG)
-            self.assertTrue(any("docs/*.md" in e for e in errors))
+            self.assertTrue(any("knowledge/*.md" in e for e in errors))
 
     def test_placeholder_is_skipped(self):
         with tempfile.TemporaryDirectory() as root:
@@ -385,7 +385,7 @@ class SkillRefsTests(unittest.TestCase):
                 root,
                 {
                     ".claude/skills/code/SKILL.md": self._skill(
-                        "Write `specs/<feature>/{requirements,design,tasks}.md`.\n"
+                        "Write `roadmap/specs/<feature>/{requirements,design,tasks}.md`.\n"
                     )
                 },
             )
@@ -644,7 +644,7 @@ class SectionTests(unittest.TestCase):
 class MainLazyConfigTests(unittest.TestCase):
     def test_outline_via_main_succeeds_without_docs_config(self):
         """main() must not call load_config() before it knows the command;
-        outline/section must work in a repo with no docs/docs-config.json."""
+        outline/section must work in a repo with no knowledge/docs-config.json."""
         with tempfile.TemporaryDirectory() as root:
             doc_rel = "doc.md"
             _make_tree(root, {doc_rel: "# Title\n\n## Section\n"})
@@ -652,7 +652,7 @@ class MainLazyConfigTests(unittest.TestCase):
             original_root = docs.REPO_ROOT
             original_config_path = docs.CONFIG_PATH
             docs.REPO_ROOT = root
-            docs.CONFIG_PATH = os.path.join(root, "docs", "docs-config.json")
+            docs.CONFIG_PATH = os.path.join(root, "knowledge", "docs-config.json")
             try:
                 import io
                 from unittest.mock import patch

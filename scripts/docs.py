@@ -5,7 +5,7 @@
 Dev tooling for agents/humans navigating this repo's docs. Not part of any
 product CLI. Zero runtime dependencies (stdlib only).
 
-Config: docs/docs-config.json (relative to repo root). Run without it to see
+Config: knowledge/docs-config.json (relative to repo root). Run without it to see
 the bootstrap instructions.
 """
 
@@ -18,15 +18,15 @@ import shutil
 import sys
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-CONFIG_PATH = os.path.join(REPO_ROOT, "docs", "docs-config.json")
+CONFIG_PATH = os.path.join(REPO_ROOT, "knowledge", "docs-config.json")
 
 
 def load_config():
-    """Load docs/docs-config.json. Exits with a clear message if missing."""
+    """Load knowledge/docs-config.json. Exits with a clear message if missing."""
     if not os.path.exists(CONFIG_PATH):
         sys.exit(
             f"docs: config not found at {CONFIG_PATH}\n"
-            "Create it from the seed: cp plugins/foundry/templates/seeds/docs/docs-config.json docs/docs-config.json\n"
+            "Create it from the seed: cp plugins/foundry/templates/seeds/knowledge/docs-config.json knowledge/docs-config.json\n"
             "Then edit it for this repo."
         )
     with open(CONFIG_PATH, encoding="utf-8") as handle:
@@ -255,13 +255,13 @@ def run_check(root, config):
 
 
 def site_url(path):
-    """Map a repo doc path to its VitePress URL (crate docs are synced under docs/)."""
+    """Map a repo doc path to its VitePress URL (crate docs are synced under knowledge/)."""
     trimmed = path[:-3] if path.endswith(".md") else path
-    if trimmed.startswith("docs/"):
-        return "/" + trimmed[len("docs/") :]
-    if trimmed.startswith("crates/") and "/docs/" in trimmed:
+    if trimmed.startswith("knowledge/"):
+        return "/" + trimmed[len("knowledge/") :]
+    if trimmed.startswith("crates/") and "/knowledge/" in trimmed:
         crate = trimmed.split("/")[1]
-        rest = trimmed.split("/docs/", 1)[1]
+        rest = trimmed.split("/knowledge/", 1)[1]
         return f"/crates/{crate}/{rest}"
     return "/" + trimmed
 
@@ -288,15 +288,15 @@ def build_sidebar(docs_list, config):
 
 
 def sync_site(root, config):
-    """Copy crate docs into docs/crates/<crate>/... so VitePress can render them.
+    """Copy crate docs into knowledge/crates/<crate>/... so VitePress can render them.
     Returns the count staged. The staged tree is gitignored and rebuilt."""
     count = 0
     for doc in curated(root, config):
         path = doc["path"]
-        if path.startswith("crates/") and "/docs/" in path:
+        if path.startswith("crates/") and "/knowledge/" in path:
             crate = path.split("/")[1]
-            rest = path.split("/docs/", 1)[1]
-            dest = os.path.join(root, "docs", "crates", crate, rest)
+            rest = path.split("/knowledge/", 1)[1]
+            dest = os.path.join(root, "knowledge", "crates", crate, rest)
             os.makedirs(os.path.dirname(dest), exist_ok=True)
             shutil.copyfile(os.path.join(root, path), dest)
             count += 1

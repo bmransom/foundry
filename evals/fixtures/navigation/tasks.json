@@ -18,17 +18,17 @@
   "tasks": [
     {
       "id": "T1",
-      "doc": "docs/small.md",
+      "doc": "knowledge/small.md",
       "question": "In the CURRENT retry policy, how many attempts are allowed before giving up?"
     },
     {
       "id": "T2",
-      "doc": "docs/medium.md",
+      "doc": "knowledge/medium.md",
       "question": "What is the SUSTAINED (non-burst) request rate limit for the public API?"
     },
     {
       "id": "T3",
-      "doc": "docs/large.md",
+      "doc": "knowledge/large.md",
       "question": "What connection idle timeout does the PRODUCTION gateway profile set?"
     }
   ]

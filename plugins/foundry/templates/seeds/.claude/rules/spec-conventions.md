@@ -1,8 +1,8 @@
 ---
 paths:
-  - "specs/**/*.md"
-  - "specs/*.md"
-  - "docs/glossary.md"
+  - "roadmap/specs/**/*.md"
+  - "roadmap/specs/*.md"
+  - "knowledge/glossary.md"
 ---
 
 <!-- foundry-seed: spec-conventions v1 -->
@@ -13,10 +13,10 @@ Specs decide names and prose. Hold them to the repo contract.
 
 ## Names
 
-- Use the canonical terms in `docs/glossary.md`. When code and the glossary
+- Use the canonical terms in `knowledge/glossary.md`. When code and the glossary
   disagree, the glossary wins.
 - Never introduce a term from the glossary's "Replaces (now debt)" column.
-- Fit new public types and fields to the entity model in `docs/glossary.md`.
+- Fit new public types and fields to the entity model in `knowledge/glossary.md`.
 - Before coining a canonical name — a glossary term, a public type or field, a
   config knob — search the prior art: the domain's literature, the stack's naming
   conventions, comparable tools. Prefer the established term; record its

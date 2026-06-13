@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # foundry-template: board v1
 #
-# Render the tracked kanban board — the Status Dashboard in docs/ROADMAP.md —
+# Render the tracked kanban board — the Status Dashboard in roadmap/ROADMAP.md —
 # to the terminal, with a per-column count. The board is the markdown; this is
 # just a view. Pass a status word to filter (e.g. `scripts/board.sh "In Progress"`).
 set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-ROADMAP="$REPO/docs/ROADMAP.md"
+ROADMAP="$REPO/roadmap/ROADMAP.md"
 [ -f "$ROADMAP" ] || { echo "board: $ROADMAP not found" >&2; exit 1; }
 
 filter="${1:-}"
@@ -28,7 +28,7 @@ if [ -n "$filter" ]; then
   exit 0
 fi
 
-echo "Board — docs/ROADMAP.md (Backlog → Ready → In progress → Validating → Done)"
+echo "Board — roadmap/ROADMAP.md (Backlog → Ready → In progress → Validating → Done)"
 echo ""
 echo "$dashboard"
 echo ""

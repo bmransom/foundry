@@ -4,19 +4,19 @@
   "tasks": [
     {
       "id": "T1",
-      "gold_spans": [{ "file": "docs/small.md", "heading": "Retry policy" }],
+      "gold_spans": [{ "file": "knowledge/small.md", "heading": "Retry policy" }],
       "correct_signature": "5",
       "decoys": [{ "id": "D1", "signature": "3", "note": "legacy retry section" }]
     },
     {
       "id": "T2",
-      "gold_spans": [{ "file": "docs/medium.md", "heading": "Sustained rate limit" }],
+      "gold_spans": [{ "file": "knowledge/medium.md", "heading": "Sustained rate limit" }],
       "correct_signature": "1000",
       "decoys": [{ "id": "D2", "signature": "100", "note": "burst limit section" }]
     },
     {
       "id": "T3",
-      "gold_spans": [{ "file": "docs/large.md", "heading": "Production gateway profile" }],
+      "gold_spans": [{ "file": "knowledge/large.md", "heading": "Production gateway profile" }],
       "correct_signature": "90",
       "decoys": [{ "id": "D3", "signature": "30", "note": "staging gateway profile section" }]
     }
