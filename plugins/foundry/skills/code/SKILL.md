@@ -7,7 +7,7 @@ description: Use when implementing, adding, changing, or fixing a feature in a r
 
 # The code lifecycle
 
-This skill defines the ordered stages and gates for feature work in any repo with the foundry setup.
+This skill defines the ordered stages and gates for feature work in a foundry repo.
 Every repo-specific detail comes from:
 
 | Repo specific | Read it from |
@@ -94,7 +94,6 @@ Violating the letter of a gate is violating its spirit.
 
 ## Enhancement
 
-This skill is the high-level flow. At any stage, if a more specialized skill applies
-to that stage's work — designing, planning, test-writing, debugging, reviewing,
-finishing a branch — prefer it; it supersedes the inline method here. When none
-applies, the stage's own instruction stands alone.
+This skill is the high-level flow. If a more specialized skill fits a stage — design,
+planning, testing, debugging, review, finishing — prefer it; it supersedes the method
+here. Otherwise the stage's instruction stands.

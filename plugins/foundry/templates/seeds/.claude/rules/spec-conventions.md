@@ -26,7 +26,7 @@ Specs decide names and prose. Hold them to the repo contract.
 
 Follow the writing style in `AGENTS.md`: omit needless words, lead with the point,
 one idea per sentence, active and imperative, cut qualifiers; prefer a table or
-list when it is denser than a sentence.
+list when denser than a sentence.
 
 ## Before finalizing a design
 

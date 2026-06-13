@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Status:** Waves 1–7 done (2026-06-12) — foundry v1.0.0; only the octant retrofit remains in Epic 0 (own spec), each planned at claim time per the lifecycle Plan stage — tracked on the [board](../../docs/ROADMAP.md). Wave 1 code blocks below were synced with the post-review fixes (marketplace validate in the gate, EMPTY-TEMPLATE check, no-tests guard, install-hooks hook-count guard) so the plan remains a faithful account of what shipped.
+**Status:** Waves 1–7 done (2026-06-12) — foundry v1.0.0; only the reference-repo retrofit remains in Epic 0 (own spec), each planned at claim time per the lifecycle Plan stage — tracked on the [board](../../docs/ROADMAP.md). Wave 1 code blocks below were synced with the post-review fixes (marketplace validate in the gate, EMPTY-TEMPLATE check, no-tests guard, install-hooks hook-count guard) so the plan remains a faithful account of what shipped.
 
-**Goal:** Ship foundry v1 — an installable Claude Code plugin whose bootstrap installs the octant-style setup into any repo, with evals that grade changes.
+**Goal:** Ship foundry v1 — an installable Claude Code plugin whose bootstrap installs the setup into any repo, with evals that grade changes.
 
 **Architecture:** A marketplace repo containing one plugin (skills + agent + verbatim templates), self-hosted: foundry develops under its own conventions, and a byte-identity gate keeps its own copies of verbatim templates in sync with `plugins/foundry/templates/`. The template tree mirrors consumer-repo layout (`templates/scripts/docs.py` installs to `scripts/docs.py`).
 
@@ -15,14 +15,14 @@
 | Wave | Scope | Spec coverage | Detail |
 |---|---|---|---|
 | 1 | Plugin skeleton + self-host gate + CI | design §Shape, AC-5.1 (gate + byte-identity), AC-2.3 (version field) | below |
-| 2 | Template extraction from octant: `docs.py` (config block; new `outline` + `section` subcommands per design §Tooling decisions) + `test_docs.py`, `board.sh`, vitepress scaffold, `ROADMAP`/`BACKLOG`/`glossary`/`validation`/`index`/`specs-README`/`features-README`/`spec-conventions`/COE templates, `worktree-retire.sh`; foundry adopts each as it lands | AC-1.1, AC-1.6, AC-6.1, design §Split | at claim |
+| 2 | Template extraction from the reference repo: `docs.py` (config block; new `outline` + `section` subcommands per design §Tooling decisions) + `test_docs.py`, `board.sh`, vitepress scaffold, `ROADMAP`/`BACKLOG`/`glossary`/`validation`/`index`/`specs-README`/`features-README`/`spec-conventions`/COE templates, `worktree-retire.sh`; foundry adopts each as it lands | AC-1.1, AC-1.6, AC-6.1, design §Split | at claim |
 | 3 | `code` lifecycle skill + `spec-reviewer` agent, generalized (commands/paths/entity model read from consumer repo files); prior-art naming step in the Spec stage; context-budget lint added to `check-fast.sh` once skill/agent prose exists | US-3 (incl. AC-3.4), US-4 (incl. AC-4.3) | at claim |
 | 4 | `bootstrap` skill: inspect → interview → copy → generate → verify | US-1 (all ACs), design §Bootstrap flow, §Isolation | at claim |
 | 5 | `update` skill: version-marker diff + refresh, flag customized files | AC-2.1, AC-2.2 | at claim |
 | 6 | Evals L1–L2: fixtures (rust-cli, python-service, ts-monorepo) with seeded-defect branches, headless harness, gate-discrimination grading | AC-5.2, AC-5.4, AC-6.3 | at claim |
 | 7 | Evals L3 + v1.0.0: spec-reviewer precision/recall vs answer keys (seeded violations incl. uncited coined terms and wordy context-resident prose), lifecycle artifact checks, version-bump rule | AC-5.3, AC-2.3 | at claim |
 
-Octant retrofit is outside this spec (board card, spec to write).
+Reference-repo retrofit is outside this spec (board card, spec to write).
 
 ---
 
@@ -351,13 +351,13 @@ git commit -m "chore(board): record wave 1 gate PASS, promote template extractio
 
 ---
 
-## Wave 2 — Template extraction from octant (claimed @main 2026-06-10)
+## Wave 2 — Template extraction from the reference repo (claimed @main 2026-06-10)
 
 Design refinement recorded at claim: template classes split into
 `templates/verbatim/` (byte-checked tooling) and `templates/seeds/` (copied once,
 repo-owned content) — see design §Template classes. Sources live in
-`~/dev/workspace/octant`; every extraction passes the mechanisms-not-content audit
-(no octant entities, terms, or standing rules in any template).
+the reference repo; every extraction passes the mechanisms-not-content audit
+(no reference-repo entities, terms, or standing rules in any template).
 
 ### Task 2.1: verbatim/ and seeds/ split
 
@@ -368,14 +368,14 @@ Gate: byte-identity still covers both files; full test suite green.
 
 ### Task 2.2: board.sh + worktree-retire.sh (verbatim)
 
-Copy from octant `scripts/`, add `# foundry-template:` markers, replace the one
-octant-specific string (the `Octant board` echo header → `Board`); install
+Copy from the reference repo's `scripts/`, add `# foundry-template:` markers, replace the one
+repo-specific string (the repo-named board header → `Board`); install
 foundry's own copies; both runnable against foundry's ROADMAP/worktrees.
 Gate: byte-identity green; `scripts/board.sh` renders foundry's dashboard.
 
 ### Task 2.3: docs.py + test_docs.py (verbatim tool + seed config) + outline/section
 
-Port octant `scripts/docs.py`: octant-specific constants (doc globs, excluded
+Port the reference repo's `scripts/docs.py`: repo-specific constants (doc globs, excluded
 paths) move to a `docs/docs-config.json` seed the script loads; port
 `test_docs.py`; add `outline <doc>` (heading tree) and `section <doc> <heading>`
 (print one section) subcommands with tests. Foundry adopts: frontmatter on all
@@ -385,7 +385,7 @@ Gate: docs.py check green on foundry's own docs; new subcommand tests green.
 
 ### Task 2.4: vitepress scaffold (verbatim config + seed site config)
 
-From octant `docs/.vitepress/`: `config.ts` generalized to read title/description
+From the reference repo's `docs/.vitepress/`: `config.ts` generalized to read title/description
 from a `docs/.vitepress/site.json` seed; `package.json` + `tsconfig.json`
 verbatim; sidebar generation (docs.py already emits it) wired. Foundry adopts:
 its docs site builds. CI gains a docs-build step; the pre-push gate does NOT run
@@ -398,7 +398,7 @@ Author under `templates/seeds/`, each with a `foundry-seed:` marker, generic per
 the mechanisms-not-content rule: `docs/ROADMAP.md`, `docs/BACKLOG.md`,
 `docs/glossary.md`, `docs/validation.md`, `docs/index.md`, `docs/README.md`,
 `specs/README.md`, `features/README.md`, `.claude/rules/spec-conventions.md`,
-`docs/coe-template.md`. Modeled on octant's equivalents; the glossary seed
+`docs/coe-template.md`. Modeled on the reference repo's equivalents; the glossary seed
 carries the debt column, prior-art preamble, and empty entity-model section; the
 ROADMAP seed carries conventions + status taxonomy + empty dashboard;
 spec-conventions carries the naming/prose/prior-art rules with the
@@ -416,14 +416,14 @@ Wave 3 card (lifecycle skill + spec-reviewer) and the COE-mechanism card to Read
 ## Wave 3 — Skills, agent, context budget, COE closure (claimed @main 2026-06-11)
 
 First plugin-resident prose: held hardest to Strunk & White (design §Context-economy
-prose) and budget-linted. Octant sources: `.claude/skills/code/SKILL.md`,
+prose) and budget-linted. Reference-repo sources: `.claude/skills/code/SKILL.md`,
 `.claude/agents/spec-reviewer.md`. Generalization rule: the skill/agent name no
 repo specifics — commands, paths, and the entity model come from the consumer
 repo's AGENTS.md, glossary, and seeds (AC-3.1, AC-4.1).
 
 ### Task 3.1: `code` lifecycle skill
 
-`plugins/foundry/skills/code/SKILL.md`, generalized from octant's: the 7-stage
+`plugins/foundry/skills/code/SKILL.md`, generalized from the reference repo's: the 7-stage
 checklist (Frame → Spec → Plan → Build → Verify → Docs → Finish) with gate
 prohibitions; Frame routes by work size (AC-3.2); feature-file-first (AC-3.3);
 prior-art naming step in the Spec stage (AC-3.4); board claim at Plan, card move +
@@ -668,7 +668,7 @@ once per version bump.
 ### Task 7.4: v1.0.0
 
 On green 7.2 + 7.3: plugin.json → 1.0.0; validation.md L3 rows; board — Epic 0
-wraps with only the octant retrofit remaining (own spec).
+wraps with only the reference-repo retrofit remaining (own spec).
 
 ### Calibration (2026-06-11)
 

@@ -4,7 +4,7 @@
 
 ## Overview
 
-Foundry is a Claude Code plugin that bootstraps the octant-style AI-assisted
+Foundry is a Claude Code plugin that bootstraps an AI-assisted
 engineering setup into any repo, polyglot: spec-driven development (Wave/EARS),
 executable Gherkin features, a vitepress doc site with frontmatter-driven discovery,
 a tracked kanban board with spec pointers, a glossary-as-contract, two-trigger
@@ -16,7 +16,7 @@ propagate on update; a hybrid bootstrap (verbatim templates + stack-aware genera
 
 **US-1 Bootstrap.** As a developer starting a repo, I run `/foundry:bootstrap`,
 answer a short interview, and get the full setup installed, wired to my stack, and
-proven working — so a new project starts with the discipline octant evolved.
+proven working — so a new project starts with the discipline the reference repo evolved.
 
 - AC-1.1 WHEN bootstrap completes, THE SYSTEM SHALL have produced: `AGENTS.md` +
   `CLAUDE.md` symlink, `docs/` (vitepress + ROADMAP + BACKLOG + glossary + index +
@@ -63,7 +63,7 @@ skill holds me to the staged lifecycle with mechanical gates.
 
 - AC-3.1 THE skill SHALL enforce Frame → Spec → Plan → Build → Verify → Docs →
   Finish with the gate prohibitions, reading repo-specific commands and paths from
-  the consumer repo's AGENTS.md (never hardcoding foundry or octant values).
+  the consumer repo's AGENTS.md (never hardcoding foundry or reference-repo values).
 - AC-3.2 WHEN work is framed as a bug fix or refactor, THE skill SHALL route around
   the full spec path (the ceremony-scaling rule).
 - AC-3.3 WHEN new observable behavior is built, THE skill SHALL require its
@@ -113,6 +113,6 @@ setup.
 
 ## Out of scope (v1)
 
-Octant retrofit (own card, own spec); non-Claude agent runtimes beyond what
+Reference-repo retrofit (own card, own spec); non-Claude agent runtimes beyond what
 AGENTS.md portability already gives; team/multi-user marketplace governance;
 Layer-4 telemetry beyond COE promotion.

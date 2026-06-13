@@ -38,5 +38,6 @@ Every doc carries frontmatter — `title`, `description`, and one `kind`:
 - `glossary.md` — foundry's vocabulary contract.
 - `validation.md` — foundry's verification gates.
 - `coe-template.md` — copy per real failure; a COE closes only with a mechanical change.
+- `releasing.md` — how versioned releases work (release-please).
 
 Per-feature requirements, design, and tasks live in `../specs/`; see `../specs/README.md` for the format.

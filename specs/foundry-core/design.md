@@ -97,7 +97,7 @@ rules naming stub restating the top rules where work is planned; (5) path-scoped
 `spec-conventions.md` rule on `specs/**` mandating glossary terms and the
 spec-reviewer dispatch; (6) gates — spec-reviewer editorially, `vocab-lint`
 mechanically (grep driven by the debt column). **Polarity is per-repo**: an engine
-repo excludes consumer vocabulary (octant's case); a product repo embraces domain
+repo excludes consumer vocabulary (the reference repo's case); a product repo embraces domain
 terms. The interview asks; the mechanism is identical.
 
 **Naming with prior art.** The glossary layers enforce consistency with chosen
@@ -141,7 +141,7 @@ execution cost, and decision inputs; trace/span correlation IDs on every record
 the repo glossary — the log schema is the glossary on the wire. Stack mapping:
 `tracing` + JSON subscriber (Rust), `structlog` (Python), `pino` (TS/Node). The
 interview names the unit of work (request, job, solve) so the canonical event has a
-name from day one. Octant's NDJSON `Trace` is the worked example of the pattern.
+name from day one. The reference repo's NDJSON `Trace` is the worked example of the pattern.
 Applied to foundry itself at its native scale: gates emit stable one-line
 `key: value` verdicts (`check-fast: PASS`, `byte-identity: DRIFT <path>`), and the
 eval harness (Wave 6) emits one NDJSON wide event per eval case (fixture, seeded
@@ -150,7 +150,7 @@ defect, verdict, duration, tokens).
 **COE.** Template ships in every bootstrap: what happened, root cause, blast
 radius, the mechanical fix, the eval case spawned. Closure rule: prose alone never
 closes a COE. Promotion rule: root cause in shared machinery → the COE moves to
-foundry and adds a fixture/answer-key case. Octant's production-path COE is the
+foundry and adds a fixture/answer-key case. The reference repo's production-path COE is the
 worked example: it becomes the seeded defect proving the production-path lint
 discriminates.
 
@@ -220,11 +220,11 @@ setup first, then replacing each piece with its extracted template; the Layer-1
 byte-identity check makes convergence mechanical. End state: foundry's own setup is
 reproducible by its own bootstrap.
 
-## Octant-ism audit
+## Reference-repo audit
 
-Carried mechanisms with octant content removed:
+Carried mechanisms with reference-repo content removed:
 
-| Octant-ism | Resolution |
+| Reference-repo idiom | Resolution |
 |---|---|
 | Entity model hardcoded in spec-conventions + spec-reviewer | both read "the entity model defined in the repo's glossary" |
 | Domain-neutrality as the vocabulary rule | polarity is an interview question; the lint mechanism is shared |
@@ -232,9 +232,9 @@ Carried mechanisms with octant content removed:
 | Dual-entrypoint BDD | one runner per actual production entrypoint |
 | `solve.feature`/`cli_only.feature` names | pattern documented in `features/README.md` (outcome vs process contracts), names per-repo |
 | ROADMAP standing rules content | template ships the naming stub only |
-| Benchmarking rule detail | AGENTS.md skeleton carries two principles: production-entrypoint-only, and grader independence; detail stays in octant |
+| Benchmarking rule detail | AGENTS.md skeleton carries two principles: production-entrypoint-only, and grader independence; detail stays in the reference repo |
 | `docs.py` DOC_GLOBS | config block at top of template |
-| Crate map, Netlib, TIMEOUT_ALLOW, lp-result-triage | excluded |
+| Project-specific structure, datasets, tuning constants, domain skills | excluded |
 
 **Meta-rule:** foundry ships mechanisms and patterns; repos supply the content.
 

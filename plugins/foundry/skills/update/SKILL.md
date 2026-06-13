@@ -42,7 +42,7 @@ v<N>`) vs the manifest entry's version.
 |---|---|---|
 | same version | **current** | skip |
 | newer; `shasum -a 256` of the repo file equals the manifest hash | **pristine** | refresh: copy byte-exact; re-record name, version, hash |
-| newer; hash differs | **customized** | leave the file alone; flag with both diffs — the template changelog (old → new template) and the local customization (old template → repo file); the old pristine content may be recoverable from git history — if not, show only the changelog and flag the customization diff as unrecoverable |
+| newer; hash differs | **customized** | Leave the file alone. Flag two diffs: the template changelog (old → new template) and the local customization (old template → repo file). Recover the old pristine content from git history; if it's gone, show only the changelog and flag the customization unrecoverable. |
 | no manifest entry | **new** | install like bootstrap's Copy: byte-exact, marker included, scripts executable; add the manifest entry |
 
 Manifest hashes cover the installed content *including* its marker — hash what
@@ -90,6 +90,6 @@ Seeds need no manifest — run 3 · Compare seeds as usual; announcements work i
 Legacy mode too.
 
 Write `.foundry-manifest.json` from the verified entries plus the plugin
-version, report, and finish with 5 · Verify — the backfill is a write, so it
+version, report, and finish with 5 · Verify. The backfill is a write, so it
 needs the pasted PASS and the caller's go-ahead like any other. Refreshes wait
 for the next run, which proceeds in manifest mode above.

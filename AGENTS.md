@@ -1,13 +1,11 @@
 # AGENTS.md — Foundry
 
 Foundry is a Claude Code plugin (plus its marketplace) that bootstraps an AI-assisted
-engineering setup into any repo: spec-driven development, executable Gherkin features,
-a vitepress doc site with frontmatter-driven discovery, a tracked kanban board, a
-glossary-as-contract, verification gates, and COE-driven eval accretion. Octant
-(`~/dev/workspace/octant`) is the reference implementation the conventions are
-extracted from; foundry ships the mechanisms, repos supply the content.
+engineering setup into any repo: spec-driven development, executable Gherkin features, a
+vitepress doc site, a tracked kanban board, a glossary-as-contract, verification gates,
+and COE-driven eval accretion. Foundry ships the mechanisms; repos supply the content.
 
-Foundry is self-hosted: this repo is developed with its own conventions. The board is
+Foundry is self-hosted — developed under its own conventions. The board is
 `docs/ROADMAP.md`; per-feature detail lives in `specs/<feature>/`; vocabulary in
 `docs/glossary.md`.
 
@@ -19,8 +17,8 @@ scripts/install-hooks.sh                   # once per clone: route git hooks thr
 claude plugin validate plugins/foundry     # manifest check only (runs inside the gate)
 ```
 
-The gate runs from `.githooks/pre-push` (bypass once with `git push --no-verify`) and
-from CI (`.github/workflows/check-fast.yml`) — same script, two triggers.
+The gate runs from `.githooks/pre-push` and from CI (`.github/workflows/check-fast.yml`):
+one script, two triggers. Bypass once with `git push --no-verify`.
 
 ## Boundaries
 
@@ -33,35 +31,32 @@ from CI (`.github/workflows/check-fast.yml`) — same script, two triggers.
   defect must make the gate fail — never by green-ness alone.
 
 **Always**
-- Before coining a canonical name (glossary term, public type or field, config
-  knob), search the prior art — domain literature, stack naming conventions,
-  comparable tools. Prefer the established term; record provenance in
-  `docs/glossary.md`.
-- Keep foundry's own copies of verbatim-template files byte-identical to
+- Before coining a canonical name (glossary term, public type or field, config knob),
+  search the prior art and record provenance in `docs/glossary.md`.
+- Keep foundry's verbatim-template copies byte-identical to
   `plugins/foundry/templates/verbatim/` (modulo the version marker) — the self-host gate.
-- A template or skill change that alters behavior needs an eval case before it ships.
-- A COE is closed only by a mechanical change (gate, lint, rule, or eval fixture),
-  never by prose alone.
+- Give a behavior-changing template or skill an eval case before it ships.
+- Close a COE only with a mechanical change (gate, lint, rule, or eval fixture), never
+  prose.
 
 **Ask first**
-- Commit or push. Branch first if on the default branch.
+- Commit or push. Branch first on the default branch.
 
 ## Writing style
 
-The standard is Strunk & White: omit needless words; use the active voice; make
-definite assertions. Lead with the point; one idea per sentence; concrete commands,
-paths, and names; say it once and link to depth. Prefer a table, list, or code block
-when denser than a sentence. Plugin-resident prose (skills, agents, rules, templates)
-loads into context windows — every needless word costs tokens in every session that
-loads it; cut hardest there.
+Strunk & White: omit needless words; use the active voice; make definite assertions.
+Lead with the point; one idea per sentence; concrete commands, paths, and names; say it
+once and link to depth. Prefer a table, list, or code block when denser than a sentence.
+Context-resident prose (AGENTS.md, skills, agents, rules) loads every session — every
+needless word costs tokens each time; cut hardest there.
 
 ## Task tracking
 
-`docs/ROADMAP.md` is the tracked kanban board — the single source of truth for
-cross-spec status. Claim a card by setting its owner; `Done` requires a recorded gate
-PASS once the gate exists. Specs are tracked in `specs/<feature>/`.
+`docs/ROADMAP.md` is the board — the single source of truth for cross-spec status. Claim
+a card by setting its owner; `Done` requires a recorded gate PASS. Specs live in
+`specs/<feature>/`.
 
 ## Deeper docs
 
-`specs/foundry-core/` — requirements and design for foundry v1 ·
-`docs/glossary.md` — foundry's own vocabulary · `docs/ROADMAP.md` — the board.
+`docs/releasing.md` — how releases work · `specs/foundry-core/` — v1 requirements and
+design · `docs/glossary.md` — vocabulary · `docs/ROADMAP.md` — the board.
