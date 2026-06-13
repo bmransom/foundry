@@ -1,0 +1,6 @@
+{
+  "kinds": ["reference", "architecture", "guide", "decision"],
+  "required_fields": ["title", "description", "kind"],
+  "doc_globs": ["docs/*.md"],
+  "exclude_substrings": ["/node_modules/", "/.vitepress/"]
+}

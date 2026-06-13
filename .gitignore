@@ -5,3 +5,4 @@ __pycache__/
 .pytest_cache/
 docs/.vitepress/sidebar.generated.json
 evals/results/
+evals/fixtures/navigation/tree/

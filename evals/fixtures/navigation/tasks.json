@@ -1,0 +1,35 @@
+{
+  "fixture": "navigation",
+  "answer_protocol": "Answer the question, then end your reply with one line exactly: ANSWER: <value>",
+  "arms": [
+    {
+      "id": "full-load",
+      "preamble": "Read each file relevant to the question in full before answering."
+    },
+    {
+      "id": "native",
+      "preamble": "Use the Read and Grep tools only to find what you need. Do not use docs.py."
+    },
+    {
+      "id": "disclosure",
+      "preamble": "Navigate large docs with `python3 scripts/docs.py outline <doc>` to see its headings, then `python3 scripts/docs.py section <doc> <heading>` to read just the relevant section. Read short files whole."
+    }
+  ],
+  "tasks": [
+    {
+      "id": "T1",
+      "doc": "docs/small.md",
+      "question": "In the CURRENT retry policy, how many attempts are allowed before giving up?"
+    },
+    {
+      "id": "T2",
+      "doc": "docs/medium.md",
+      "question": "What is the SUSTAINED (non-burst) request rate limit for the public API?"
+    },
+    {
+      "id": "T3",
+      "doc": "docs/large.md",
+      "question": "What connection idle timeout does the PRODUCTION gateway profile set?"
+    }
+  ]
+}
