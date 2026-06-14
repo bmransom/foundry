@@ -4,9 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "predev": "python3 ../scripts/docs.py sync && python3 ../scripts/docs.py sidebar -o .vitepress/sidebar.generated.json",
+    "predev": "python3 ../scripts/knowledge.py sync && python3 ../scripts/knowledge.py sidebar -o .vitepress/sidebar.generated.json",
     "dev": "vitepress dev",
-    "prebuild": "python3 ../scripts/docs.py sync && python3 ../scripts/docs.py sidebar -o .vitepress/sidebar.generated.json",
+    "prebuild": "python3 ../scripts/knowledge.py sync && python3 ../scripts/knowledge.py sidebar -o .vitepress/sidebar.generated.json",
     "build": "vitepress build",
     "preview": "vitepress preview"
   },

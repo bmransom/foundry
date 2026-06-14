@@ -8,19 +8,19 @@
     },
     {
       "id": "native",
-      "preamble": "Use the Read and Grep tools only to find what you need. Do not use docs.py."
+      "preamble": "Use the Read and Grep tools only to find what you need. Do not use knowledge.py."
     },
     {
       "id": "disclosure",
-      "preamble": "Do not grep. Use `python3 scripts/docs.py list` to see the catalog of docs (title + description), pick the relevant one, then `python3 scripts/docs.py section <doc> <heading>` to read just that section."
+      "preamble": "Do not grep. Use `python3 scripts/knowledge.py list` to see the catalog of docs (title + description), pick the relevant one, then `python3 scripts/knowledge.py section <doc> <heading>` to read just that section."
     },
     {
       "id": "hybrid",
-      "preamble": "Use grep to locate candidate docs, scoping it to curated docs via `python3 scripts/docs.py list --paths`; then read the matched section cleanly with `python3 scripts/docs.py section <doc> <heading>`."
+      "preamble": "Use grep to locate candidate docs, scoping it to curated docs via `python3 scripts/knowledge.py list --paths`; then read the matched section cleanly with `python3 scripts/knowledge.py section <doc> <heading>`."
     },
     {
       "id": "index",
-      "preamble": "Use `python3 scripts/docs.py list` and pick the doc from its title and description alone, then `python3 scripts/docs.py section <doc> <heading>`. Do not grep and do not read whole files."
+      "preamble": "Use `python3 scripts/knowledge.py list` and pick the doc from its title and description alone, then `python3 scripts/knowledge.py section <doc> <heading>`. Do not grep and do not read whole files."
     }
   ],
   "tasks": [

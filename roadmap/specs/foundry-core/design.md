@@ -43,13 +43,13 @@ gate enforces it. `templates/seeds/` holds content starting points — board, gl
 doc stubs, rules, the COE template — copied once at bootstrap, then owned by the
 repo; never byte-checked, divergence is the point. Seeds carry `foundry-seed:`
 markers so `/foundry:update` can announce a newer seed without overwriting. Any
-per-repo variation a verbatim tool needs lives in a seed config file (docs.py reads
-`knowledge/docs-config.json`; the vitepress config reads `knowledge/.vitepress/site.json`),
+per-repo variation a verbatim tool needs lives in a seed config file (knowledge.py reads
+`knowledge/knowledge-config.json`; the vitepress config reads `knowledge/.vitepress/site.json`),
 keeping the tool itself byte-stable.
 
 | Plugin (shared, auto-propagates) | Verbatim templates (version-marked) | Generated per-repo (stack-aware) |
 |---|---|---|
-| `code` lifecycle skill | `scripts/docs.py` + `test_docs.py` (DOC_GLOBS in a config block) | `AGENTS.md` + `CLAUDE.md` symlink |
+| `code` lifecycle skill | `scripts/knowledge.py` + `test_knowledge.py` (DOC_GLOBS in a config block) | `AGENTS.md` + `CLAUDE.md` symlink |
 | `spec-reviewer` agent | `knowledge/.vitepress/` config, `package.json`, `tsconfig.json` | `scripts/check-fast.sh` (real gate commands) |
 | `bootstrap` + `update` skills | `scripts/board.sh`, `install-hooks.sh`, `worktree-retire.sh`, `.githooks/pre-push` | optional `scripts/verify.sh` (heavy gate + lock, only when an expensive validation exists) |
 | Spec format definition (Wave/EARS) | `knowledge/{index,README}.md`, `roadmap/ROADMAP.md`, `roadmap/BACKLOG.md`, `knowledge/validation.md`, `roadmap/specs/README.md`, `features/README.md` | `features/` + BDD runner wiring + walking-skeleton Scenario |
@@ -125,7 +125,7 @@ beyond specs to skill/agent/rule changes.
 **Lifecycle.** Frame routes by work size (bug fix and refactor skip the spec —
 the ceremony-scaling answer to the known SDD failure mode); Spec gates on approval +
 spec-reviewer; Plan claims the card; Build is feature-file-first then TDD; Verify
-requires the pasted PASS; Docs requires `docs.py check` clean and indexed; Finish
+requires the pasted PASS; Docs requires `knowledge.py check` clean and indexed; Finish
 moves the card, Done needs the recorded gate PASS. All commands and paths read from
 the consumer repo's AGENTS.md.
 
@@ -156,7 +156,7 @@ discriminates.
 
 ## Tooling decisions
 
-**Repo scripts over agent tools.** `docs.py`, `board.sh`, and the gates stay plain
+**Repo scripts over agent tools.** `knowledge.py`, `board.sh`, and the gates stay plain
 CLI scripts shipped as templates — not MCP tools, not plugin `bin/` executables.
 Rationale: the portability principle (any agent, humans, and CI can run them; an
 MCP tool is Claude-session-only), discovery is solved by AGENTS.md naming the
@@ -169,8 +169,8 @@ third.**
 
 | Level | Question | Mechanism |
 |---|---|---|
-| 1 — index | "what docs exist?" | `docs.py list` — kind + title + frontmatter description |
-| 2 — outline | "what's in this 30 KB doc?" | `docs.py outline <doc>` — heading tree; `docs.py section <doc> <heading>` prints one section |
+| 1 — index | "what docs exist?" | `knowledge.py list` — kind + title + frontmatter description |
+| 2 — outline | "what's in this 30 KB doc?" | `knowledge.py outline <doc>` — heading tree; `knowledge.py section <doc> <heading>` prints one section |
 | 3 — retrieval | "where is X discussed?" | grep + targeted Read — already optimal, no tooling |
 
 Level 2 (`outline`/`section`) is new in the Wave 2 template: it lets an agent pull
@@ -233,7 +233,7 @@ Carried mechanisms with reference-repo content removed:
 | `solve.feature`/`cli_only.feature` names | pattern documented in `features/README.md` (outcome vs process contracts), names per-repo |
 | ROADMAP standing rules content | template ships the naming stub only |
 | Benchmarking rule detail | AGENTS.md skeleton carries two principles: production-entrypoint-only, and grader independence; detail stays in the reference repo |
-| `docs.py` DOC_GLOBS | config block at top of template |
+| `knowledge.py` DOC_GLOBS | config block at top of template |
 | Project-specific structure, datasets, tuning constants, domain skills | excluded |
 
 **Meta-rule:** foundry ships mechanisms and patterns; repos supply the content.
@@ -246,6 +246,6 @@ plugin over a standalone scaffolding agent (distribution + versioning + propagat
 agents are used *inside* the design where context isolation pays: spec-reviewer) ·
 CI mirroring and explicit versioning added after best-practice review · COE and
 self-hosting adopted 2026-06-10 · structured logging (wide events + OTel correlation
-+ glossary field names) and the script-over-MCP tooling decision with `docs.py
++ glossary field names) and the script-over-MCP tooling decision with `knowledge.py
 outline`/`section` added 2026-06-10 · naming-with-prior-art and Strunk & White
 context-economy prose adopted 2026-06-10.

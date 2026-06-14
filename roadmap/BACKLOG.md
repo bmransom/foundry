@@ -1,7 +1,6 @@
 ---
 title: Backlog
 description: The idea pool — captured, not yet committed to the board.
-kind: reference
 ---
 
 <!-- foundry-seed: backlog v1 -->

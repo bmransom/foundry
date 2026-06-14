@@ -1,7 +1,6 @@
 ---
 title: Feature files
 description: Executable Gherkin — the single behavioral source of truth.
-kind: reference
 ---
 
 <!-- foundry-seed: features-readme v1 -->

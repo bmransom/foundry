@@ -1,7 +1,7 @@
 ---
 title: Releasing
 description: "How foundry cuts versioned releases: release-please, the eval gate, and overrides."
-kind: guide
+type: guide
 ---
 
 # Releasing

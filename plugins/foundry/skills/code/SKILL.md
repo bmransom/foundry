@@ -18,6 +18,10 @@ Every repo-specific detail comes from:
 | Vocabulary | `knowledge/glossary.md` |
 | The board | `roadmap/ROADMAP.md` |
 
+**Precondition.** This skill assumes a foundry-bootstrapped repo. If there is no
+`AGENTS.md` or `roadmap/ROADMAP.md`, the setup is absent — stop and point the user
+to `/foundry:bootstrap` rather than writing spec, board, or feature files.
+
 ## The checklist
 
 Copy this into your reply and check off each stage. A gate is a **prohibition**: do
@@ -28,7 +32,7 @@ not start a later stage until the prior gate is met.
 - [ ] **2 Plan** — bite-sized TDD tasks in `tasks.md`; board card claimed. GATE: no code until the plan is approved.
 - [ ] **3 Build** — feature-file Scenario first, then TDD red→green. GATE: new behavior has its Scenario before its code.
 - [ ] **4 Verify** — the repo's canonical gate green. GATE: a recorded PASS, pasted — not a claim.
-- [ ] **5 Docs** — `python3 scripts/docs.py check` clean; touched docs updated. GATE: no stale or unindexed doc.
+- [ ] **5 Knowledge** — `python3 scripts/knowledge.py check` clean; touched concepts updated. GATE: no stale concept or `index.md`.
 - [ ] **6 Finish** — branch first, ask before push, move the card. GATE: `Done` needs the recorded gate PASS.
 
 ## 0 · Frame — pick the path
@@ -67,11 +71,12 @@ you commit — never `git add -A` (the tree may be shared by parallel agents).
 Run the repo's canonical gate — the command `AGENTS.md` Commands names.
 **Gate:** paste the gate's final PASS line.
 
-## 5 · Docs
+## 5 · Knowledge
 
-Run `python3 scripts/docs.py check` (frontmatter lint) on any new or changed doc.
-Update `AGENTS.md` if a convention changed; index a new doc in `knowledge/README.md`.
-**Gate:** no finish with a stale or unindexed doc reference.
+Run `python3 scripts/knowledge.py check` (frontmatter lint) on any new or changed concept.
+Regenerate the listing (`python3 scripts/knowledge.py index`) and log the change in
+`knowledge/log.md`. Update `AGENTS.md` if a convention changed.
+**Gate:** no finish with a stale concept or `index.md`.
 
 ## 6 · Finish
 

@@ -101,9 +101,9 @@ def score_run(answer_key, run_number, findings_text):
         signature = violation["signature"]
         detected = signature_in_flagged(signature, flagged_terms)
         detail = (
-            f"signature {signature!r} present in FLAGGED lines ({violation['kind']})"
+            f"signature {signature!r} present in FLAGGED lines ({violation['type']})"
             if detected
-            else f"signature {signature!r} absent from FLAGGED lines ({violation['kind']})"
+            else f"signature {signature!r} absent from FLAGGED lines ({violation['type']})"
         )
         yield f"violation:{violation['id']}", detected, detail
 

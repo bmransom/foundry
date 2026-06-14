@@ -8,11 +8,11 @@
     },
     {
       "id": "native",
-      "preamble": "Use the Read and Grep tools only to find what you need. Do not use docs.py."
+      "preamble": "Use the Read and Grep tools only to find what you need. Do not use knowledge.py."
     },
     {
       "id": "disclosure",
-      "preamble": "Navigate large docs with `python3 scripts/docs.py outline <doc>` to see its headings, then `python3 scripts/docs.py section <doc> <heading>` to read just the relevant section. Read short files whole."
+      "preamble": "Navigate large docs with `python3 scripts/knowledge.py outline <doc>` to see its headings, then `python3 scripts/knowledge.py section <doc> <heading>` to read just the relevant section. Read short files whole."
     }
   ],
   "tasks": [

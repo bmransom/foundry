@@ -18,15 +18,15 @@ SCORE_REVIEW = Path(__file__).resolve().parent / "score_review.py"
 ANSWER_KEY = {
     "fixture": "reviewer",
     "violations": [
-        {"id": "V1", "signature": "basket", "kind": "debt-term"},
-        {"id": "V2", "signature": "row item", "kind": "debt-term"},
-        {"id": "V3", "signature": "PriceLattice", "kind": "uncited-coined-term"},
-        {"id": "V4", "signature": "very basically", "kind": "needless-qualifier"},
-        {"id": "V5", "signature": "rounding_residue", "kind": "prose-should-be-table"},
+        {"id": "V1", "signature": "basket", "type": "debt-term"},
+        {"id": "V2", "signature": "row item", "type": "debt-term"},
+        {"id": "V3", "signature": "PriceLattice", "type": "uncited-coined-term"},
+        {"id": "V4", "signature": "very basically", "type": "needless-qualifier"},
+        {"id": "V5", "signature": "rounding_residue", "type": "prose-should-be-table"},
     ],
     "decoys": [
-        {"id": "D1", "signature": "Snapshot", "kind": "coined-term-with-prior-art"},
-        {"id": "D2", "signature": "estimate", "kind": "debt-term-in-replaces-context"},
+        {"id": "D1", "signature": "Snapshot", "type": "coined-term-with-prior-art"},
+        {"id": "D2", "signature": "estimate", "type": "debt-term-in-replaces-context"},
     ],
 }
 

@@ -7,7 +7,7 @@
 A Layer-3 eval that measures whether a context-disclosure approach improves an agent's
 navigation of large docs and specs, and a reusable correctness-vs-context-cost
 visualization across foundry's evals. The eval compares three **arms** — full-load,
-native Read/Grep, and the `docs.py` outline/section protocol — on completeness,
+native Read/Grep, and the `knowledge.py` outline/section protocol — on completeness,
 correctness, and efficiency, graded against an independently authored answer key with
 decoys. It answers one question with evidence, not intuition: is the
 disclosure protocol worth adopting? "Not necessary" is a valid, expected outcome.
@@ -18,7 +18,7 @@ disclosure protocol worth adopting? "Not necessary" is a valid, expected outcome
 which disclosure arm wins on completeness, correctness, and efficiency.
 
 - AC-1.1 WHEN the nav-eval runs, THE SYSTEM SHALL execute every task under every arm
-  (full-load, native Read/Grep, `docs.py` outline/section) for N runs (default N=3).
+  (full-load, native Read/Grep, `knowledge.py` outline/section) for N runs (default N=3).
 - AC-1.2 THE SYSTEM SHALL grade each run against an independently authored answer key,
   never the agent's self-report and never a tool that shares code with the arm under test.
 - AC-1.3 WHEN a run completes, THE SYSTEM SHALL record, per (task, arm, run): task
@@ -61,7 +61,7 @@ cost so efficiency is measurable, not estimated.
 - Statistical-significance claims — N is a smoke-alarm scale, per the existing eval framing.
 - The uninstructed-tool arm (tool available but not prompted) and auto-applying the
   discovered threshold — the eval reports the crossover; acting on it is a separate decision.
-- Changing `docs.py` or the `code` skill based on results — results-driven, separate spec.
+- Changing `knowledge.py` or the `code` skill based on results — results-driven, separate spec.
 - Any plotting library as a runtime dependency of shipped templates — the viz is
   dev-harness only.
 
@@ -70,7 +70,7 @@ cost so efficiency is measurable, not estimated.
 - The existing eval harness (`evals/harness/`, the NDJSON conventions, the
   `evals/fixtures/<name>/` layout) and the headless `claude` CLI with `--output-format
   stream-json`.
-- `docs.py outline`/`section` — the arm under test.
+- `knowledge.py outline`/`section` — the arm under test.
 
 ## Open design decisions (resolve in Phase 2)
 

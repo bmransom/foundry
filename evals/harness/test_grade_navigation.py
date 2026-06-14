@@ -142,11 +142,11 @@ class GradeNavigationTest(unittest.TestCase):
         )
         self.assertFalse(nav.grade_transcript(wrong, key, self.tree)["success"])
 
-    def test_docs_py_section_of_gold_counts_for_recall(self):
+    def test_knowledge_py_section_of_gold_counts_for_recall(self):
         path = self._transcript_file(
             transcript(
                 bash_block(
-                    'python3 scripts/docs.py section knowledge/small.md "Retry policy"'
+                    'python3 scripts/knowledge.py section knowledge/small.md "Retry policy"'
                 ),
                 result_record("ANSWER: 5 attempts"),
             )

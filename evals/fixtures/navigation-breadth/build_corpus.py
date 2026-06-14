@@ -20,8 +20,10 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(HERE)))
 
 
-def frontmatter(title, description, kind="reference"):
-    return f"---\ntitle: {title}\ndescription: {description}\nkind: {kind}\n---\n\n"
+def frontmatter(title, description, type_name="reference"):
+    return (
+        f"---\ntitle: {title}\ndescription: {description}\ntype: {type_name}\n---\n\n"
+    )
 
 
 GOLD_NAME = "gateway.md"
@@ -48,9 +50,9 @@ DECOY_DOCS = {
 }
 
 DOCS_CONFIG = (
-    '{\n  "kinds": ["reference", "architecture", "guide", "decision"],\n'
-    '  "required_fields": ["title", "description", "kind"],\n'
-    '  "doc_globs": ["knowledge/*.md"],\n'
+    '{\n  "types": ["reference", "architecture", "guide", "decision"],\n'
+    '  "required_fields": ["title", "description", "type"],\n'
+    '  "concept_globs": ["knowledge/*.md"],\n'
     '  "exclude_substrings": ["/node_modules/", "/.vitepress/"]\n}\n'
 )
 
@@ -93,13 +95,14 @@ def main():
             handle.write(filler_doc(index))
 
     with open(
-        os.path.join(docs_dir, "docs-config.json"), "w", encoding="utf-8"
+        os.path.join(docs_dir, "knowledge-config.json"), "w", encoding="utf-8"
     ) as handle:
         handle.write(DOCS_CONFIG)
     scripts_dir = os.path.join(args.out, "scripts")
     os.makedirs(scripts_dir, exist_ok=True)
     shutil.copyfile(
-        os.path.join(REPO, "scripts", "docs.py"), os.path.join(scripts_dir, "docs.py")
+        os.path.join(REPO, "scripts", "knowledge.py"),
+        os.path.join(scripts_dir, "knowledge.py"),
     )
 
     total = len([n for n in os.listdir(docs_dir) if n.endswith(".md")])

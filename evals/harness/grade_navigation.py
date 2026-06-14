@@ -9,7 +9,7 @@ summary. A non-discriminating fixture — no arm ever wrong and no decoy ever hi
 is reported as such and exits non-zero, never passed (AC-1.7).
 
 Independence: this grader shares no code with any arm. It does NOT import
-docs.py (the disclosure arm's tool); it re-implements heading scanning so the
+knowledge.py (the disclosure arm's tool); it re-implements heading scanning so the
 oracle stays independent of the system under test. Pure stdlib.
 
 Usage:
@@ -58,7 +58,7 @@ def signature_matches(signature, text_lower):
 def heading_line_ranges(text):
     """Map each ATX heading (lowercased) -> (start_line, end_line), 1-based,
     end exclusive at the next equal-or-higher heading. Independent re-implementation;
-    deliberately does not import docs.py."""
+    deliberately does not import knowledge.py."""
     lines = text.splitlines()
     headings = []
     in_fence = False
@@ -97,7 +97,7 @@ def tool_uses(records):
 
 def gold_covered(gold, records, tree_dir):
     """Did the agent load this gold span {file, heading} into context — by a Read
-    overlapping its line range (or a full read of the file), or a `docs.py
+    overlapping its line range (or a full read of the file), or a `knowledge.py
     section` of its heading? Grep is a locator, not a load, so it does not count."""
     gold_file = gold["file"]
     gold_heading = gold["heading"].lower()
@@ -129,7 +129,7 @@ def gold_covered(gold, records, tree_dir):
             command = (params.get("command") or "").lower()
             heading_head = gold_heading.split()[0] if gold_heading else ""
             if (
-                "docs.py section" in command
+                "knowledge.py section" in command
                 and gold_basename.lower() in command
                 and heading_head in command
             ):

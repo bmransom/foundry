@@ -1,14 +1,14 @@
 ---
 title: Glossary — the ubiquitous language
-description: The vocabulary contract for specs, code, APIs, and docs.
-kind: reference
+description: The vocabulary contract for specs, code, APIs, and concepts.
+type: reference
 ---
 
 <!-- foundry-seed: glossary v1 -->
 
 # Glossary — the ubiquitous language
 
-The vocabulary contract for this repo's specs, code, APIs, and docs. When code and
+The vocabulary contract for this repo's specs, code, APIs, and concepts. When code and
 this file disagree, this file wins; the code is debt to be migrated. A new term
 names its prior art — the industry or stack standard it follows — or records why
 none fits.

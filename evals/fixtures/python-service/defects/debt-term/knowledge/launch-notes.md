@@ -1,7 +1,7 @@
 ---
 title: Launch notes
 description: Checklist for the first catalog launch.
-kind: guide
+type: guide
 ---
 
 # Launch notes

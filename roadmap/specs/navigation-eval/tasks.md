@@ -61,4 +61,4 @@ headless harness; nothing shipped to consumers.
 - [x] `grade_navigation.py --tag K=V` passthrough (corpus_size on every record)
 - [x] `navigation-breadth-eval.sh` — corpus-size sweep driver
 - [x] `plot_sweep.py` (content loaded vs corpus size) + `test_plot_sweep.py` + gate shim
-- [x] live sweep N=1, sizes 5/25/100 → finding: native grep leanest at scale; docs.py catalog (`list`) is O(N), most expensive; disclosure not justified for greppable lookups. Untested: non-greppable / browse-by-topic queries (the regime where a catalog might earn its cost)
+- [x] live sweep N=1, sizes 5/25/100 → finding: native grep leanest at scale; knowledge.py catalog (`list`) is O(N), most expensive; disclosure not justified for greppable lookups. Untested: non-greppable / browse-by-topic queries (the regime where a catalog might earn its cost)

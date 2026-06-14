@@ -32,7 +32,7 @@ Writing-style block:
 
 Assemble from: the detected stack rows below (only tools the repo actually
 configures), the interview-confirmed commands, and always
-`python3 scripts/docs.py check` and the feature-runner command.
+`python3 scripts/knowledge.py check` and the feature-runner command.
 
 | Stack | Commands |
 |---|---|
@@ -55,8 +55,8 @@ echo "== lint"
 echo "== tests"
 <stack test commands, including the feature runner>
 
-echo "== docs"
-python3 scripts/docs.py check
+echo "== knowledge"
+python3 scripts/knowledge.py check
 
 echo "check-fast: PASS"
 ```
@@ -64,6 +64,10 @@ echo "check-fast: PASS"
 `scripts/verify.sh` exists only when an expensive validation does (long
 benchmark, full suite): it runs `check-fast.sh` plus the heavy step behind the
 machine-global lock from §Isolation.
+
+After filling the seed concepts, regenerate the listing: `python3 scripts/knowledge.py
+index` writes `knowledge/index.md` (the OKF directory listing + site home). The gate's
+`knowledge check` fails if it is stale.
 
 ## BDD wiring
 

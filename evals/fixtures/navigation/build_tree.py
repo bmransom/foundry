@@ -6,7 +6,7 @@ roughly 100 / 500 / 2000 lines. Each holds one gold section (the answer) and,
 immediately before it, a near-duplicate decoy section with a different value — so
 a naive grep returns both and the arm must disambiguate. Gold/decoy strings match
 answer-key.json. Filler sections are deterministic noise giving the large doc
-genuine length. Also drops scripts/docs.py into the tree so the disclosure arm
+genuine length. Also drops scripts/knowledge.py into the tree so the disclosure arm
 can run it.
 
 The tree is generated (gitignored), not committed: the committed ground truth is
@@ -95,9 +95,9 @@ def main():
     scripts_dir = os.path.join(TREE, "scripts")
     os.makedirs(scripts_dir, exist_ok=True)
     shutil.copyfile(
-        os.path.join(REPO, "scripts", "docs.py"), os.path.join(scripts_dir, "docs.py")
+        os.path.join(REPO, "scripts", "knowledge.py"), os.path.join(scripts_dir, "knowledge.py")
     )
-    print(f"navigation fixture: built {sizes} + scripts/docs.py in {TREE}")
+    print(f"navigation fixture: built {sizes} + scripts/knowledge.py in {TREE}")
 
 
 if __name__ == "__main__":

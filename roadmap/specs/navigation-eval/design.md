@@ -17,7 +17,7 @@ correctness-vs-cost chart.
   never installs — so they add nothing downstream. Any versioning foundry later ships to
   consumers stays commit-level and tool-agnostic (Conventional Commits, semver, `vX.Y.Z`
   tags), never a specific release tool such as release-please.
-- **Zero-dependency tooling.** Stdlib Python + bash only, like `docs.py`/`grade.py`. The
+- **Zero-dependency tooling.** Stdlib Python + bash only, like `knowledge.py`/`grade.py`. The
   plotter emits SVG by hand rather than importing matplotlib.
 - **Independent oracle.** The grader shares no code with any arm; ground truth is an
   independently authored `answer-key.json`.
@@ -46,8 +46,8 @@ an idealized one.
 | Arm | Prompt preamble |
 |---|---|
 | A0 full-load | "Read each relevant file in full before answering." |
-| A1 native | "Use `Read` and `Grep` to find what you need; do not use `docs.py`." |
-| A2 disclosure | "Use `docs.py outline <doc>` then `docs.py section <doc> <heading>`; read short files whole." |
+| A1 native | "Use `Read` and `Grep` to find what you need; do not use `knowledge.py`." |
+| A2 disclosure | "Use `knowledge.py outline <doc>` then `knowledge.py section <doc> <heading>`; read short files whole." |
 
 ## Data flow
 
@@ -97,7 +97,7 @@ value via a one-line adapter.
 
 Both come from the transcript the harness already saves — the agent is untouched.
 `tool_use` events give the file + range (`Read` offset/limit), the `Grep`, or the
-`docs.py section/outline` call → the loaded span; recall = gold lines covered ÷ gold
+`knowledge.py section/outline` call → the loaded span; recall = gold lines covered ÷ gold
 lines needed. Tokens come from the result record's `usage` (input + cache + output) via
 the shared `eval_tokens.py`, which is also wired into the reviewer/bootstrap/lifecycle
 drivers so the plotter produces a chart for every eval (AC-2.2).
@@ -177,14 +177,14 @@ overtake grep?
 - **Breadth fixture** (`evals/fixtures/navigation-breadth/`, via `build_corpus.py`): N docs
   where the answer lives only in `gateway.md`; `staging.md`/`edge.md` are decoys; filler
   docs each mention `timeout` benignly so `grep -r timeout` returns ~N hits — the noise
-  that scales. Each doc carries frontmatter, so `docs.py list` is a real catalog. Tasks
+  that scales. Each doc carries frontmatter, so `knowledge.py list` is a real catalog. Tasks
   never name the target doc, so discovery cost is real.
 - **Five arms**: `full-load`, `native` (grep/read), `disclosure` (catalog→section),
-  **`hybrid`** (grep-locate scoped via `docs.py list --paths`, then `section`), `index`
-  (`docs.py list` by description → `section`).
+  **`hybrid`** (grep-locate scoped via `knowledge.py list --paths`, then `section`), `index`
+  (`knowledge.py list` by description → `section`).
 - **Sweep**: `navigation-breadth-eval.sh` rebuilds the corpus per size, runs every arm, and
   grades with `--tag corpus_size=N`. `plot_sweep.py` draws content-loaded vs corpus size,
   one line per arm — the crossover answers "how large must the corpus be."
-- **Hybrid uses existing tools only.** A dedicated `docs.py search` subcommand is
+- **Hybrid uses existing tools only.** A dedicated `knowledge.py search` subcommand is
   deliberately *not* built yet — the eval must first show the hybrid wins and that the
   multi-call ergonomics cost something. Measure, then build.

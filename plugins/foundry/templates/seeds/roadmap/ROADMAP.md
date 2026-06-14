@@ -1,7 +1,6 @@
 ---
 title: Roadmap
 description: The tracked kanban board — the single source of truth for cross-spec status.
-kind: reference
 ---
 
 <!-- foundry-seed: roadmap v1 -->

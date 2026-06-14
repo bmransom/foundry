@@ -20,9 +20,9 @@ BASE_EXPECTATIONS = {
     "files": [
         {"path": "AGENTS.md", "class": "generated"},
         {"path": "CLAUDE.md", "class": "symlink", "target": "AGENTS.md"},
-        {"path": "scripts/docs.py", "class": "verbatim"},
+        {"path": "scripts/knowledge.py", "class": "verbatim"},
         {"path": "roadmap/ROADMAP.md", "class": "seed"},
-        {"path": "knowledge/docs-config.json", "class": "seed"},
+        {"path": "knowledge/knowledge-config.json", "class": "seed"},
         {"path": "features", "class": "dir"},
         {"path": "scripts/agent-env.sh", "class": "absent"},
     ],
@@ -58,14 +58,14 @@ def build_complete_tree(root: Path) -> None:
         "# AGENTS.md — fake\n\nIntro.\n\n## Commands\n\n`scripts/check-fast.sh`\n"
     )
     os.symlink("AGENTS.md", root / "CLAUDE.md")
-    (root / "scripts" / "docs.py").write_text(
-        "# foundry-template: docs v1\nprint('hi')\n"
+    (root / "scripts" / "knowledge.py").write_text(
+        "# foundry-template: knowledge v1\nprint('hi')\n"
     )
     (root / "roadmap" / "ROADMAP.md").write_text(
         "<!-- foundry-seed: roadmap v1 -->\n# Roadmap\n\n### Epic 0 — fake epic\n"
     )
-    (root / "knowledge" / "docs-config.json").write_text(
-        json.dumps({"_foundry_seed": "docs-config v1", "kinds": []})
+    (root / "knowledge" / "knowledge-config.json").write_text(
+        json.dumps({"_foundry_seed": "knowledge-config v1", "types": []})
     )
     (root / "scripts" / "check-fast.sh").write_text(
         '#!/usr/bin/env bash\nset -euo pipefail\necho "check-fast: PASS"\n'
@@ -75,8 +75,8 @@ def build_complete_tree(root: Path) -> None:
             {
                 "pluginVersion": "0.2.0",
                 "files": {
-                    "scripts/docs.py": {
-                        "template": "docs",
+                    "scripts/knowledge.py": {
+                        "template": "knowledge",
                         "version": 1,
                         "sha256": "ab",
                     },
@@ -153,9 +153,9 @@ class GradeDiscriminationTest(unittest.TestCase):
 
     def test_verbatim_file_without_marker_fails(self):
         records = self.grade_broken(
-            lambda tree: (tree / "scripts" / "docs.py").write_text("print('hi')\n")
+            lambda tree: (tree / "scripts" / "knowledge.py").write_text("print('hi')\n")
         )
-        self.assertEqual(verdict_of(records, "file:scripts/docs.py"), "fail")
+        self.assertEqual(verdict_of(records, "file:scripts/knowledge.py"), "fail")
 
     def test_seed_file_without_marker_fails(self):
         records = self.grade_broken(

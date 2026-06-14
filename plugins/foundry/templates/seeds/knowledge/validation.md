@@ -1,7 +1,7 @@
 ---
 title: Validation
 description: Every verification gate — command, what it catches, when it fires.
-kind: reference
+type: reference
 ---
 
 <!-- foundry-seed: validation v1 -->

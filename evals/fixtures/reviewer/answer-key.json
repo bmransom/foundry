@@ -1,20 +1,20 @@
 {
   "fixture": "reviewer",
   "violations": [
-    { "id": "V1", "signature": "basket", "kind": "debt-term" },
-    { "id": "V2", "signature": "row item", "kind": "debt-term" },
-    { "id": "V3", "signature": "shipping job", "kind": "debt-term" },
-    { "id": "V4", "signature": "OrderAdjustmentBag", "kind": "entity-model-misfit" },
-    { "id": "V5", "signature": "PriceLattice", "kind": "uncited-coined-term" },
-    { "id": "V6", "signature": "adjustments_total", "kind": "near-duplicate-identifiers" },
-    { "id": "V7", "signature": "it could perhaps be considered", "kind": "passive-buried-point" },
-    { "id": "V8", "signature": "very basically", "kind": "needless-qualifier" },
-    { "id": "V9", "signature": "rounding_residue", "kind": "prose-should-be-table" },
-    { "id": "V10", "signature": "product sheet", "kind": "debt-term-in-heading" }
+    { "id": "V1", "signature": "basket", "type": "debt-term" },
+    { "id": "V2", "signature": "row item", "type": "debt-term" },
+    { "id": "V3", "signature": "shipping job", "type": "debt-term" },
+    { "id": "V4", "signature": "OrderAdjustmentBag", "type": "entity-model-misfit" },
+    { "id": "V5", "signature": "PriceLattice", "type": "uncited-coined-term" },
+    { "id": "V6", "signature": "adjustments_total", "type": "near-duplicate-identifiers" },
+    { "id": "V7", "signature": "it could perhaps be considered", "type": "passive-buried-point" },
+    { "id": "V8", "signature": "very basically", "type": "needless-qualifier" },
+    { "id": "V9", "signature": "rounding_residue", "type": "prose-should-be-table" },
+    { "id": "V10", "signature": "product sheet", "type": "debt-term-in-heading" }
   ],
   "decoys": [
-    { "id": "D1", "signature": "Snapshot", "kind": "coined-term-with-prior-art" },
-    { "id": "D2", "signature": "estimate", "kind": "debt-term-in-replaces-context" },
-    { "id": "D3", "signature": "Round half to even", "kind": "terse-imperative" }
+    { "id": "D1", "signature": "Snapshot", "type": "coined-term-with-prior-art" },
+    { "id": "D2", "signature": "estimate", "type": "debt-term-in-replaces-context" },
+    { "id": "D3", "signature": "Round half to even", "type": "terse-imperative" }
   ]
 }

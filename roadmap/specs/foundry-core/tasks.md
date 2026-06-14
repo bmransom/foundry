@@ -6,16 +6,16 @@
 
 **Goal:** Ship foundry v1 — an installable Claude Code plugin whose bootstrap installs the setup into any repo, with evals that grade changes.
 
-**Architecture:** A marketplace repo containing one plugin (skills + agent + verbatim templates), self-hosted: foundry develops under its own conventions, and a byte-identity gate keeps its own copies of verbatim templates in sync with `plugins/foundry/templates/`. The template tree mirrors consumer-repo layout (`templates/scripts/docs.py` installs to `scripts/docs.py`).
+**Architecture:** A marketplace repo containing one plugin (skills + agent + verbatim templates), self-hosted: foundry develops under its own conventions, and a byte-identity gate keeps its own copies of verbatim templates in sync with `plugins/foundry/templates/`. The template tree mirrors consumer-repo layout (`templates/scripts/knowledge.py` installs to `scripts/knowledge.py`).
 
-**Tech Stack:** Bash (gates, hooks), Python 3 (docs.py), Claude Code plugin manifests (JSON), vitepress (docs), GitHub Actions (CI backstop).
+**Tech Stack:** Bash (gates, hooks), Python 3 (knowledge.py), Claude Code plugin manifests (JSON), vitepress (docs), GitHub Actions (CI backstop).
 
 ## Wave map (spec coverage)
 
 | Wave | Scope | Spec coverage | Detail |
 |---|---|---|---|
 | 1 | Plugin skeleton + self-host gate + CI | design §Shape, AC-5.1 (gate + byte-identity), AC-2.3 (version field) | below |
-| 2 | Template extraction from the reference repo: `docs.py` (config block; new `outline` + `section` subcommands per design §Tooling decisions) + `test_docs.py`, `board.sh`, vitepress scaffold, `ROADMAP`/`BACKLOG`/`glossary`/`validation`/`index`/`specs-README`/`features-README`/`spec-conventions`/COE templates, `worktree-retire.sh`; foundry adopts each as it lands | AC-1.1, AC-1.6, AC-6.1, design §Split | at claim |
+| 2 | Template extraction from the reference repo: `knowledge.py` (config block; new `outline` + `section` subcommands per design §Tooling decisions) + `test_knowledge.py`, `board.sh`, vitepress scaffold, `ROADMAP`/`BACKLOG`/`glossary`/`validation`/`index`/`specs-README`/`features-README`/`spec-conventions`/COE templates, `worktree-retire.sh`; foundry adopts each as it lands | AC-1.1, AC-1.6, AC-6.1, design §Split | at claim |
 | 3 | `code` lifecycle skill + `spec-reviewer` agent, generalized (commands/paths/entity model read from consumer repo files); prior-art naming step in the Spec stage; context-budget lint added to `check-fast.sh` once skill/agent prose exists | US-3 (incl. AC-3.4), US-4 (incl. AC-4.3) | at claim |
 | 4 | `bootstrap` skill: inspect → interview → copy → generate → verify | US-1 (all ACs), design §Bootstrap flow, §Isolation | at claim |
 | 5 | `update` skill: version-marker diff + refresh, flag customized files | AC-2.1, AC-2.2 | at claim |
@@ -373,21 +373,21 @@ repo-specific string (the repo-named board header → `Board`); install
 foundry's own copies; both runnable against foundry's ROADMAP/worktrees.
 Gate: byte-identity green; `scripts/board.sh` renders foundry's dashboard.
 
-### Task 2.3: docs.py + test_docs.py (verbatim tool + seed config) + outline/section
+### Task 2.3: knowledge.py + test_knowledge.py (verbatim tool + seed config) + outline/section
 
-Port the reference repo's `scripts/docs.py`: repo-specific constants (doc globs, excluded
-paths) move to a `knowledge/docs-config.json` seed the script loads; port
-`test_docs.py`; add `outline <doc>` (heading tree) and `section <doc> <heading>`
+Port the reference repo's `scripts/knowledge.py`: repo-specific constants (doc globs, excluded
+paths) move to a `knowledge/knowledge-config.json` seed the script loads; port
+`test_knowledge.py`; add `outline <doc>` (heading tree) and `section <doc> <heading>`
 (print one section) subcommands with tests. Foundry adopts: frontmatter on all
-foundry docs, config seed present, `python3 scripts/docs.py check` + the python
+foundry docs, config seed present, `python3 scripts/knowledge.py check` + the python
 tests wired into `check-fast.sh`.
-Gate: docs.py check green on foundry's own docs; new subcommand tests green.
+Gate: knowledge.py check green on foundry's own docs; new subcommand tests green.
 
 ### Task 2.4: vitepress scaffold (verbatim config + seed site config)
 
 From the reference repo's `knowledge/.vitepress/`: `config.ts` generalized to read title/description
 from a `knowledge/.vitepress/site.json` seed; `package.json` + `tsconfig.json`
-verbatim; sidebar generation (docs.py already emits it) wired. Foundry adopts:
+verbatim; sidebar generation (knowledge.py already emits it) wired. Foundry adopts:
 its docs site builds. CI gains a docs-build step; the pre-push gate does NOT run
 the build (too slow for the fast gate).
 Gate: `npm ci && npm run docs:build` (or equivalent) succeeds under `knowledge/`.
@@ -404,7 +404,7 @@ ROADMAP seed carries conventions + status taxonomy + empty dashboard;
 spec-conventions carries the naming/prose/prior-art rules with the
 spec-reviewer dispatch. Foundry adopts the ones it lacks: `knowledge/index.md`,
 `knowledge/README.md`, `roadmap/BACKLOG.md`, `knowledge/validation.md`, `roadmap/specs/README.md`.
-Gate: docs.py check green over the adopted files; seeds audit clean.
+Gate: knowledge.py check green over the adopted files; seeds audit clean.
 
 ### Task 2.6: Record the gate, move the card
 
@@ -453,7 +453,7 @@ Gate: TDD red→green; seeded oversize file fails the lint.
 Foundry adopts `knowledge/coe-template.md` from the seed; `knowledge/README.md` index
 pointer. The promote-upstream flow and eval-accretion rule are already recorded
 (design §COE, AGENTS.md); this closes the card.
-Gate: `python3 scripts/docs.py check` green.
+Gate: `python3 scripts/knowledge.py check` green.
 
 ### Task 3.5: Record the gate, move the cards
 

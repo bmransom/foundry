@@ -1,7 +1,6 @@
 ---
 title: Spec format
 description: How specs are written — requirements, design, and tasks per feature.
-kind: reference
 ---
 
 <!-- foundry-seed: specs-readme v1 -->

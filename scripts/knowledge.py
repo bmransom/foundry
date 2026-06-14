@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-# foundry-template: docs v1
-"""docs — list and lint the curated docs by kind + description.
+# foundry-template: knowledge v1
+"""knowledge — list and lint the curated knowledge concepts by type + description.
 
-Dev tooling for agents/humans navigating this repo's docs. Not part of any
-product CLI. Zero runtime dependencies (stdlib only).
+Dev tooling for agents/humans navigating this repo's knowledge base. Not part of
+any product CLI. Zero runtime dependencies (stdlib only).
 
-Config: knowledge/docs-config.json (relative to repo root). Run without it to see
-the bootstrap instructions.
+Config: knowledge/knowledge-config.json (relative to repo root). Run without it to
+see the bootstrap instructions.
 """
 
 import argparse
@@ -18,15 +18,15 @@ import shutil
 import sys
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-CONFIG_PATH = os.path.join(REPO_ROOT, "knowledge", "docs-config.json")
+CONFIG_PATH = os.path.join(REPO_ROOT, "knowledge", "knowledge-config.json")
 
 
 def load_config():
-    """Load knowledge/docs-config.json. Exits with a clear message if missing."""
+    """Load knowledge/knowledge-config.json. Exits with a clear message if missing."""
     if not os.path.exists(CONFIG_PATH):
         sys.exit(
-            f"docs: config not found at {CONFIG_PATH}\n"
-            "Create it from the seed: cp plugins/foundry/templates/seeds/knowledge/docs-config.json knowledge/docs-config.json\n"
+            f"knowledge: config not found at {CONFIG_PATH}\n"
+            "Create it from the seed: cp plugins/foundry/templates/seeds/knowledge/knowledge-config.json knowledge/knowledge-config.json\n"
             "Then edit it for this repo."
         )
     with open(CONFIG_PATH, encoding="utf-8") as handle:
@@ -90,14 +90,14 @@ def infer_crate(relpath):
 
 
 def discover(root, config):
-    """Return curated docs as dicts sorted by path. Each dict has public keys
-    (path, title, description, kind, crate, lifecycle) plus internal _ok/_meta."""
-    doc_globs = config["doc_globs"]
+    """Return curated concepts as dicts sorted by path. Each dict has public keys
+    (path, title, description, type, crate, lifecycle) plus internal _ok/_meta."""
+    concept_globs = config["concept_globs"]
     exclude_substrings = config.get("exclude_substrings", [])
     exclude_prefixes = tuple(config.get("exclude_prefixes", []))
 
     seen = {}
-    for pattern in doc_globs:
+    for pattern in concept_globs:
         for abspath in glob.glob(os.path.join(root, pattern), recursive=True):
             relpath = os.path.relpath(abspath, root).replace(os.sep, "/")
             if any(s in "/" + relpath for s in exclude_substrings):
@@ -113,7 +113,7 @@ def discover(root, config):
                 "path": relpath,
                 "title": meta.get("title", ""),
                 "description": meta.get("description", ""),
-                "kind": meta.get("kind", ""),
+                "type": meta.get("type", ""),
                 "crate": meta.get("crate") or infer_crate(relpath),
                 "lifecycle": meta.get("lifecycle", "current") if ok else "",
                 "_ok": ok,
@@ -123,70 +123,70 @@ def discover(root, config):
     return [seen[k] for k in sorted(seen)]
 
 
-def validate(doc, config):
-    """Return a list of human-readable errors for a discovered doc ([] = clean)."""
-    kinds = config["kinds"]
+def validate(concept, config):
+    """Return a list of human-readable errors for a discovered concept ([] = clean)."""
+    types = config["types"]
     lifecycles = config.get("lifecycles", ["current", "superseded", "historical"])
-    required = config.get("required_fields", ["title", "description", "kind"])
+    required = config.get("required_fields", ["title", "description", "type"])
 
-    if not doc["_ok"]:
+    if not concept["_ok"]:
         return ["missing frontmatter block"]
-    meta = doc["_meta"]
+    meta = concept["_meta"]
     errors = []
     for field in required:
         if not meta.get(field):
             errors.append(f"missing required field '{field}'")
-    if meta.get("kind") and meta["kind"] not in kinds:
-        errors.append(f"invalid kind '{meta['kind']}' (expected one of {kinds})")
+    if meta.get("type") and meta["type"] not in types:
+        errors.append(f"invalid type '{meta['type']}' (expected one of {types})")
     if meta.get("lifecycle") and meta["lifecycle"] not in lifecycles:
         errors.append(
             f"invalid lifecycle '{meta['lifecycle']}' (expected one of {lifecycles})"
         )
-    errors.extend(doc.get("_strict", []))
+    errors.extend(concept.get("_strict", []))
     return errors
 
 
-def filter_docs(docs_list, kind, crate, lifecycle):
-    result = docs_list
-    if kind:
-        result = [d for d in result if d["kind"] == kind]
+def filter_concepts(concepts, type_name, crate, lifecycle):
+    result = concepts
+    if type_name:
+        result = [c for c in result if c["type"] == type_name]
     if crate:
-        result = [d for d in result if d["crate"] == crate]
+        result = [c for c in result if c["crate"] == crate]
     if lifecycle:
-        result = [d for d in result if d["lifecycle"] == lifecycle]
+        result = [c for c in result if c["lifecycle"] == lifecycle]
     return result
 
 
-def public_view(doc):
+def public_view(concept):
     return {
-        k: doc[k]
-        for k in ["path", "title", "description", "kind", "crate", "lifecycle"]
+        k: concept[k]
+        for k in ["path", "title", "description", "type", "crate", "lifecycle"]
     }
 
 
-def format_list(docs_list, config):
-    """Render docs grouped by kind, one line each, as a string."""
-    kinds = config["kinds"]
+def format_list(concepts, config):
+    """Render concepts grouped by type, one line each, as a string."""
+    types = config["types"]
     out = []
-    for kind in kinds:
-        group = [d for d in docs_list if d["kind"] == kind]
+    for type_name in types:
+        group = [c for c in concepts if c["type"] == type_name]
         if not group:
             continue
-        out.append(kind.upper() + (" (dated)" if kind == "decision" else ""))
-        for doc in group:
+        out.append(type_name.upper() + (" (dated)" if type_name == "decision" else ""))
+        for concept in group:
             bits = []
-            if doc["crate"]:
-                bits.append(doc["crate"])
-            if kind == "decision" and doc["_meta"].get("updated"):
-                bits.append(doc["_meta"]["updated"])
+            if concept["crate"]:
+                bits.append(concept["crate"])
+            if type_name == "decision" and concept["_meta"].get("updated"):
+                bits.append(concept["_meta"]["updated"])
             tag = f" [{' · '.join(bits)}]" if bits else ""
-            out.append(f"  {doc['path']}{tag}  {doc['description']}")
+            out.append(f"  {concept['path']}{tag}  {concept['description']}")
     return "\n".join(out)
 
 
 def curated(root, config):
-    exclude_paths = set(config.get("exclude_paths", []))
-    return [d for d in discover(root, config) if d["path"] not in exclude_paths]
+    reserved = set(config.get("reserved_files", []))
+    return [c for c in discover(root, config) if c["path"] not in reserved]
 
 
 def _inline_code_spans(text):
@@ -223,7 +223,7 @@ def check_skill_refs(root, config):
     if not skill_ref_prefixes:
         return errors
     # Split each span on whitespace so an embedded path in a compound command span
-    # (e.g. `python3 scripts/docs.py check`) is still checked, not just bare-path spans.
+    # (e.g. `python3 scripts/knowledge.py check`) is still checked, not just bare-path spans.
     for token in (part for span in _inline_code_spans(raw) for part in span.split()):
         if not token.startswith(skill_ref_prefixes):
             continue
@@ -241,21 +241,8 @@ def check_skill_refs(root, config):
     return errors
 
 
-def run_check(root, config):
-    """Return (exit_code, report_text). Non-zero when any curated doc is invalid."""
-    docs_list = curated(root, config)
-    lines = []
-    for doc in docs_list:
-        for error in validate(doc, config):
-            lines.append(f"{doc['path']}: {error}")
-    lines.extend(check_skill_refs(root, config))
-    if lines:
-        return 1, "\n".join(lines) + "\ndocs check: FAILED"
-    return 0, f"docs check: OK ({len(docs_list)} docs)"
-
-
 def site_url(path):
-    """Map a repo doc path to its VitePress URL (crate docs are synced under knowledge/)."""
+    """Map a repo concept path to its VitePress URL (crate concepts are synced under knowledge/)."""
     trimmed = path[:-3] if path.endswith(".md") else path
     if trimmed.startswith("knowledge/"):
         return "/" + trimmed[len("knowledge/") :]
@@ -266,21 +253,59 @@ def site_url(path):
     return "/" + trimmed
 
 
-def build_sidebar(docs_list, config):
-    """VitePress sidebar: one collapsible section per kind, items by title."""
-    kinds = config["kinds"]
+def build_index(concepts, config):
+    """OKF directory listing (§6): no frontmatter; a section per type;
+    '* [Title](/url) - description' entries. Doubles as the VitePress home."""
+    types = config["types"]
+    title = config.get("index_title", "Knowledge")
+    out = [f"# {title}", ""]
+    for type_name in types:
+        group = [c for c in concepts if c["type"] == type_name]
+        if not group:
+            continue
+        out.append(f"## {type_name.capitalize()}")
+        out.append("")
+        for concept in group:
+            label = concept["title"] or concept["path"]
+            link = site_url(concept["path"])
+            desc = concept["description"]
+            entry = f"* [{label}]({link}) - {desc}" if desc else f"* [{label}]({link})"
+            out.append(entry)
+        out.append("")
+    return "\n".join(out).rstrip() + "\n"
+
+
+def check_index_fresh(root, config):
+    """The committed knowledge/index.md must match a fresh `index` generation."""
+    expected = build_index(curated(root, config), config)
+    index_abs = os.path.join(root, "knowledge", "index.md")
+    actual = ""
+    if os.path.exists(index_abs):
+        with open(index_abs, encoding="utf-8") as handle:
+            actual = handle.read()
+    if actual != expected:
+        return [
+            "knowledge/index.md is stale — regenerate with "
+            "`python3 scripts/knowledge.py index`"
+        ]
+    return []
+
+
+def build_sidebar(concepts, config):
+    """VitePress sidebar: one collapsible section per type, items by title."""
+    types = config["types"]
     sidebar = []
-    for kind in kinds:
+    for type_name in types:
         items = [
-            {"text": d["title"] or d["path"], "link": site_url(d["path"])}
-            for d in docs_list
-            if d["kind"] == kind
+            {"text": c["title"] or c["path"], "link": site_url(c["path"])}
+            for c in concepts
+            if c["type"] == type_name
         ]
         if items:
             sidebar.append(
                 {
-                    "text": kind.capitalize(),
-                    "collapsed": kind == "decision",
+                    "text": type_name.capitalize(),
+                    "collapsed": type_name == "decision",
                     "items": items,
                 }
             )
@@ -288,11 +313,11 @@ def build_sidebar(docs_list, config):
 
 
 def sync_site(root, config):
-    """Copy crate docs into knowledge/crates/<crate>/... so VitePress can render them.
+    """Copy crate concepts into knowledge/crates/<crate>/... so VitePress can render them.
     Returns the count staged. The staged tree is gitignored and rebuilt."""
     count = 0
-    for doc in curated(root, config):
-        path = doc["path"]
+    for concept in curated(root, config):
+        path = concept["path"]
         if path.startswith("crates/") and "/knowledge/" in path:
             crate = path.split("/")[1]
             rest = path.split("/knowledge/", 1)[1]
@@ -301,6 +326,20 @@ def sync_site(root, config):
             shutil.copyfile(os.path.join(root, path), dest)
             count += 1
     return count
+
+
+def run_check(root, config):
+    """Return (exit_code, report_text). Non-zero when any curated concept is invalid."""
+    concepts = curated(root, config)
+    lines = []
+    for concept in concepts:
+        for error in validate(concept, config):
+            lines.append(f"{concept['path']}: {error}")
+    lines.extend(check_skill_refs(root, config))
+    lines.extend(check_index_fresh(root, config))
+    if lines:
+        return 1, "\n".join(lines) + "\nknowledge check: FAILED"
+    return 0, f"knowledge check: OK ({len(concepts)} concepts)"
 
 
 def parse_headings(text):
@@ -323,17 +362,31 @@ def parse_headings(text):
     return headings
 
 
-def cmd_outline(doc_path, root):
-    """Print the heading tree (level, text, line number) for a doc."""
-    abspath = os.path.join(root, doc_path) if not os.path.isabs(doc_path) else doc_path
+def cmd_index(root, config, output=None):
+    """Generate the OKF listing and write knowledge/index.md (or --output)."""
+    content = build_index(curated(root, config), config)
+    dest = output or os.path.join(root, "knowledge", "index.md")
+    with open(dest, "w", encoding="utf-8") as handle:
+        handle.write(content)
+    print(f"knowledge index: wrote {os.path.relpath(dest, root)}")
+    return 0
+
+
+def cmd_outline(concept_path, root):
+    """Print the heading tree (level, text, line number) for a concept."""
+    abspath = (
+        os.path.join(root, concept_path)
+        if not os.path.isabs(concept_path)
+        else concept_path
+    )
     if not os.path.exists(abspath):
-        print(f"docs outline: file not found: {doc_path}", file=sys.stderr)
+        print(f"knowledge outline: file not found: {concept_path}", file=sys.stderr)
         return 1
     with open(abspath, encoding="utf-8") as handle:
         text = handle.read()
     headings = parse_headings(text)
     if not headings:
-        print(f"docs outline: no headings found in {doc_path}")
+        print(f"knowledge outline: no headings found in {concept_path}")
         return 0
     for level, heading_text, lineno in headings:
         indent = "  " * (level - 1)
@@ -341,18 +394,24 @@ def cmd_outline(doc_path, root):
     return 0
 
 
-def cmd_section(doc_path, heading_query, root):
+def cmd_section(concept_path, heading_query, root):
     """Print the section matching heading_query (case-insensitive substring)."""
-    abspath = os.path.join(root, doc_path) if not os.path.isabs(doc_path) else doc_path
+    abspath = (
+        os.path.join(root, concept_path)
+        if not os.path.isabs(concept_path)
+        else concept_path
+    )
     if not os.path.exists(abspath):
-        print(f"docs section: file not found: {doc_path}", file=sys.stderr)
+        print(f"knowledge section: file not found: {concept_path}", file=sys.stderr)
         return 1
     with open(abspath, encoding="utf-8") as handle:
         text = handle.read()
     lines = text.splitlines(keepends=True)
     headings = parse_headings(text)
     if not headings:
-        print(f"docs section: no headings found in {doc_path}", file=sys.stderr)
+        print(
+            f"knowledge section: no headings found in {concept_path}", file=sys.stderr
+        )
         return 1
 
     query_lower = heading_query.lower()
@@ -367,7 +426,7 @@ def cmd_section(doc_path, heading_query, root):
     if match_index is None:
         available = "\n".join(f"  {heading_text}" for _, heading_text, _ in headings)
         print(
-            f"docs section: no heading contains '{heading_query}'. Available headings:\n{available}",
+            f"knowledge section: no heading contains '{heading_query}'. Available headings:\n{available}",
             file=sys.stderr,
         )
         return 1
@@ -389,11 +448,13 @@ def cmd_section(doc_path, heading_query, root):
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(prog="docs", description=__doc__.splitlines()[0])
+    parser = argparse.ArgumentParser(
+        prog="knowledge", description=__doc__.splitlines()[0]
+    )
     sub = parser.add_subparsers(dest="command", required=True)
 
-    p_list = sub.add_parser("list", help="list curated docs grouped by kind")
-    p_list.add_argument("--kind")
+    p_list = sub.add_parser("list", help="list curated concepts grouped by type")
+    p_list.add_argument("--type", dest="type_name")
     p_list.add_argument("--crate")
     p_list.add_argument("--lifecycle")
     p_list.add_argument("--json", action="store_true", help="machine-readable array")
@@ -403,16 +464,25 @@ def main(argv=None):
 
     p_sidebar = sub.add_parser("sidebar", help="emit the VitePress sidebar JSON")
     p_sidebar.add_argument("-o", "--output", help="write here instead of stdout")
-    sub.add_parser("sync", help="stage crate docs into the site tree")
+    sub.add_parser("sync", help="stage crate concepts into the site tree")
 
-    p_outline = sub.add_parser("outline", help="print the heading tree of a doc file")
-    p_outline.add_argument(
-        "doc_path", help="path to the markdown file (repo-relative or absolute)"
+    p_index = sub.add_parser(
+        "index", help="generate the OKF listing (knowledge/index.md)"
+    )
+    p_index.add_argument(
+        "-o", "--output", help="write here instead of knowledge/index.md"
     )
 
-    p_section = sub.add_parser("section", help="print one section of a doc file")
+    p_outline = sub.add_parser(
+        "outline", help="print the heading tree of a concept file"
+    )
+    p_outline.add_argument(
+        "concept_path", help="path to the markdown file (repo-relative or absolute)"
+    )
+
+    p_section = sub.add_parser("section", help="print one section of a concept file")
     p_section.add_argument(
-        "doc_path", help="path to the markdown file (repo-relative or absolute)"
+        "concept_path", help="path to the markdown file (repo-relative or absolute)"
     )
     p_section.add_argument(
         "heading", help="substring to match against heading text (case-insensitive)"
@@ -421,14 +491,14 @@ def main(argv=None):
     args = parser.parse_args(argv)
 
     if args.command == "outline":
-        return cmd_outline(args.doc_path, REPO_ROOT)
+        return cmd_outline(args.concept_path, REPO_ROOT)
 
     if args.command == "section":
-        return cmd_section(args.doc_path, args.heading, REPO_ROOT)
+        return cmd_section(args.concept_path, args.heading, REPO_ROOT)
 
     # Commands below require config.
     config = load_config()
-    kinds = config["kinds"]
+    types = config["types"]
     lifecycles = config.get("lifecycles", ["current", "superseded", "historical"])
 
     if args.command == "check":
@@ -448,29 +518,34 @@ def main(argv=None):
             print(payload)
         return 0
 
+    if args.command == "index":
+        return cmd_index(REPO_ROOT, config, args.output)
+
     if args.command == "sync":
-        print(f"docs sync: staged {sync_site(REPO_ROOT, config)} crate docs")
+        print(f"knowledge sync: staged {sync_site(REPO_ROOT, config)} crate concepts")
         return 0
 
     # args.command == "list"
-    # Validate --kind / --lifecycle after loading config so choices are accurate.
-    kind = getattr(args, "kind", None)
+    # Validate --type / --lifecycle after loading config so choices are accurate.
+    type_name = getattr(args, "type_name", None)
     lifecycle = getattr(args, "lifecycle", None)
-    if kind and kind not in kinds:
-        parser.error(f"argument --kind: invalid choice: '{kind}' (choose from {kinds})")
+    if type_name and type_name not in types:
+        parser.error(
+            f"argument --type: invalid choice: '{type_name}' (choose from {types})"
+        )
     if lifecycle and lifecycle not in lifecycles:
         parser.error(
             f"argument --lifecycle: invalid choice: '{lifecycle}' (choose from {lifecycles})"
         )
-    docs_list = filter_docs(
-        curated(REPO_ROOT, config), kind, getattr(args, "crate", None), lifecycle
+    concepts = filter_concepts(
+        curated(REPO_ROOT, config), type_name, getattr(args, "crate", None), lifecycle
     )
     if getattr(args, "json", False):
-        print(json.dumps([public_view(d) for d in docs_list], indent=2))
+        print(json.dumps([public_view(c) for c in concepts], indent=2))
     elif getattr(args, "paths", False):
-        print("\n".join(d["path"] for d in docs_list))
+        print("\n".join(c["path"] for c in concepts))
     else:
-        print(format_list(docs_list, config))
+        print(format_list(concepts, config))
     return 0
 
 

@@ -1,7 +1,7 @@
 ---
 title: COE template
 description: Correction of Error — the fill-in record for a real failure the setup permitted.
-kind: decision
+type: decision
 ---
 
 <!-- foundry-seed: coe-template v1 -->
