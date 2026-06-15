@@ -1,5 +1,6 @@
 {
   "name": "foundry",
+  "description": "Foundry: a Claude Code plugin that bootstraps an AI-assisted engineering setup into any repo.",
   "owner": { "name": "Brandon Ransom" },
   "plugins": [
     {
