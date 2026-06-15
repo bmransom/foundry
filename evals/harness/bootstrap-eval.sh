@@ -169,6 +169,8 @@ fi
 overall=0
 if [ "$1" = "all" ]; then
   for fixture_path in "$FIXTURES_DIR"/*/; do
+    # Bootstrap fixtures carry an expectations.json; skip the others (navigation-eval fixtures).
+    [ -f "$fixture_path/expectations.json" ] || continue
     run_fixture "$(basename "$fixture_path")" || overall=1
   done
 else

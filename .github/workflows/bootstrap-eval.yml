@@ -5,13 +5,11 @@ on:
       fixture:
         description: "Fixture to evaluate (rust-cli | python-service | ts-monorepo | all)"
         default: all
-  pull_request:
-    branches: [main]
 jobs:
   eval:
-    # Manual runs, or the release-please Release PR — the AC-2.3 gate: a version bump
-    # ships only on a green L3 eval. Skipped on ordinary PRs to avoid the cost.
-    if: github.event_name == 'workflow_dispatch' || startsWith(github.head_ref, 'release-please--')
+    # Manual dispatch only. The L3 evals run a headless `claude` bootstrap — minutes and
+    # API spend per fixture — so they are not a per-PR CI gate. The AC-2.3 release gate is
+    # satisfied by running them locally, green, before merging the Release PR.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
