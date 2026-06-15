@@ -10,7 +10,7 @@
 ### Features
 
 * **evals:** navigation eval with cost/correctness visualization ([03592f8](https://github.com/bmransom/foundry/commit/03592f8b94694c3d7a12608cfa1bdbdec87bba9b))
-* **knowledge:** align to OKF — type field, knowledge/concept vocabulary, generated index + log ([0f57589](https://github.com/bmransom/foundry/commit/0f57589c4880ae089601e4d7117e5e39f064cd7c))
+* **knowledge:** align to OKF: type field, knowledge/concept vocabulary, generated index + log ([0f57589](https://github.com/bmransom/foundry/commit/0f57589c4880ae089601e4d7117e5e39f064cd7c))
 
 
 ### Bug Fixes
@@ -21,7 +21,3 @@
 ### Miscellaneous
 
 * adopt 0.x versioning until the knowledge format stabilizes ([a7069a3](https://github.com/bmransom/foundry/commit/a7069a3fcb81551498b15a07f0ae727bf07bcc2e))
-
-## 1.0.0
-
-Initial release.
