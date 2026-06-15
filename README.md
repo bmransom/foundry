@@ -1,7 +1,7 @@
 # Foundry
 
 [![CI](https://github.com/bmransom/foundry/actions/workflows/check-fast.yml/badge.svg)](https://github.com/bmransom/foundry/actions/workflows/check-fast.yml)
-![Version](https://img.shields.io/badge/version-1.0.0-blue.svg) <!-- x-release-please-version -->
+![Version](https://img.shields.io/badge/version-0.1.0-blue.svg) <!-- x-release-please-version -->
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 A Claude Code plugin that bootstraps an AI-assisted engineering setup into any repo:
