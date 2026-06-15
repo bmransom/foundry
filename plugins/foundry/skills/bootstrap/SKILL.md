@@ -61,10 +61,13 @@ when the caller supplies them. The questions:
   column, and polarity statement; the first ROADMAP epic; the
   `knowledge/.vitepress/site.json` title and description. Keep the `foundry-seed:`
   markers.
-- Write `.foundry-manifest.json`: the plugin version, plus per verbatim file its
-  template name, marker version, and `shasum -a 256` of the installed content —
-  `/foundry:update` tells pristine from customized by these hashes. The shape:
-  `{"pluginVersion": "<v>", "files": {"<repo path>": {"template": "<name>",
+- Write `.foundry-manifest.json`: the plugin version, the **convention version**
+  (the layout the plugin installs — `2` for the OKF `knowledge/` convention; bumped
+  only by a convention break, so `/foundry:update` knows whether a repo needs
+  migrating), plus per verbatim file its template name, marker version, and
+  `shasum -a 256` of the installed content — `/foundry:update` tells pristine from
+  customized by these hashes. The shape: `{"pluginVersion": "<v>",
+  "conventionVersion": 2, "files": {"<repo path>": {"template": "<name>",
   "version": <N>, "sha256": "<hex>"}}}`.
 
 ## 4 · Generate

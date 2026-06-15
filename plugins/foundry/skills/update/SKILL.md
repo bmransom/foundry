@@ -1,39 +1,69 @@
 ---
 name: update
 description: Use when explicitly asked to update, sync, or refresh the foundry
-  templates in a bootstrapped repo (/foundry:update). Templates only — skills
-  and agents propagate with the plugin install itself, no per-repo action.
+  templates in a bootstrapped repo, or to migrate one across a convention break
+  (/foundry:update). Templates and convention migrations only — skills and agents
+  propagate with the plugin install, no per-repo action.
 ---
 
 # Update
 
-Re-sync the repo's installed templates with the plugin's current ones.
-Templates ship with the plugin at `<base dir>/../../templates/` — `verbatim/`
-(byte-exact, manifest-tracked) and `seeds/` (repo-owned, announce only).
+Re-sync the repo's installed templates with the plugin's, first crossing any
+**convention break** the repo is behind (a release that renamed templates, moved
+directories, or changed frontmatter). Templates ship at `<base dir>/../../templates/`
+— `verbatim/` (byte-exact, manifest-tracked) and `seeds/` (repo-owned). Migrations
+live in `references/migrations/`.
 
-Copy into your reply; check off as you go. A gate is a **prohibition**: do not
-start a later phase until the prior gate is met.
+Copy into your reply; check off as you go. A gate is a **prohibition**: do not start
+a later phase until the prior gate is met.
 
-- [ ] **1 Read state** — `.foundry-manifest.json`; absent → Legacy mode (below). GATE: no file writes before the full comparison report.
-- [ ] **2 Compare verbatim** — classify every plugin template: current, pristine, customized, or new. GATE: classification only — no copies yet.
-- [ ] **3 Compare seeds** — `foundry-seed:` marker versions, repo vs plugin. GATE: never touch a repo seed.
-- [ ] **4 Report** — the verdict table in the reply; then apply refreshes and new installs. GATE: no write before the table.
-- [ ] **5 Verify** — the repo's canonical gate green; manifest current. GATE: no commit without a pasted PASS and the caller's go-ahead.
+- [ ] **1 Read state** — `.foundry-manifest.json`; absent → Legacy mode. GATE: no writes before the report.
+- [ ] **2 Detect & plan migrations** — place the repo's convention; build the chain to the registry head. GATE: clean tree; dry-run report; no writes.
+- [ ] **3 Migrate** — on a branch, run each migration in order, re-checking between steps. GATE: stop on the first failed step.
+- [ ] **4 Compare verbatim** — classify every template. GATE: classification only, no copies.
+- [ ] **5 Compare seeds** — `foundry-seed:` versions, repo vs plugin. GATE: never touch a repo seed.
+- [ ] **6 Report** — the verdict table; then apply refreshes and new installs. GATE: no write before the table.
+- [ ] **7 Verify** — migration checks green; canonical gate not regressed; manifest current. GATE: no commit or merge without a pasted PASS and go-ahead.
 
 ## 1 · Read state
 
-Read `.foundry-manifest.json` at the repo root — the canonical shape, written
-by bootstrap and backfilled by Legacy mode:
+Read `.foundry-manifest.json` — the shape bootstrap writes and Legacy backfills:
 
 ```json
-{ "pluginVersion": "0.1.0",
+{ "pluginVersion": "0.2.0", "conventionVersion": 2,
   "files": { "scripts/board.sh": { "template": "board", "version": 1, "sha256": "<hex>" } } }
 ```
 
-Absent → the repo predates the manifest; switch to Legacy mode below. Phases
-2–3 are read-only; nothing is written until the report (4) is in the reply.
+`conventionVersion` is the layout the repo is on; absent → §2 places it by detection.
+No manifest → Legacy mode. Phases 2–6 stay read-only until each one's report.
 
-## 2 · Compare verbatim
+## 2 · Detect & plan migrations
+
+Read `references/migrations/README.md` — the registry, ordered by convention version.
+The repo's convention is the manifest `conventionVersion`, else the earliest whose
+detector fires; the plugin's is the registry head. The chain is every migration with
+`repo < convention ≤ head`, ascending — empty → skip to §4.
+
+GATE: refuse on a dirty tree (tell the caller to commit a baseline); place the repo
+by structure, never guess; then **dry-run report** the whole chain, writing nothing.
+
+## 3 · Migrate
+
+**Preflight — this is how the branch is created; never branch by hand:**
+`bash "<base dir>/references/migrations/preflight.sh" <head-id>`. It refuses a dirty
+tree (nonzero exit → STOP: relay its message and end; do not commit, stash, or work
+around it) and, on a clean tree, creates and switches to `foundry/migrate-<head-id>`.
+All writes land on that branch; leave it for the caller to merge. Record the gate's
+current result as the **baseline**.
+
+Run each migration ascending, per its playbook (`references/migrations/<id>.md`): its
+primitives exactly, its judgment by reading the repo; regenerate `index.md` /
+`log.md`; re-run the structure and frontmatter checks. A step that fails **stops the
+chain** — prior steps stay, report which failed, do not continue. After the last,
+stamp `conventionVersion = head`. The phases below then confirm current and catch any
+refresh unrelated to the break.
+
+## 4 · Compare verbatim
 
 Per template under `verbatim/`: its marker version (`foundry-template: <name>
 v<N>`) vs the manifest entry's version.
@@ -42,54 +72,48 @@ v<N>`) vs the manifest entry's version.
 |---|---|---|
 | same version | **current** | skip |
 | newer; `shasum -a 256` of the repo file equals the manifest hash | **pristine** | refresh: copy byte-exact; re-record name, version, hash |
-| newer; hash differs | **customized** | Leave the file alone. Flag two diffs: the template changelog (old → new template) and the local customization (old template → repo file). Recover the old pristine content from git history; if it's gone, show only the changelog and flag the customization unrecoverable. |
+| newer; hash differs | **customized** | Leave the file. Flag two diffs: the template changelog (old → new template) and the local change (old template → repo file). Recover the old pristine content from git history; if gone, show only the changelog and flag it unrecoverable. |
 | no manifest entry | **new** | install like bootstrap's Copy: byte-exact, marker included, scripts executable; add the manifest entry |
 
-Manifest hashes cover the installed content *including* its marker — hash what
-is on disk at install or refresh time.
+Manifest hashes cover the installed content *including* its marker — hash what is on
+disk at install or refresh time.
 
-## 3 · Compare seeds
+## 5 · Compare seeds
 
-Seeds are repo-owned; divergence is the point. Compare the seed marker in the
-repo file vs the plugin's copy — `foundry-seed: <name> v<N>` in markdown, the
-`"_foundry_seed"` key in JSON seeds. Plugin newer → **announced**: show the
-repo-copy-vs-plugin-seed diff so the repo can adopt what it wants. Never write
-to a repo seed.
+Seeds are repo-owned; divergence is the point. Compare the seed marker repo vs plugin
+— `foundry-seed: <name> v<N>` in markdown, the `"_foundry_seed"` key in JSON. Plugin
+newer → **announced**: show the repo-copy-vs-plugin-seed diff so the repo can adopt
+what it wants. Never write to a repo seed.
 
-## 4 · Report
+## 6 · Report
 
-One table before anything is written — a row per template: path | class
-(verbatim / seed) | verdict (current / refreshed / customized / new /
-announced; Legacy mode adds pristine-backfilled / needs-review).
+One table before anything is written — a row per template: path | class (verbatim /
+seed) | verdict (current / refreshed / customized / new / announced; Legacy adds
+pristine-backfilled / needs-review). Then apply refreshes and new installs only: copy
+byte-exact, keep scripts executable, update each manifest entry.
 
-Then apply: refreshes and new installs only — copy byte-exact from the
-template, keep scripts executable, update each entry in the manifest.
+## 7 · Verify
 
-## 5 · Verify
-
-Run the repo's canonical gate — the command AGENTS.md Commands names — and
-paste the PASS. If a refresh broke the gate, revert that refresh, restore its
-manifest entry, and flag it in the report. Set the manifest's plugin version to
-the installed plugin's (`.claude-plugin/plugin.json`). Review `git status`,
-propose the commit with explicit paths, and **ask before committing**.
+Migration checks first: `python3 scripts/knowledge.py check`, a residue scan (no
+`kind:`, no stale `docs/` ref, no `docs.py`), manifest-sha match — all green. Then the
+repo's canonical gate (the command AGENTS.md Commands names): require **no
+regression** against the §3 baseline — a check green before must stay green; a gate
+already red before is reported, not blamed. Revert and flag any refresh that broke a
+check. Set the manifest's plugin version to the installed plugin's. Review `git
+status`, propose the commit with explicit paths, **ask before committing**, and leave
+the migration branch for the caller to merge.
 
 ## Legacy mode — pre-manifest repo
 
-The plugin ships only current templates, so "locally customized" vs "older
-pristine" is undecidable from content alone — say so in the report; never
-guess.
+No manifest means "customized" vs "older pristine" is undecidable from content alone
+— say so; never guess. A no-manifest repo is also pre-`conventionVersion`: §2 places
+its convention by detection, so a Legacy repo on the old layout still migrates.
 
-Per verbatim file, compare content modulo the marker against the current
-template — strip marker lines with `grep -vF 'foundry-template:'` on both
-sides, the idiom foundry's own check-byte-identity.sh uses:
+Per verbatim file, compare content modulo the marker against the current template
+(strip marker lines with `grep -vF 'foundry-template:'` both sides): identical →
+record pristine at the current version; different → flag for review with the diff, no
+entry, no write. Seeds need no manifest — run §5 as usual.
 
-- identical → record as pristine at the current template version;
-- different → flag for human review with the diff; no manifest entry, no write.
-
-Seeds need no manifest — run 3 · Compare seeds as usual; announcements work in
-Legacy mode too.
-
-Write `.foundry-manifest.json` from the verified entries plus the plugin
-version, report, and finish with 5 · Verify. The backfill is a write, so it
-needs the pasted PASS and the caller's go-ahead like any other. Refreshes wait
-for the next run, which proceeds in manifest mode above.
+Write `.foundry-manifest.json` from the verified entries plus the plugin and
+convention versions, then finish with §7. The backfill is a write — it needs the
+pasted PASS and go-ahead. Refreshes wait for the next run, in manifest mode above.
