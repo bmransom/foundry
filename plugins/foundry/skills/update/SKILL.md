@@ -27,15 +27,16 @@ a later phase until the prior gate is met.
 
 ## 1 · Read state
 
-Read `.foundry-manifest.json` — the shape bootstrap writes and Legacy backfills:
+Read `.foundry/manifest.json` (legacy fallback: a top-level `.foundry-manifest.json`) —
+the shape bootstrap writes and Legacy backfills:
 
 ```json
-{ "pluginVersion": "0.2.0", "conventionVersion": 2,
-  "files": { "scripts/board.sh": { "template": "board", "version": 1, "sha256": "<hex>" } } }
+{ "pluginVersion": "0.2.0", "conventionVersion": 3,
+  "harnesses": ["claude-code"], "files": { "scripts/board.sh": { "template": "board", "version": 1, "sha256": "<hex>" } } }
 ```
 
 `conventionVersion` is the layout the repo is on; absent → §2 places it by detection.
-No manifest → Legacy mode. Phases 2–6 stay read-only until each one's report.
+`harnesses` is the recorded target set; add or remove one per `references/add-harness.md`. No manifest → Legacy mode.
 
 ## 2 · Detect & plan migrations
 
@@ -94,8 +95,8 @@ byte-exact, keep scripts executable, update each manifest entry.
 
 ## 7 · Verify
 
-Migration checks first: `python3 scripts/knowledge.py check`, a residue scan (no
-`kind:`, no stale `docs/` ref, no `docs.py`), manifest-sha match — all green. Then the
+Migration checks first: `python3 scripts/knowledge.py check`, each applied migration's
+residue scan (per its playbook §Self-verify), manifest-sha match — all green. Then the
 repo's canonical gate (the command AGENTS.md Commands names): require **no
 regression** against the §3 baseline — a check green before must stay green; a gate
 already red before is reported, not blamed. Revert and flag any refresh that broke a
@@ -114,6 +115,6 @@ Per verbatim file, compare content modulo the marker against the current templat
 record pristine at the current version; different → flag for review with the diff, no
 entry, no write. Seeds need no manifest — run §5 as usual.
 
-Write `.foundry-manifest.json` from the verified entries plus the plugin and
+Write `.foundry/manifest.json` from the verified entries plus the plugin and
 convention versions, then finish with §7. The backfill is a write — it needs the
 pasted PASS and go-ahead. Refreshes wait for the next run, in manifest mode above.
