@@ -10,13 +10,13 @@ make_fixture() {
   fixture="$(mktemp -d "$FIXTURE_ROOT/case.XXXXXX")"
   mkdir -p "$fixture/plugins/foundry/skills/code"
   mkdir -p "$fixture/plugins/foundry/agents"
-  mkdir -p "$fixture/plugins/foundry/templates/seeds/.claude/rules"
+  mkdir -p "$fixture/plugins/foundry/templates/seeds/rules"
   # 10-line skill — well under budget
   printf '%s\n' {1..10} > "$fixture/plugins/foundry/skills/code/SKILL.md"
   # 10-line agent — well under budget
   printf '%s\n' {1..10} > "$fixture/plugins/foundry/agents/spec-reviewer.md"
   # 10-line seed rule — well under budget
-  printf '%s\n' {1..10} > "$fixture/plugins/foundry/templates/seeds/.claude/rules/spec-conventions.md"
+  printf '%s\n' {1..10} > "$fixture/plugins/foundry/templates/seeds/rules/spec-conventions.md"
   echo "$fixture"
 }
 
@@ -43,7 +43,7 @@ if "$SCRIPT" "$fixture" >/dev/null 2>&1; then fail "oversize agent should fail";
 
 # Case (d): seed rule over budget → fail
 fixture="$(make_fixture)"
-printf '%s\n' {1..70} > "$fixture/plugins/foundry/templates/seeds/.claude/rules/spec-conventions.md"
+printf '%s\n' {1..70} > "$fixture/plugins/foundry/templates/seeds/rules/spec-conventions.md"
 if "$SCRIPT" "$fixture" >/dev/null 2>&1; then fail "oversize seed rule should fail"; fi
 
 # Case (e): missing dirs → PASS (nothing to lint is fine)

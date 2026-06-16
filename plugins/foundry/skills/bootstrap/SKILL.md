@@ -38,8 +38,14 @@ report the conflict and skip the file.
 
 ## 2 · Interview
 
-Ask through the host's question tool when one is present; accept canned answers
-when the caller supplies them. The questions:
+Ask through the harness's question tool when one is present; accept canned answers
+when the caller supplies them.
+
+First, the **target harness(es)** — which AI coding tool(s) will run this setup:
+Claude Code, Codex, or both (multi-select; default both). It drives what Generate
+emits and is recorded in the manifest.
+
+Then the content questions:
 
 1. One-paragraph project description.
 2. 5–10 domain terms — and the wrong names that keep appearing (they seed the
@@ -61,22 +67,24 @@ when the caller supplies them. The questions:
   column, and polarity statement; the first ROADMAP epic; the
   `knowledge/.vitepress/site.json` title and description. Keep the `foundry-seed:`
   markers.
-- Write `.foundry-manifest.json`: the plugin version, the **convention version**
-  (the layout the plugin installs — `2` for the OKF `knowledge/` convention; bumped
-  only by a convention break, so the update skill knows whether a repo needs
-  migrating), plus per verbatim file its template name, marker version, and
-  `shasum -a 256` of the installed content — the update skill tells pristine from
-  customized by these hashes. The shape: `{"pluginVersion": "<v>",
-  "conventionVersion": 2, "files": {"<repo path>": {"template": "<name>",
-  "version": <N>, "sha256": "<hex>"}}}`.
+- Write `.foundry/manifest.json`: the plugin version, the **convention version**
+  (`3` for the harness-agnostic layout; bumped only by a convention break, so the
+  update skill knows whether a repo needs migrating), the **harness set** (the
+  interview's target harnesses), plus per verbatim file its template name, marker
+  version, and `shasum -a 256` of the installed content — the update skill tells
+  pristine from customized by these hashes. The shape: `{"pluginVersion": "<v>",
+  "conventionVersion": 3, "harnesses": ["claude-code", "codex"], "files": {"<repo
+  path>": {"template": "<name>", "version": <N>, "sha256": "<hex>"}}}`.
 
 ## 4 · Generate
 
 Read `references/generate.md` first — it carries the AGENTS.md skeleton and
 every per-stack mapping. Produce:
 
-- `AGENTS.md` from the skeleton, filled with detected + interview content; then
-  `ln -s AGENTS.md CLAUDE.md` — a symlink, not a copy.
+- `AGENTS.md` from the skeleton, filled with detected + interview content — the
+  single instruction source every harness reads. **Only when Claude Code is a target
+  harness**, add `ln -s AGENTS.md CLAUDE.md` (a symlink pointer, not a copy); emit no
+  `CLAUDE.md` for a Codex-only repo.
 - `scripts/check-fast.sh` wired to the repo's real commands. Commands must be
   repo-portable: discover project-local toolchains (venv, `node_modules/.bin`)
   at runtime; never hardcode machine paths. CI installs dependencies first.
@@ -95,7 +103,10 @@ every per-stack mapping. Produce:
 
 Read `references/verify.md`; run its checklist end to end and paste each
 output: file inventory, hooks installed, vitepress build, walking-skeleton
-Scenario green, `check-fast: PASS`.
+Scenario green, `check-fast: PASS`. **Per-harness readability**: confirm each
+selected harness's instruction file resolves (`AGENTS.md` for every harness;
+`CLAUDE.md` → `AGENTS.md` when Claude Code is selected) and that no unselected
+harness's shim is present.
 
 The gate must also **discriminate**: seed a failing check, watch the gate fail,
 remove the seed, watch it pass.

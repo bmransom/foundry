@@ -10,11 +10,11 @@ REPO="${1:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 
 SKILL_BUDGET=120   # plugins/foundry/skills/*/SKILL.md
 AGENT_BUDGET=60    # plugins/foundry/agents/*.md
-RULE_BUDGET=60     # plugins/foundry/templates/seeds/.claude/rules/*.md
+RULE_BUDGET=60     # plugins/foundry/templates/seeds/rules/*.md
 
 SKILLS_DIR="$REPO/plugins/foundry/skills"
 AGENTS_DIR="$REPO/plugins/foundry/agents"
-RULES_DIR="$REPO/plugins/foundry/templates/seeds/.claude/rules"
+RULES_DIR="$REPO/plugins/foundry/templates/seeds/rules"
 
 has_violation=0
 
