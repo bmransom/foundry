@@ -31,19 +31,18 @@ conventions for its own development last (Wave 6), once the Codex path is green.
   `/foundry:<name>` command form; keep each `SKILL.md` frontmatter to `name` +
   `description` — `plugins/foundry/skills/{bootstrap,code,update}/SKILL.md`.
   → AC-2.2, AC-2.3
-- [ ] **T5** `spec-reviewer`, one source two wrappers: extract the review criteria to a
-  shared source; keep the Claude agent; add the Codex twin (`developer_instructions`,
-  `sandbox_mode = "read-only"`); add a gate assertion that the wrappers carry identical
-  criteria — `plugins/foundry/agents/{spec-reviewer.md,spec-reviewer.codex.toml,spec-reviewer.criteria.md}`,
-  `scripts/check-fast.sh`. → AC-2.6, AC-2.5 (definition)
+- [ ] **T5** `spec-reviewer`, shared single file: confirm `agents/spec-reviewer.md`
+  frontmatter is Codex-clean (the subset both harnesses honor) so the one `.md` serves
+  both; read-only holds via its `tools` frontmatter. No twin, no drift guard (verified:
+  Codex reads `agents/*.md`) — `plugins/foundry/agents/spec-reviewer.md`.
+  → AC-2.6, AC-2.5 (definition)
 - [ ] **T6** `code` dispatch rule: delegate review through the running harness's
   subagent mechanism, inline fallback where none exists — never skip —
   `plugins/foundry/skills/code/SKILL.md`. → AC-2.5
-- [ ] **T7** Codex distribution: a Codex `plugin.json` (`components`: skills + the
-  reviewer agent) mirroring the Claude marketplace/plugin, plus an install how-to;
-  confirm the manifest schema + location against a live `codex` —
-  `plugins/foundry/plugin.json` (location per `/codex/plugins/build`),
-  `knowledge/releasing.md`. → AC-2.7, AC-2.1
+- [ ] **T7** Codex distribution: add `plugins/foundry/.codex-plugin/plugin.json`
+  (mirror `.claude-plugin/plugin.json` + `"skills": "./skills/"` + an `interface` block;
+  confirm the `agents/` key) and a Codex marketplace entry, plus an install how-to —
+  `plugins/foundry/.codex-plugin/plugin.json`, `knowledge/releasing.md`. → AC-2.7, AC-2.1
 
 ## Wave 3: Bootstrap emission — Axis B (depends: Waves 1–2)
 
@@ -109,7 +108,7 @@ conventions for its own development last (Wave 6), once the Codex path is green.
 ## Wave 6: Verification
 
 - [ ] Run `scripts/check-fast.sh` — foundry self-host gate (plugin validate,
-  byte-identity, knowledge check, script tests, the new reviewer drift guard). Must PASS.
+  byte-identity, knowledge check, script tests). Must PASS.
 - [ ] Confirm T16–T19 evals green; paste results.
 - [ ] Regression: the existing `claude -p` bootstrap / update / migration evals stay
   green — the changes are structural and additive.
@@ -144,7 +143,7 @@ un-covered case fail loudly, not catastrophically — so breadth accretes as nee
 | 2.3 no hardcoded invocation | T4 | T16 |
 | 2.4 template resolution | T3 | T16 |
 | 2.5 dispatch or inline | T5, T6 | T16, T19 |
-| 2.6 shared spec-reviewer | T5 | T19; drift guard |
+| 2.6 shared spec-reviewer | T5 | T19 (parity) |
 | 2.7 Codex install path | T7 | T16 (install + run) |
 | 3.1 interview asks | T8 | T17 |
 | 3.2 AGENTS.md + conditional CLAUDE.md | T9 | T17 |

@@ -30,9 +30,9 @@ Codex is a new row (AC-4 extensibility), not new machinery.
 | Instruction file | `CLAUDE.md` → `AGENTS.md` (pointer) | `AGENTS.md` (native) | `AGENTS.md` |
 | Skill location | `plugins/foundry/skills/<name>/` (plugin) | `.agents/skills/<name>/` (plugin-distributed) | one `SKILL.md` per skill |
 | Skill invocation | `/foundry:<name>` | `$<name>` | referenced by name, not command form |
-| Subagent | `agents/spec-reviewer.md` (frontmatter + body) | `.codex/agents/spec-reviewer.toml` (`developer_instructions`, `sandbox_mode="read-only"`) | the review criteria prose |
-| Distribution | `.claude-plugin/{marketplace,plugin}.json` | Codex `plugin.json` (`components`) | the plugin's skill/agent/template tree |
-| Plugin-root ref | `${CLAUDE_PLUGIN_ROOT}` | Codex plugin root | the placeholder `<plugin root>` |
+| Subagent | `agents/spec-reviewer.md` (frontmatter + body) | `agents/spec-reviewer.md` (same `.md` format, plugin-bundled) | one shared `agents/spec-reviewer.md` |
+| Distribution | `.claude-plugin/{marketplace,plugin}.json` | `.codex-plugin/plugin.json` (mirror + `interface`; `skills`/`agents` pointers) | the plugin's `skills/` + `agents/` tree |
+| Plugin-root ref | `${CLAUDE_PLUGIN_ROOT}` | Codex plugin root (tree co-located, verified) | the placeholder `<plugin root>` |
 
 `AGENTS.md` and the `SKILL.md` bodies are written **once**; only the thin per-harness
 wrappers (the pointer file, the subagent envelope, the manifest, the invocation
@@ -46,9 +46,9 @@ token) vary. This is the no-divergent-content rule from requirements Out-of-scop
 | Harness map | `plugins/foundry/skills/*/references/` or a shared skill ref | new | The table above, the source skills read for per-harness behavior (AC-2, AC-3) |
 | Plugin-root resolution | `bootstrap`/`update` `SKILL.md` | mod | Replace fragile `<base dir>/../../templates/` with `<plugin root>/templates/`, resolved per harness (AC-2.4) |
 | Invocation neutralization | `bootstrap`/`code`/`update` `SKILL.md` | mod | Name skills by intent, not `/foundry:<name>` (AC-2.3) |
-| `spec-reviewer` shared criteria + two wrappers | `agents/spec-reviewer.md` (Claude), `agents/spec-reviewer.codex.toml` (Codex), shared criteria body | mod / new | One source, two envelopes, drift-checked (AC-2.6) |
+| `spec-reviewer` (single shared file) | `agents/spec-reviewer.md` | mod | One `.md` agent both harnesses read; no twin, no drift (AC-2.6) |
 | `code` dispatch rule | `code` `SKILL.md` §1 | mod | Delegate review via the harness's subagent mechanism, inline fallback (AC-2.5) |
-| Codex distribution manifest | `plugins/foundry/` Codex `plugin.json` (+ install doc) | new | A Codex user installs foundry whole (AC-2.7) |
+| Codex distribution | `plugins/foundry/.codex-plugin/plugin.json` + Codex marketplace entry (+ install doc) | new | A Codex user installs foundry whole (AC-2.7) |
 | Harness interview question | `bootstrap` `SKILL.md` §2 | mod | Select target harness(es) (AC-3.1) |
 | Conditional instruction pointer | `bootstrap` `SKILL.md` §4, `generate.md` | mod | `CLAUDE.md` iff Claude selected (AC-3.2) |
 | Rules relocation | `templates/seeds/.claude/rules/` → `templates/seeds/rules/` | mod | Harness-neutral convention path (AC-3.3, AC-4.2) |
@@ -76,28 +76,25 @@ the legacy top-level `.foundry-manifest.json` (AC-4.7); `update` reads
 manifest only — the rest of the interview lives single-source in the files it
 generated (`AGENTS.md`, glossary, board), so re-storing it would invite drift.
 
-**Codex `spec-reviewer` (`.codex/agents/spec-reviewer.toml`)** — the read-only twin:
+**`spec-reviewer` — one shared file.** Verified against `codex` 0.139.0: Codex reads
+plugin agents as `agents/*.md` (markdown + frontmatter), the same format Claude Code
+uses. Foundry's existing `agents/spec-reviewer.md` serves both harnesses unchanged — no
+Codex twin, no drift guard. Read-only holds via its `tools: Read, Grep, Glob`
+frontmatter (and `--sandbox read-only` when run as a Codex subagent).
 
-```toml
-name = "spec-reviewer"
-description = "Reviews spec docs and context-resident prose for naming and prose against the repo contract. Read-only."
-sandbox_mode = "read-only"
-developer_instructions = """<the shared review criteria, verbatim>"""
-```
-
-**Codex distribution (`plugin.json` `components`)** — bundles the existing tree:
+**Codex distribution (`.codex-plugin/plugin.json`)** — mirrors `.claude-plugin/plugin.json`
+(verified against the installed `superpowers` Codex plugin):
 
 ```json
-{ "name": "foundry", "version": "1.1.0",
-  "components": { "skills": ["skills/bootstrap","skills/code","skills/update"],
-                  "agents": ["agents/spec-reviewer.codex.toml"] } }
+{ "name": "foundry", "version": "1.1.0", "description": "…",
+  "author": { "name": "Brandon Ransom" }, "skills": "./skills/",
+  "interface": { "displayName": "Foundry", "category": "Developer Tools" } }
 ```
 
-> **Verify at build (stated assumption):** the exact Codex `plugin.json` schema
-> (`/codex/plugins/build`) and subagent `.toml` field set (`/codex/config-reference`)
-> are taken from current Codex docs/community references; confirm both against a live
-> `codex` before Wave 2 codes them. The design depends on the *shape* (a components
-> manifest; a TOML agent with read-only sandbox), not exact key spelling.
+The `skills` pointer is confirmed; agents ship in `agents/` (present in agent-bundling
+Codex plugins) — confirm the manifest's agents key at T7. Foundry's existing
+`plugins/foundry/{skills,agents}/` layout already matches; only this manifest (+ a Codex
+marketplace entry) is new.
 
 ## Plugin-root resolution
 
@@ -109,7 +106,7 @@ sibling `templates/` need not survive, so `../../` is fragile.
 **Fix:** replace `<base dir>/../../templates/` with **`<plugin root>/templates/`**,
 where `<plugin root>` is the harness's own plugin-root reference (Claude
 `${CLAUDE_PLUGIN_ROOT}`; the Codex equivalent). Each harness resolves a stable root;
-templates ride along in the plugin's `components` (Codex) or plugin dir (Claude).
+templates ride along in the plugin tree, co-located under both harnesses (verified: the `superpowers` Codex plugin ships `skills/` beside its plugin root).
 The skill body carries the neutral placeholder; the harness map binds it. This
 satisfies AC-2.4 and removes a latent bug that also bites any non-default Claude
 install layout.
@@ -170,10 +167,9 @@ bootstrap eval (cross-stack), the `reviewer` fixture for parity, and a conventio
 snapshot (frozen by the existing fixture-builder) for the migration. Each carries a
 discrimination variant the harness scan must fail.
 
-**Drift guard (AC-2.6).** A `check-fast.sh` assertion that the Codex
-`spec-reviewer.codex.toml` `developer_instructions` carry the canonical criteria
-verbatim — foundry's byte-identity discipline applied to the two wrappers, so they
-cannot diverge.
+**No drift guard needed (AC-2.6).** `spec-reviewer` is a single `agents/spec-reviewer.md`
+both harnesses read — no second wrapper to sync. The parity eval above still confirms the
+one file behaves the same under each harness.
 
 ## Performance
 
@@ -222,11 +218,14 @@ single Markdown source consumed natively by Claude Code, Codex, Cursor, and more
 
 ## Open questions to confirm at build
 
-1. Exact Codex `plugin.json` and subagent `.toml` schemas — confirm against a live
-   `codex` (`/codex/plugins/build`, `/codex/config-reference`) before Wave 2.
-2. Whether Codex exposes a stable plugin-root reference for `<plugin root>/templates/`,
-   or templates must be bundled per-skill — drives the plugin-root binding.
-3. Whether any current consumer auto-loads `.claude/rules/` via a `CLAUDE.md` import
+Resolved at Wave 2 against `codex` 0.139.0: the plugin manifest
+(`.codex-plugin/plugin.json`, mirrors the Claude one), the subagent format (`agents/*.md`,
+shared with Claude Code), the sandbox modes, and the co-located plugin tree (so
+`<plugin root>/templates/` resolves). Remaining:
+
+1. The `.codex-plugin/plugin.json` key that exposes `agents/` (the `skills` pointer is
+   confirmed).
+2. Whether any current consumer auto-loads `.claude/rules/` via a `CLAUDE.md` import
    (vs. reference-by-path) — if so, the migration rewrites that import too.
 
 ## Acceptance-criteria traceability
@@ -236,11 +235,11 @@ single Markdown source consumed natively by Claude Code, Codex, Cursor, and more
 | 1.1 harness term | Components (glossary); Architecture |
 | 1.2 manifest term update | Data models; §Migration |
 | 2.1 skills under Codex | Harness map; Data flow (Axis A) |
-| 2.2 frontmatter minimal | Harness map (single-source `SKILL.md`); drift guard |
+| 2.2 frontmatter minimal | Harness map (single-source `SKILL.md`); check-fast frontmatter guard |
 | 2.3 no hardcoded invocation | Components (invocation neutralization) |
 | 2.4 template resolution | §Plugin-root resolution |
 | 2.5 dispatch or inline | Components (`code` dispatch); Error handling |
-| 2.6 shared `spec-reviewer` | Data models (twin); Testing (drift guard) |
+| 2.6 shared `spec-reviewer` | Data models (single file); Testing (parity eval) |
 | 2.7 Codex install path | Data models (`plugin.json`); harness map |
 | 3.1 interview asks | Data flow (Bootstrap); Error handling |
 | 3.2 AGENTS.md + conditional CLAUDE.md | Data flow; harness map |
@@ -258,5 +257,5 @@ single Markdown source consumed natively by Claude Code, Codex, Cursor, and more
 | 5.2 Codex e2e | Testing (Codex bootstrap eval) |
 | 5.3 readability | Testing (readability eval) |
 | 5.4 migration | Testing (migration eval) |
-| 5.5 reviewer parity | Testing (parity eval); drift guard |
+| 5.5 reviewer parity | Testing (parity eval) |
 | 5.6 self-host converge + dogfood | §Self-hosting; Testing |

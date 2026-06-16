@@ -100,9 +100,10 @@ subagent format, the `CLAUDE.md` shim, and the rules path — not the method.
 - **AC-2.5** WHERE the `code` skill delegates spec review, THE SYSTEM SHALL dispatch
   `spec-reviewer` through the running harness's subagent mechanism, or degrade to an
   inline review where the harness has none — never skip the review.
-- **AC-2.6** THE SYSTEM SHALL provide a `spec-reviewer` definition in Codex's agent
-  format equivalent to the Claude Code agent — same review criteria, read-only — built
-  from one shared source so the two cannot drift.
+- **AC-2.6** THE SYSTEM SHALL keep `spec-reviewer` a single `agents/spec-reviewer.md`:
+  Claude Code and Codex read the same markdown-and-frontmatter agent format, so one file
+  serves both — no twin, no drift. Its frontmatter SHALL stay to the subset both
+  harnesses honor, and it SHALL remain read-only.
 - **AC-2.7** THE SYSTEM SHALL provide a Codex install path — a Codex plugin manifest
   and/or a documented install into Codex's skill and agent locations — that delivers
   AC-2.1–AC-2.6 without manual file surgery.
