@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.1.1](https://github.com/bmransom/foundry/compare/v0.1.0...v0.1.1) (2026-06-16)
+
+
+### Features
+
+* **harness-agnostic:** add harness term and harness map ([3e3f563](https://github.com/bmransom/foundry/commit/3e3f563d001e5f706ef4424213328b75d776574c))
+* **harness-agnostic:** bootstrap emits multi-harness setups (Axis B core) ([9c807a9](https://github.com/bmransom/foundry/commit/9c807a99c8e314fdfceebabd73bf2749361ba02d))
+* **harness-agnostic:** convention-3 migration + harness add/remove (Axis C) ([5df7062](https://github.com/bmransom/foundry/commit/5df7062c5f1e41c702b3744d7f915f38382499ff))
+* **harness-agnostic:** run foundry under Codex (Axis A) ([e311ba0](https://github.com/bmransom/foundry/commit/e311ba03853f391f9aa8c42a852e00c628ebb1d7))
+* **update:** migrate repos across convention breaks ([39316bb](https://github.com/bmransom/foundry/commit/39316bb9380230f2cb555ed67a41862e945a5a7f))
+
+
+### Bug Fixes
+
+* **harness-agnostic:** Codex reads its own manifests, never .claude-plugin/ ([9610e90](https://github.com/bmransom/foundry/commit/9610e90ca6cd95faab4d6c56cd8625828921876a))
+* **harness-agnostic:** drop redundant .codex-plugin manifests ([7917989](https://github.com/bmransom/foundry/commit/79179895ebb49feda11c4c606723360ccb30b41b))
+
 ## 0.1.0 (2026-06-15)
 
 
