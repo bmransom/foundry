@@ -1,4 +1,7 @@
-> **Status:** Ready (2026-06-16) — tracked on the [board](../../ROADMAP.md).
+> **Status:** Validating (2026-06-16) — tracked on the [board](../../ROADMAP.md).
+> The board is authoritative. Axis A/B/C are built and fast-gate green; the
+> readability eval now fails missing or mismatched `.foundry/manifest.json`
+> harness state. The live headless matrix remains in `roadmap/BACKLOG.md`.
 
 # Tasks — harness-agnostic foundry
 

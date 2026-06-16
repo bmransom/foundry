@@ -1,6 +1,8 @@
 # OKF alignment — tasks
 
-**Status:** Spec — tasks drafted (2026-06-14) — tracked on the [board](../../ROADMAP.md).
+**Status:** Validating (2026-06-16) — tracked on the [board](../../ROADMAP.md).
+The board is authoritative. The implementation has moved past these build-order
+boxes; remaining validation is the full bootstrap/reviewer eval confirmation.
 
 **Atomic migration.** All waves land in **one commit**; intermediate states break `knowledge check` and byte-identity, so the gate is run only at Wave 7. Waves are build order + dependency, not separately committable. Within a wave, tasks on different files run in parallel. Every verbatim edit touches **both trees** (`scripts/…` + `plugins/foundry/templates/verbatim/…`) byte-identically; every seed edit touches the seed under `plugins/foundry/templates/seeds/…` and foundry's own copy.
 

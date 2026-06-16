@@ -28,8 +28,56 @@ fi
 # Rules at the neutral location, never .claude/rules/.
 if [ -d "$REPO/.claude/rules" ]; then bad ".claude/rules/ present — rules belong at the neutral rules/"; fi
 
-# Manifest, if any, lives under .foundry/ — never the legacy top-level path.
+# Manifest lives under .foundry/ — never the legacy top-level path.
 if [ -f "$REPO/.foundry-manifest.json" ]; then bad "legacy top-level .foundry-manifest.json — expected .foundry/manifest.json"; fi
+manifest="$REPO/.foundry/manifest.json"
+if [ ! -f "$manifest" ]; then
+  bad ".foundry/manifest.json missing"
+else
+  if ! manifest_check="$(python3 - "$manifest" "${HARNESSES[@]}" 2>&1 <<'PY'
+import json
+import sys
+
+path = sys.argv[1]
+expected = sys.argv[2:]
+
+try:
+    with open(path, encoding="utf-8") as handle:
+        manifest = json.load(handle)
+except Exception as exc:
+    print(f"manifest is not valid JSON: {exc}")
+    sys.exit(1)
+
+if manifest.get("conventionVersion") != 3:
+    print(f"manifest conventionVersion={manifest.get('conventionVersion')!r}; expected 3")
+    sys.exit(1)
+
+harnesses = manifest.get("harnesses")
+if not isinstance(harnesses, list) or any(not isinstance(item, str) for item in harnesses):
+    print("manifest harnesses must be a string array")
+    sys.exit(1)
+
+if len(set(harnesses)) != len(harnesses):
+    print("manifest harnesses contains duplicates")
+    sys.exit(1)
+
+expected_set = set(expected)
+actual_set = set(harnesses)
+missing = sorted(expected_set - actual_set)
+extra = sorted(actual_set - expected_set)
+if missing or extra:
+    detail = []
+    if missing:
+        detail.append("missing " + ", ".join(missing))
+    if extra:
+        detail.append("extra " + ", ".join(extra))
+    print("manifest harnesses mismatch: " + "; ".join(detail))
+    sys.exit(1)
+PY
+  )"; then
+    bad "$manifest_check"
+  fi
+fi
 
 if [ "$fail" -eq 0 ]; then
   echo "harness-readability: PASS (${HARNESSES[*]})"
