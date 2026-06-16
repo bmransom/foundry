@@ -31,7 +31,7 @@ Codex is a new row (AC-4 extensibility), not new machinery.
 | Skill location | `plugins/foundry/skills/<name>/` (plugin) | `.agents/skills/<name>/` (plugin-distributed) | one `SKILL.md` per skill |
 | Skill invocation | `/foundry:<name>` | `$<name>` | referenced by name, not command form |
 | Subagent | `agents/spec-reviewer.md` (frontmatter + body) | `agents/spec-reviewer.md` (same `.md` format, plugin-bundled) | one shared `agents/spec-reviewer.md` |
-| Distribution | `.claude-plugin/{marketplace,plugin}.json` | `.codex-plugin/plugin.json` (mirror + `interface`; `skills`/`agents` pointers) | the plugin's `skills/` + `agents/` tree |
+| Distribution | `.claude-plugin/{marketplace,plugin}.json` | the same `.claude-plugin/` manifests (Codex reads them directly — verified) | the plugin's `skills/` + `agents/` tree |
 | Plugin-root ref | `${CLAUDE_PLUGIN_ROOT}` | Codex plugin root (tree co-located, verified) | the placeholder `<plugin root>` |
 
 `AGENTS.md` and the `SKILL.md` bodies are written **once**; only the thin per-harness
@@ -82,19 +82,12 @@ uses. Foundry's existing `agents/spec-reviewer.md` serves both harnesses unchang
 Codex twin, no drift guard. Read-only holds via its `tools: Read, Grep, Glob`
 frontmatter (and `--sandbox read-only` when run as a Codex subagent).
 
-**Codex distribution (`.codex-plugin/plugin.json`)** — mirrors `.claude-plugin/plugin.json`
-(verified against the installed `superpowers` Codex plugin):
-
-```json
-{ "name": "foundry", "version": "1.1.0", "description": "…",
-  "author": { "name": "Brandon Ransom" }, "skills": "./skills/",
-  "interface": { "displayName": "Foundry", "category": "Developer Tools" } }
-```
-
-The `skills` pointer is confirmed; agents ship in `agents/` (present in agent-bundling
-Codex plugins) — confirm the manifest's agents key at T7. Foundry's existing
-`plugins/foundry/{skills,agents}/` layout already matches; only this manifest (+ a Codex
-marketplace entry) is new.
+**Codex distribution — none needed.** Verified live (`codex plugin marketplace add`):
+Codex reads foundry's existing `.claude-plugin/marketplace.json` + `.claude-plugin/plugin.json`
+directly and discovers `foundry@foundry` (identical with the `.codex-plugin/` files
+removed). Foundry's Claude plugin **is** its Codex plugin — no `.codex-plugin/` files
+required. A Codex-only `.codex-plugin/plugin.json` with an `interface` block would add
+Codex-app-store UI polish, but is not needed to load or run.
 
 ## Plugin-root resolution
 
