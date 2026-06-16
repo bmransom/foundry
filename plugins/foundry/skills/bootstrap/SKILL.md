@@ -1,7 +1,7 @@
 ---
 name: bootstrap
 description: Use when explicitly asked to bootstrap, install, or set up the
-  foundry engineering setup in a repo (/foundry:bootstrap) — specs, executable
+  foundry engineering setup in a repo — specs, executable
   features, docs site, board, glossary, gates, and CI, wired to the repo's
   stack and verified working. Not for feature work in a bootstrapped repo.
 ---
@@ -9,7 +9,7 @@ description: Use when explicitly asked to bootstrap, install, or set up the
 # Bootstrap
 
 Install the foundry setup into the current repo in five phases. Templates ship
-with the plugin at `<base dir>/../../templates/` — `verbatim/` (byte-exact
+with the plugin at `<plugin root>/templates/` — `verbatim/` (byte-exact
 tooling) and `seeds/` (content starting points the repo will own).
 
 Copy into your reply; check off as you go. A gate is a **prohibition**: do not
@@ -55,7 +55,7 @@ when the caller supplies them. The questions:
 ## 3 · Copy
 
 - Copy every `verbatim/` file to the same relative path, byte-exact — the
-  `foundry-template: <name> v<N>` markers included; `/foundry:update` diffs
+  `foundry-template: <name> v<N>` markers included; the update skill's diffs
   depend on them. Keep scripts executable.
 - Copy `seeds/` files, then fill them from the interview: glossary terms, debt
   column, and polarity statement; the first ROADMAP epic; the
@@ -63,9 +63,9 @@ when the caller supplies them. The questions:
   markers.
 - Write `.foundry-manifest.json`: the plugin version, the **convention version**
   (the layout the plugin installs — `2` for the OKF `knowledge/` convention; bumped
-  only by a convention break, so `/foundry:update` knows whether a repo needs
+  only by a convention break, so the update skill knows whether a repo needs
   migrating), plus per verbatim file its template name, marker version, and
-  `shasum -a 256` of the installed content — `/foundry:update` tells pristine from
+  `shasum -a 256` of the installed content — the update skill tells pristine from
   customized by these hashes. The shape: `{"pluginVersion": "<v>",
   "conventionVersion": 2, "files": {"<repo path>": {"template": "<name>",
   "version": <N>, "sha256": "<hex>"}}}`.

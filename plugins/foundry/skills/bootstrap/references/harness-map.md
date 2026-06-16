@@ -9,9 +9,9 @@ The per-harness coupling points foundry binds. Everything else is single-source:
 | Instruction file | `CLAUDE.md` → `AGENTS.md` (pointer) | `AGENTS.md` (native) |
 | Skill location | `<plugin root>/skills/<name>/` | `.agents/skills/<name>/` |
 | Skill invocation | `/foundry:<name>` | `$<name>` |
-| Subagent | `agents/<name>.md` (YAML frontmatter + body) | `.codex/agents/<name>.toml` (`developer_instructions`, `sandbox_mode`) |
-| Distribution | `.claude-plugin/{marketplace,plugin}.json` | `plugin.json` (`components`) |
-| Plugin-root reference | `${CLAUDE_PLUGIN_ROOT}` | Codex plugin root (verify) |
+| Subagent | `agents/<name>.md` (YAML frontmatter + body) | `agents/<name>.md` (same `.md` format) |
+| Distribution | `.claude-plugin/{marketplace,plugin}.json` | `.codex-plugin/plugin.json` (`skills`/`agents` pointers + `interface`) |
+| Plugin-root reference | `${CLAUDE_PLUGIN_ROOT}` | Codex plugin root (tree co-located) |
 
 ## Single source
 
@@ -23,12 +23,14 @@ The per-harness coupling points foundry binds. Everything else is single-source:
 - **Templates** — resolved as `<plugin root>/templates/`, the root bound per harness in
   the table; never a layout-relative `../../` path.
 
-## Verify against a live harness (build-time)
+## Verified against codex 0.139.0
 
-- Codex plugin-root reference, and whether the plugin layout survives install — else
-  bundle templates per-skill.
-- Codex `plugin.json` `components` schema — `/codex/plugins/build`.
-- Codex subagent `.toml` fields and the read-only sandbox — `/codex/config-reference`.
+- Plugin: `.codex-plugin/plugin.json` with a `skills` pointer + an `interface` block
+  (mirrors `.claude-plugin/plugin.json`); plugin tree co-located, so `<plugin root>`
+  resolves.
+- Subagent: `agents/*.md` — same format as Claude Code (no `.toml` twin).
+- Sandbox modes: `read-only` / `workspace-write` / `danger-full-access`.
+- Open: the manifest key that exposes `agents/` (skills pointer confirmed).
 
 ## Adding a harness
 

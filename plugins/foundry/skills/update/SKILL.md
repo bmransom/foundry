@@ -2,7 +2,7 @@
 name: update
 description: Use when explicitly asked to update, sync, or refresh the foundry
   templates in a bootstrapped repo, or to migrate one across a convention break
-  (/foundry:update). Templates and convention migrations only — skills and agents
+  Templates and convention migrations only — skills and agents
   propagate with the plugin install, no per-repo action.
 ---
 
@@ -10,7 +10,7 @@ description: Use when explicitly asked to update, sync, or refresh the foundry
 
 Re-sync the repo's installed templates with the plugin's, first crossing any
 **convention break** the repo is behind (a release that renamed templates, moved
-directories, or changed frontmatter). Templates ship at `<base dir>/../../templates/`
+directories, or changed frontmatter). Templates ship at `<plugin root>/templates/`
 — `verbatim/` (byte-exact, manifest-tracked) and `seeds/` (repo-owned). Migrations
 live in `references/migrations/`.
 

@@ -20,7 +20,7 @@ Every repo-specific detail comes from:
 
 **Precondition.** This skill assumes a foundry-bootstrapped repo. If there is no
 `AGENTS.md` or `roadmap/ROADMAP.md`, the setup is absent — stop and point the user
-to `/foundry:bootstrap` rather than writing spec, board, or feature files.
+to the bootstrap skill rather than writing spec, board, or feature files.
 
 ## The checklist
 
@@ -47,8 +47,8 @@ not start a later stage until the prior gate is met.
 ## 1 · Spec
 
 Write `roadmap/specs/<feature>/{requirements,design,tasks}.md` in the format `roadmap/specs/README.md`
-defines, in the vocabulary of `knowledge/glossary.md`. Before coining any canonical name (glossary term, public type or field, config knob), search the prior art — domain literature, stack naming conventions, comparable tools; record provenance, or why none fits, in the glossary. Dispatch the `spec-reviewer` agent on the Design
-before presenting it.
+defines, in the vocabulary of `knowledge/glossary.md`. Before coining any canonical name (glossary term, public type or field, config knob), search the prior art — domain literature, stack naming conventions, comparable tools; record provenance, or why none fits, in the glossary. Delegate the Design to the `spec-reviewer` — a subagent where the harness provides
+one, else review inline against its criteria — before presenting it.
 **Gate:** no implementation until the Design is approved.
 
 ## 2 · Plan
