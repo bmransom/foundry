@@ -20,3 +20,6 @@ then it becomes a card on `roadmap/ROADMAP.md`.
 | migration-eval `migration-customized` fixture (diverged glossary/ROADMAP/rule) | Exercise transform-and-flag at depth (AC-2.6) — preserve customizations, never clobber | migration-aware-update tier-2 |
 | migration-eval `migration-scale` fixture (dozens of concepts, multiple specs) | Completeness at scale — catch a missed file on a large repo | migration-aware-update tier-2 |
 | migration-eval `migration-partial` fixture (half-hand-migrated tree) | Idempotent convergence (AC-4.4) on a partially migrated repo | migration-aware-update tier-2 |
+| harness-agnostic live eval matrix: `codex exec` bootstrap e2e, migration eval, reviewer parity, self-host dogfood | Foundry's shippable bar (an eval per behavior change); deferred — the live `codex`/`claude` headless runs are slow and costly | harness-agnostic Wave 5 |
+| harness-agnostic `knowledge.py` harness-aware skill-ref check (`.agents/skills/` alongside `.claude/skills/`) | Defensive completeness for a vendored `code` skill; the verbatim-template cost is not justified vs. its rarely-hit value (T12) | harness-agnostic Wave 3 |
+| harness-agnostic Codex install how-to in `knowledge/releasing.md` (`codex plugin marketplace add`) | The manifests work live; only the doc is the gap (T7) | harness-agnostic Wave 5 |

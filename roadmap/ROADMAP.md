@@ -76,7 +76,7 @@ model, forbidden terms, standing rules, or gate commands.
 | Work | Status | Spec | Depends on |
 |---|---|---|---|
 | harness-agnostic spec: requirements + design + tasks | Done — approved 2026-06-16 (spec-reviewer applied) | `roadmap/specs/harness-agnostic/` | migration-aware-update |
-| Axis A — foundry runs under Codex: harness map, plugin-root fix, invocation neutralization, spec-reviewer twin + drift guard, Codex distribution | Ready | `roadmap/specs/harness-agnostic/` | spec approval |
-| Axis B — bootstrap emits per-harness: interview question, conditional CLAUDE.md, rules → `rules/`, `.foundry/manifest.json` + `harnesses`, knowledge.py | Ready | `roadmap/specs/harness-agnostic/` | Axis A |
-| Axis C — convention-3 retrofit migration + update read-path (new-then-legacy, no re-prompt, add-a-harness) | Ready | `roadmap/specs/harness-agnostic/` | Axis B |
-| Evals + self-host dogfood: codex-exec bootstrap, readability, migration, reviewer parity, self-host convergence | Ready | `roadmap/specs/harness-agnostic/` | Axis C |
+| Axis A — foundry runs under Codex: harness map, plugin-root fix, invocation neutralization, shared `spec-reviewer.md`, distribution (`.agents/plugins/` + `.codex-plugin/`) | Validating — gate green; `foundry@foundry` discovered live under codex | `roadmap/specs/harness-agnostic/` | spec approval |
+| Axis B — bootstrap emits per-harness: interview question, conditional `CLAUDE.md`, rules → `rules/`, `.foundry/manifest.json` + `harnesses` | Validating — gate green (T12 knowledge.py → BACKLOG) | `roadmap/specs/harness-agnostic/` | Axis A |
+| Axis C — convention-3 retrofit migration + update read-path (new-then-legacy, no re-prompt, add-a-harness) | Validating — gate green | `roadmap/specs/harness-agnostic/` | Axis B |
+| Evals + self-host: readability eval + self-host convergence done; live matrix (codex/claude headless: bootstrap, migration, reviewer parity, dogfood) → BACKLOG | Validating — readability + convergence green | `roadmap/specs/harness-agnostic/` | Axis C |
