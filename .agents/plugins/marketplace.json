@@ -1,0 +1,12 @@
+{
+  "name": "foundry",
+  "interface": { "displayName": "Foundry" },
+  "plugins": [
+    {
+      "name": "foundry",
+      "source": { "source": "local", "path": "./plugins/foundry" },
+      "policy": { "installation": "AVAILABLE" },
+      "category": "Developer Tools"
+    }
+  ]
+}

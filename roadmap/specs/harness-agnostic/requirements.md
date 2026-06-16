@@ -104,10 +104,11 @@ subagent format, the `CLAUDE.md` shim, and the rules path — not the method.
   Claude Code and Codex read the same markdown-and-frontmatter agent format, so one file
   serves both — no twin, no drift. Its frontmatter SHALL stay to the subset both
   harnesses honor, and it SHALL remain read-only.
-- **AC-2.7** THE SYSTEM SHALL be installable under Codex without a Codex-specific
-  manifest: Codex reads foundry's existing `.claude-plugin/` marketplace and plugin
-  manifests directly (`codex plugin marketplace add`), delivering AC-2.1–AC-2.6. The
-  install path SHALL be documented.
+- **AC-2.7** THE SYSTEM SHALL be installable under Codex via harness-appropriate
+  manifests — a neutral `.agents/plugins/marketplace.json` and a
+  `plugins/foundry/.codex-plugin/plugin.json` — so Codex never reads a `.claude-plugin/`-named
+  path (`codex plugin marketplace add` discovers `foundry@foundry`), delivering
+  AC-2.1–AC-2.6. The install path SHALL be documented.
 
 ### Harness selection at bootstrap (Axis B)
 

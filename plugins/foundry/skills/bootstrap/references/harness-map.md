@@ -10,7 +10,7 @@ The per-harness coupling points foundry binds. Everything else is single-source:
 | Skill location | `<plugin root>/skills/<name>/` | `.agents/skills/<name>/` |
 | Skill invocation | `/foundry:<name>` | `$<name>` |
 | Subagent | `agents/<name>.md` (YAML frontmatter + body) | `agents/<name>.md` (same `.md` format) |
-| Distribution | `.claude-plugin/{marketplace,plugin}.json` | the same `.claude-plugin/` manifests (Codex reads them directly — verified) |
+| Distribution | `.claude-plugin/{marketplace,plugin}.json` | `.agents/plugins/marketplace.json` (neutral) + `.codex-plugin/plugin.json` |
 | Plugin-root reference | `${CLAUDE_PLUGIN_ROOT}` | Codex plugin root (tree co-located) |
 
 ## Single source
@@ -25,9 +25,10 @@ The per-harness coupling points foundry binds. Everything else is single-source:
 
 ## Verified against codex 0.139.0
 
-- Distribution: Codex reads foundry's existing `.claude-plugin/{marketplace,plugin}.json`
-  directly (`codex plugin marketplace add` discovers `foundry@foundry`) — no Codex-specific
-  manifest needed. Plugin tree co-located, so `<plugin root>` resolves.
+- Distribution: Codex discovers `foundry@foundry` via a neutral `.agents/plugins/marketplace.json`
+  (the `.agents/` family, like `.agents/skills/`) + a Codex-native `plugins/foundry/.codex-plugin/plugin.json`
+  — verified with both `.claude-plugin/` dirs removed, so neither harness reads the other's
+  manifest. Plugin tree co-located, so `<plugin root>` resolves.
 - Subagent: `agents/*.md` — same format as Claude Code (no `.toml` twin).
 - Sandbox modes: `read-only` / `workspace-write` / `danger-full-access`.
 - Open: the manifest key that exposes `agents/` (skills pointer confirmed).

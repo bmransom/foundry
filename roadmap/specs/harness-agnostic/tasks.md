@@ -39,10 +39,10 @@ conventions for its own development last (Wave 6), once the Codex path is green.
 - [ ] **T6** `code` dispatch rule: delegate review through the running harness's
   subagent mechanism, inline fallback where none exists — never skip —
   `plugins/foundry/skills/code/SKILL.md`. → AC-2.5
-- [x] **T7** Codex distribution: none needed — verified live that Codex reads foundry's
-  existing `.claude-plugin/` marketplace + plugin manifests directly (`codex plugin
-  marketplace add` discovers `foundry@foundry`). Document the Codex install path —
-  `knowledge/releasing.md`. → AC-2.7, AC-2.1
+- [x] **T7** Codex distribution: a neutral `.agents/plugins/marketplace.json` +
+  `plugins/foundry/.codex-plugin/plugin.json` (Codex-native, `interface` block) — verified
+  Codex discovers `foundry@foundry` via these with `.claude-plugin/` removed, so it never
+  reads a Claude-named path. Document the install path — `knowledge/releasing.md`. → AC-2.7, AC-2.1
 
 ## Wave 3: Bootstrap emission — Axis B (depends: Waves 1–2)
 
