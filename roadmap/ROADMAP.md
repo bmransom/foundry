@@ -70,3 +70,13 @@ model, forbidden terms, standing rules, or gate commands.
 | Convention plumbing: `conventionVersion` in manifest (bootstrap stamps) + migration registry (@main) | Validating — check-fast: PASS | `roadmap/specs/migration-aware-update/` | spec approval |
 | OKF migration playbook + update pre-flight (detect → dry-run → branch → chain → no-regression → stamp) + deterministic preflight (@main) | Validating — check-fast: PASS; migration-eval okf 7/7 | `roadmap/specs/migration-aware-update/` | convention plumbing |
 | Eval safety net: harness + tier-1 fixtures (okf, legacy, dirty, red-gate) + chaining/idempotency (@main) | Validating — tier-1 behaviors verified (cold `claude -p` composite + Claude Code engine okf 7/7); unified headless capstone deferred (usage limit) | `roadmap/specs/migration-aware-update/` | OKF playbook |
+
+### Epic 4 — Harness-agnostic foundry
+
+| Work | Status | Spec | Depends on |
+|---|---|---|---|
+| harness-agnostic spec: requirements + design + tasks | Done — approved 2026-06-16 (spec-reviewer applied) | `roadmap/specs/harness-agnostic/` | migration-aware-update |
+| Axis A — foundry runs under Codex: harness map, plugin-root fix, invocation neutralization, spec-reviewer twin + drift guard, Codex distribution | Ready | `roadmap/specs/harness-agnostic/` | spec approval |
+| Axis B — bootstrap emits per-harness: interview question, conditional CLAUDE.md, rules → `rules/`, `.foundry/manifest.json` + `harnesses`, knowledge.py | Ready | `roadmap/specs/harness-agnostic/` | Axis A |
+| Axis C — convention-3 retrofit migration + update read-path (new-then-legacy, no re-prompt, add-a-harness) | Ready | `roadmap/specs/harness-agnostic/` | Axis B |
+| Evals + self-host dogfood: codex-exec bootstrap, readability, migration, reviewer parity, self-host convergence | Ready | `roadmap/specs/harness-agnostic/` | Axis C |
