@@ -45,7 +45,12 @@ BASE_EXPECTATIONS = {
             "must_exist": True,
         },
     ],
-    "manifest": {"path": ".foundry-manifest.json", "min_files": 2},
+    "manifest": {
+        "path": ".foundry/manifest.json",
+        "min_files": 2,
+        "conventionVersion": 3,
+        "harnesses": ["claude-code", "codex"],
+    },
 }
 
 
@@ -70,10 +75,13 @@ def build_complete_tree(root: Path) -> None:
     (root / "scripts" / "check-fast.sh").write_text(
         '#!/usr/bin/env bash\nset -euo pipefail\necho "check-fast: PASS"\n'
     )
-    (root / ".foundry-manifest.json").write_text(
+    (root / ".foundry").mkdir()
+    (root / ".foundry" / "manifest.json").write_text(
         json.dumps(
             {
                 "pluginVersion": "0.2.0",
+                "conventionVersion": 3,
+                "harnesses": ["claude-code", "codex"],
                 "files": {
                     "scripts/knowledge.py": {
                         "template": "knowledge",
@@ -225,17 +233,42 @@ class GradeDiscriminationTest(unittest.TestCase):
 
     def test_manifest_with_too_few_entries_fails(self):
         records = self.grade_broken(
-            lambda tree: (tree / ".foundry-manifest.json").write_text(
-                json.dumps({"pluginVersion": "0.2.0", "files": {}})
+            lambda tree: (tree / ".foundry" / "manifest.json").write_text(
+                json.dumps(
+                    {
+                        "pluginVersion": "0.2.0",
+                        "conventionVersion": 3,
+                        "harnesses": ["claude-code", "codex"],
+                        "files": {},
+                    }
+                )
             )
         )
-        self.assertEqual(verdict_of(records, "manifest:.foundry-manifest.json"), "fail")
+        self.assertEqual(verdict_of(records, "manifest:.foundry/manifest.json"), "fail")
 
     def test_manifest_with_invalid_json_fails(self):
         records = self.grade_broken(
-            lambda tree: (tree / ".foundry-manifest.json").write_text("not json")
+            lambda tree: (tree / ".foundry" / "manifest.json").write_text("not json")
         )
-        self.assertEqual(verdict_of(records, "manifest:.foundry-manifest.json"), "fail")
+        self.assertEqual(verdict_of(records, "manifest:.foundry/manifest.json"), "fail")
+
+    def test_manifest_with_wrong_convention_version_fails(self):
+        def break_tree(tree):
+            manifest = json.loads((tree / ".foundry" / "manifest.json").read_text())
+            manifest["conventionVersion"] = 2
+            (tree / ".foundry" / "manifest.json").write_text(json.dumps(manifest))
+
+        records = self.grade_broken(break_tree)
+        self.assertEqual(verdict_of(records, "manifest:.foundry/manifest.json"), "fail")
+
+    def test_manifest_with_wrong_harness_set_fails(self):
+        def break_tree(tree):
+            manifest = json.loads((tree / ".foundry" / "manifest.json").read_text())
+            manifest["harnesses"] = ["claude-code"]
+            (tree / ".foundry" / "manifest.json").write_text(json.dumps(manifest))
+
+        records = self.grade_broken(break_tree)
+        self.assertEqual(verdict_of(records, "manifest:.foundry/manifest.json"), "fail")
 
 
 class GradeResultsFileTest(unittest.TestCase):

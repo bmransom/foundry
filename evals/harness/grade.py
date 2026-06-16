@@ -17,7 +17,9 @@ Expectations schema (all top-level keys optional except "fixture"):
   content:   [{"name"?, "path", "pattern", "must_exist"}]
              — patterns compile with re.MULTILINE | re.DOTALL, so "^### Epic 0"
                anchors lines and "a.*b" asserts ordering across lines.
-  manifest:  {"path", "min_files"} — JSON with >= min_files entries in "files".
+  manifest:  {"path", "min_files", "conventionVersion"?, "harnesses"?} — JSON
+             with >= min_files entries in "files"; optional convention and
+             harness-set checks.
   gate_command, defects: read by bootstrap-eval.sh, ignored here.
 """
 
@@ -129,6 +131,30 @@ def check_manifest(tree, spec):
         return False, f'{path} lacks a "files" object'
     if len(entries) < min_files:
         return False, f"{path} records {len(entries)} files, expected >= {min_files}"
+    expected_convention = spec.get("conventionVersion")
+    if (
+        expected_convention is not None
+        and manifest.get("conventionVersion") != expected_convention
+    ):
+        return (
+            False,
+            f"{path} conventionVersion={manifest.get('conventionVersion')!r}, "
+            f"expected {expected_convention}",
+        )
+    expected_harnesses = spec.get("harnesses")
+    if expected_harnesses is not None:
+        actual_harnesses = manifest.get("harnesses")
+        if not isinstance(actual_harnesses, list) or any(
+            not isinstance(item, str) for item in actual_harnesses
+        ):
+            return False, f"{path} harnesses must be a string array"
+        if len(set(actual_harnesses)) != len(actual_harnesses):
+            return False, f"{path} harnesses contains duplicates"
+        if set(actual_harnesses) != set(expected_harnesses):
+            return (
+                False,
+                f"{path} harnesses={actual_harnesses!r}, expected {expected_harnesses!r}",
+            )
     return True, f"{path} records {len(entries)} files (>= {min_files})"
 
 

@@ -174,6 +174,10 @@ the surfaces the polarity answer names (`knowledge/` and `roadmap/specs/` — pl
 for an excluding engine), excluding the glossary itself — its debt column
 contains every term; fail on any hit:
 
+Keep the script portable to Bash 3.2, which `/usr/bin/env bash` resolves to on
+macOS. Do not use Bash 4-only helpers such as `mapfile` or `readarray`; stream
+terms with `while read` or `awk`.
+
 ```
 vocab-lint: DEBT <term> <path>:<line>
 ```

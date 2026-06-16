@@ -4,7 +4,8 @@
   "files": [
     {"path": "AGENTS.md", "class": "generated"},
     {"path": "CLAUDE.md", "class": "symlink", "target": "AGENTS.md"},
-    {"path": ".foundry-manifest.json", "class": "generated"},
+    {"path": ".foundry/manifest.json", "class": "generated"},
+    {"path": ".foundry-manifest.json", "class": "absent"},
     {"path": "scripts/check-fast.sh", "class": "generated"},
     {"path": ".github/workflows/check-fast.yml", "class": "generated"},
     {"path": "tests/acceptance.rs", "class": "generated"},
@@ -29,8 +30,10 @@
     {"path": "knowledge/coe-template.md", "class": "seed"},
     {"path": "roadmap/specs/README.md", "class": "seed"},
     {"path": "features/README.md", "class": "seed"},
-    {"path": ".claude/rules/spec-conventions.md", "class": "seed"},
-    {"path": ".claude/rules/knowledge-conventions.md", "class": "seed"},
+    {"path": "rules/spec-conventions.md", "class": "seed"},
+    {"path": "rules/knowledge-conventions.md", "class": "seed"},
+    {"path": ".claude/rules/spec-conventions.md", "class": "absent"},
+    {"path": ".claude/rules/knowledge-conventions.md", "class": "absent"},
     {"path": "features", "class": "dir"},
     {"path": "scripts/vocab-lint.sh", "class": "absent"},
     {"path": "scripts/verify.sh", "class": "absent"},
@@ -46,7 +49,12 @@
     {"name": "gate-runs-cargo-test", "path": "scripts/check-fast.sh", "pattern": "cargo test", "must_exist": true},
     {"name": "roadmap-has-epic-0", "path": "roadmap/ROADMAP.md", "pattern": "^### Epic 0", "must_exist": true}
   ],
-  "manifest": {"path": ".foundry-manifest.json", "min_files": 8},
+  "manifest": {
+    "path": ".foundry/manifest.json",
+    "min_files": 8,
+    "conventionVersion": 3,
+    "harnesses": ["claude-code", "codex"]
+  },
   "defects": [
     {"name": "failing-test", "expectation": "gate_fails"}
   ]
