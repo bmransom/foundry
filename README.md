@@ -62,9 +62,9 @@ Installed once at user scope, these run in every repo:
 | `naming-standards` skill | Reviews glossary, API, file, metric, and config names before they become contracts |
 | `design-patterns` skill | Chooses patterns such as Strategy, Adapter, Observer, Factory, Builder, Facade, Decorator, Command, and State when they earn their complexity |
 | `modular-structure` skill | Reviews directory layout, module boundaries, dependency direction, and public/internal APIs |
+| `spec-review` skill | Reviews specs and context-resident prose against the glossary and writing style, preferably in fresh context |
 | `handoff` skill | Captures verified state and starts a same-harness successor session |
 | `extract-skill` skill | Distills reusable workflows from a session into user, repo, or plugin skills |
-| `spec-reviewer` agent | Reviews specs and context-resident prose against the glossary and writing style |
 
 ## Setup
 
@@ -119,8 +119,7 @@ A run looks roughly like this:
 proposed commit (asks first): foundry: bootstrap engineering setup
 ```
 
-The `code` lifecycle skill and the `spec-reviewer` agent then drive every feature in
-the repo.
+The `code` lifecycle skill and `spec-review` then drive every feature in the repo.
 
 ## Development
 

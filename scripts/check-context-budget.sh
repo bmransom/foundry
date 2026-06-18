@@ -3,7 +3,7 @@
 # Plugin prose loads into context windows; oversized files waste tokens in every session.
 # Usage: check-context-budget.sh [repo-root]   (defaults to this repo)
 #
-# Budgets calibrated 2026-06-11: code skill 100 lines, spec-reviewer 41 lines, seed rule 34 lines.
+# Budgets calibrated 2026-06-11: code skill 100 lines, plugin agent 41 lines, seed rule 34 lines.
 # Headroom added to tolerate organic growth before a forced trim.
 set -euo pipefail
 REPO="${1:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"

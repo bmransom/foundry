@@ -45,9 +45,10 @@ Derive a short lowercase slug from the next unit of work, then run:
 scripts/spawn-successor.sh "<slug>"
 ```
 
-The script detects `claude`, `codex`, or `pi` and opens a tmux window or detached
-tmux session with that same harness. If tmux or harness detection is unavailable,
-it prints the manual command and seed prompt.
+The script delegates to Foundry's shared fresh-session runner, which detects
+`claude`, `codex`, or `pi`, writes the prompt under `.foundry/tmp/fresh-session/`,
+and opens a tmux window or detached tmux session with that same harness. If tmux
+or harness detection is unavailable, it prints the manual command and seed prompt.
 
 ## Common Mistakes
 

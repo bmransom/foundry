@@ -53,7 +53,7 @@ Write `roadmap/specs/<feature>/{requirements,design,tasks}.md` in the format
 `roadmap/specs/README.md` defines and the vocabulary of `knowledge/glossary.md`.
 Then loop:
 
-1. Review requirements, design, and tasks against `spec-reviewer`.
+1. Use `spec-review` in fresh context for requirements, design, and tasks.
 2. Use `naming-standards` for new glossary terms, public APIs, config, metrics, files, and directories.
 3. Use `design-patterns` when boundaries, extension points, eventing, adapters, construction, or algorithm selection matter.
 4. Use `modular-structure` for placement, dependency direction, public/internal APIs, and directory shape.

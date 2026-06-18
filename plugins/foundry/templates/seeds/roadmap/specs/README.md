@@ -38,5 +38,5 @@ parallel; each wave builds on the last. Every task names the gate that proves it
 
 ## Review before approval
 
-Dispatch the `spec-reviewer` agent on the changed spec files and apply its
-findings before presenting `design.md` for approval.
+Use `spec-review` in fresh context on the changed spec files and apply its findings
+before presenting `design.md` for approval.
