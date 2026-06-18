@@ -28,5 +28,5 @@ list when denser than a sentence.
 
 ## Before finalizing a design
 
-Dispatch the `spec-reviewer` agent on the changed spec files and apply its
-findings before presenting `design.md` for approval.
+Use `spec-review` in fresh context on the changed spec files and apply its findings
+before presenting `design.md` for approval.

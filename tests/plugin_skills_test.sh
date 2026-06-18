@@ -14,6 +14,7 @@ required_skills=(
   modular-structure
   naming-standards
   performance
+  spec-review
   update
 )
 

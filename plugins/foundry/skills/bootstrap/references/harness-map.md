@@ -9,7 +9,7 @@ The per-harness coupling points foundry binds. Everything else is single-source:
 | Instruction file | `CLAUDE.md` → `AGENTS.md` (pointer) | `AGENTS.md` (native) |
 | Skill location | `<plugin root>/skills/<name>/` | `.agents/skills/<name>/` |
 | Skill invocation | `/foundry:<name>` | `$<name>` |
-| Subagent | `agents/<name>.md` (YAML frontmatter + body) | `agents/<name>.md` (same `.md` format) |
+| Fresh review context | `agents/spec-reviewer.md` wrapper | `spec-review` runner starts a fresh Codex session |
 | Distribution | `.claude-plugin/{marketplace,plugin}.json` | `.agents/plugins/marketplace.json` (neutral) + `.codex-plugin/plugin.json` |
 | Plugin-root reference | `${CLAUDE_PLUGIN_ROOT}` | Codex plugin root (tree co-located) |
 
@@ -29,12 +29,14 @@ The per-harness coupling points foundry binds. Everything else is single-source:
   (the `.agents/` family, like `.agents/skills/`) + a Codex-native `plugins/foundry/.codex-plugin/plugin.json`
   — verified with both `.claude-plugin/` dirs removed, so neither harness reads the other's
   manifest. Plugin tree co-located, so `<plugin root>` resolves.
-- Subagent: `agents/*.md` — same format as Claude Code (no `.toml` twin).
+- Fresh review context: canonical behavior lives in the `spec-review` skill. Claude
+  Code can dispatch `agents/spec-reviewer.md`; Codex should use the skill runner to
+  start a fresh session until Codex plugin-packaged agents are supported.
 - Sandbox modes: `read-only` / `workspace-write` / `danger-full-access`.
 - Open: the manifest key that exposes `agents/` (skills pointer confirmed).
 
 ## Adding a harness
 
 A new column: its instruction file (or `AGENTS.md`-native), skill location + invocation,
-subagent format, distribution manifest, and plugin-root reference. No skill body or
-template change.
+fresh-context review strategy, distribution manifest, and plugin-root reference. No
+skill body or template change.
