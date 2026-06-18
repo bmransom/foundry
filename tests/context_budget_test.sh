@@ -9,12 +9,9 @@ trap 'rm -rf "$FIXTURE_ROOT"' EXIT
 make_fixture() {
   fixture="$(mktemp -d "$FIXTURE_ROOT/case.XXXXXX")"
   mkdir -p "$fixture/plugins/foundry/skills/code"
-  mkdir -p "$fixture/plugins/foundry/agents"
   mkdir -p "$fixture/plugins/foundry/templates/seeds/rules"
   # 10-line skill — well under budget
   printf '%s\n' {1..10} > "$fixture/plugins/foundry/skills/code/SKILL.md"
-  # 10-line agent — well under budget
-  printf '%s\n' {1..10} > "$fixture/plugins/foundry/agents/spec-reviewer.md"
   # 10-line seed rule — well under budget
   printf '%s\n' {1..10} > "$fixture/plugins/foundry/templates/seeds/rules/spec-conventions.md"
   echo "$fixture"
@@ -38,7 +35,8 @@ echo "$output" | grep -q "120" \
 
 # Case (c): agent file over budget → fail
 fixture="$(make_fixture)"
-printf '%s\n' {1..70} > "$fixture/plugins/foundry/agents/spec-reviewer.md"
+mkdir -p "$fixture/plugins/foundry/agents"
+printf '%s\n' {1..70} > "$fixture/plugins/foundry/agents/custom-agent.md"
 if "$SCRIPT" "$fixture" >/dev/null 2>&1; then fail "oversize agent should fail"; fi
 
 # Case (d): seed rule over budget → fail

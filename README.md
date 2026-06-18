@@ -65,7 +65,6 @@ Installed once at user scope, these run in every repo:
 | `spec-review` skill | Reviews specs and context-resident prose against the glossary and writing style, preferably in fresh context |
 | `handoff` skill | Captures verified state and starts a same-harness successor session |
 | `extract-skill` skill | Distills reusable workflows from a session into user, repo, or plugin skills |
-| `spec-reviewer` agent | Claude Code wrapper for fresh-context `spec-review` |
 
 ## Setup
 

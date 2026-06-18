@@ -7,7 +7,7 @@ SKILL_DIR="$REPO/plugins/foundry/skills/spec-review"
 SKILL_MD="$SKILL_DIR/SKILL.md"
 SCRIPT="$SKILL_DIR/scripts/spawn-spec-reviewer.sh"
 CODE_SKILL="$REPO/plugins/foundry/skills/code/SKILL.md"
-CLAUDE_AGENT="$REPO/plugins/foundry/agents/spec-reviewer.md"
+LEGACY_AGENT="$REPO/plugins/foundry/agents/spec-reviewer.md"
 README="$REPO/README.md"
 SPEC_README="$REPO/roadmap/specs/README.md"
 SEED_SPEC_RULE="$REPO/plugins/foundry/templates/seeds/rules/spec-conventions.md"
@@ -34,6 +34,7 @@ frontmatter_value() {
 }
 
 [ -f "$SKILL_MD" ] || fail "missing $SKILL_MD"
+[ ! -f "$LEGACY_AGENT" ] || fail "spec-reviewer agent must not be part of the active plugin surface"
 [ "$(frontmatter_value name "$SKILL_MD")" = "spec-review" ] \
   || fail "spec-review frontmatter name must match directory"
 case "$(frontmatter_value description "$SKILL_MD")" in
@@ -73,10 +74,8 @@ grep -q "spec-review" "$CODE_SKILL" \
 ! grep -q "against \`spec-reviewer\`" "$CODE_SKILL" \
   || fail "code lifecycle must not name spec-reviewer as the canonical review surface"
 
-grep -q "spec-review" "$CLAUDE_AGENT" \
-  || fail "Claude spec-reviewer wrapper must delegate to spec-review"
-grep -q "fresh context" "$CLAUDE_AGENT" \
-  || fail "Claude spec-reviewer wrapper must state its fresh-context purpose"
+! grep -q "spec-reviewer.*agent" "$README" \
+  || fail "README must not advertise a Claude-specific spec-reviewer agent"
 
 for doc in "$README" "$SPEC_README" "$SEED_SPEC_RULE" "$SEED_SPEC_README"; do
   grep -q "spec-review" "$doc" \
