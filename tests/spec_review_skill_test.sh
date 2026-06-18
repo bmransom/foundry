@@ -61,7 +61,7 @@ dry_run="$(
     "$SCRIPT" --dry-run roadmap/specs/example/design.md "$REPO"
 )"
 case "$dry_run" in
-  *"new-window"*spec-review*claude*"roadmap/specs/example/design.md"*".foundry/reports/spec-review/"*) ;;
+  *"new-window"*spec-review*claude*".foundry/tmp/fresh-session/"*"prompt.md"*".foundry/reports/spec-review/"*) ;;
   *) fail "spawn-spec-reviewer.sh dry-run must launch claude review with target and report path" ;;
 esac
 

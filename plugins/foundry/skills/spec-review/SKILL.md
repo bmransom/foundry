@@ -12,6 +12,7 @@ reviewer sees the artifact, not the author's rationale.
 
 1. Identify the target files.
 2. Run `scripts/spawn-spec-reviewer.sh <target> [repo-dir]` when tmux is available.
+   The wrapper delegates to Foundry's shared fresh-session runner.
 3. Wait for the report in `.foundry/reports/spec-review/`.
 4. Read the report, apply accepted fixes, and re-run if the fixes change names,
    vocabulary, requirements, design, tasks, skills, agents, or rules.

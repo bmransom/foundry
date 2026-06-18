@@ -70,6 +70,8 @@ scripts/spawn-extractor.sh "<name>" ".agent/skill-extractions/<name>/brief.md"
 ```
 
 If the harness or tmux cannot be detected, print the command and seed prompt.
+The script delegates to Foundry's shared fresh-session runner so Claude, Codex, and
+Pi use the same prompt-file and tmux launch path.
 
 ## Quality Bar
 

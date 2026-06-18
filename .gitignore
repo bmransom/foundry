@@ -8,3 +8,4 @@ evals/results/
 evals/fixtures/navigation/tree/
 evals/fixtures/navigation-breadth/tree/
 .foundry/reports/
+.foundry/tmp/

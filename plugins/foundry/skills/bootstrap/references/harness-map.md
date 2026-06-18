@@ -9,7 +9,7 @@ The per-harness coupling points foundry binds. Everything else is single-source:
 | Instruction file | `CLAUDE.md` → `AGENTS.md` (pointer) | `AGENTS.md` (native) |
 | Skill location | `<plugin root>/skills/<name>/` | `.agents/skills/<name>/` |
 | Skill invocation | `/foundry:<name>` | `$<name>` |
-| Fresh review context | `agents/spec-reviewer.md` wrapper | `spec-review` runner starts a fresh Codex session |
+| Fresh session runner | `spawn-fresh-session.sh` starts `claude` in tmux | `spawn-fresh-session.sh` starts `codex` in tmux |
 | Distribution | `.claude-plugin/{marketplace,plugin}.json` | `.agents/plugins/marketplace.json` (neutral) + `.codex-plugin/plugin.json` |
 | Plugin-root reference | `${CLAUDE_PLUGIN_ROOT}` | Codex plugin root (tree co-located) |
 
@@ -29,14 +29,16 @@ The per-harness coupling points foundry binds. Everything else is single-source:
   (the `.agents/` family, like `.agents/skills/`) + a Codex-native `plugins/foundry/.codex-plugin/plugin.json`
   — verified with both `.claude-plugin/` dirs removed, so neither harness reads the other's
   manifest. Plugin tree co-located, so `<plugin root>` resolves.
-- Fresh review context: canonical behavior lives in the `spec-review` skill. Claude
-  Code can dispatch `agents/spec-reviewer.md`; Codex should use the skill runner to
-  start a fresh session until Codex plugin-packaged agents are supported.
+- Fresh session runner: lifecycle skills use `plugins/foundry/scripts/spawn-fresh-session.sh`
+  through thin skill wrappers. The runner writes the full prompt to
+  `.foundry/tmp/fresh-session/<id>/prompt.md`, then starts the same harness in tmux
+  with a short "read this prompt file" instruction. Harness-specific behavior stays
+  in the runner's command adapter.
 - Sandbox modes: `read-only` / `workspace-write` / `danger-full-access`.
 - Open: the manifest key that exposes `agents/` (skills pointer confirmed).
 
 ## Adding a harness
 
 A new column: its instruction file (or `AGENTS.md`-native), skill location + invocation,
-fresh-context review strategy, distribution manifest, and plugin-root reference. No
+fresh-session command adapter, distribution manifest, and plugin-root reference. No
 skill body or template change.
