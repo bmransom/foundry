@@ -1,13 +1,14 @@
 ---
 name: code
-description: Use when implementing, adding, changing, or fixing a feature in a repo
-  with the foundry setup — a board at roadmap/ROADMAP.md, roadmap/specs/, features/ — work that
-  ends in a commit. Covers the lifecycle from first design through shipping.
+description: "Use when implementing, adding, changing, or fixing a feature in a repo with the foundry setup: roadmap/ROADMAP.md, roadmap/specs/, features/, knowledge/, and work that ends in verification or a commit. Covers the lifecycle from design through shipping."
 ---
 
 # The code lifecycle
 
-This skill defines the ordered stages and gates for feature work in a foundry repo.
+This is the high-level dispatcher for feature work in a foundry repo. Keep repo
+facts in `AGENTS.md`, `rules/`, and the knowledge base; use lower-level skills for
+judgment-heavy checks so this lifecycle stays small.
+
 Every repo-specific detail comes from:
 
 | Repo specific | Read it from |
@@ -18,9 +19,8 @@ Every repo-specific detail comes from:
 | Vocabulary | `knowledge/glossary.md` |
 | The board | `roadmap/ROADMAP.md` |
 
-**Precondition.** This skill assumes a foundry-bootstrapped repo. If there is no
-`AGENTS.md` or `roadmap/ROADMAP.md`, the setup is absent — stop and point the user
-to the bootstrap skill rather than writing spec, board, or feature files.
+**Precondition.** If there is no `AGENTS.md` or `roadmap/ROADMAP.md`, stop and
+point the user to the bootstrap skill rather than writing foundry files.
 
 ## The checklist
 
@@ -28,7 +28,7 @@ Copy this into your reply and check off each stage. A gate is a **prohibition**:
 not start a later stage until the prior gate is met.
 
 - [ ] **0 Frame** — classify the work; pick the path below.
-- [ ] **1 Spec** — `roadmap/specs/<feature>/{requirements,design,tasks}.md` written + Design reviewed. GATE: no code until the Design is approved.
+- [ ] **1 Spec** — `roadmap/specs/<feature>/{requirements,design,tasks}.md` written, reviewed, and revised. GATE: no code until Design is approved.
 - [ ] **2 Plan** — bite-sized TDD tasks in `tasks.md`; board card claimed. GATE: no code until the plan is approved.
 - [ ] **3 Build** — feature-file Scenario first, then TDD red→green. GATE: new behavior has its Scenario before its code.
 - [ ] **4 Verify** — the repo's canonical gate green. GATE: a recorded PASS, pasted — not a claim.
@@ -41,14 +41,25 @@ not start a later stage until the prior gate is met.
 |---|---|
 | **New feature** | All stages 1 → 6. |
 | **Enhancement** of existing behavior | Update the affected Scenario in `features/` + the touched stages; a light spec note, not a full `roadmap/specs/<feature>/`. |
+| **Performance-sensitive change** | Use `performance` during Spec/Plan/Verify, then follow the matching feature, enhancement, bug-fix, or refactor path. |
+| **Naming, API, or vocabulary change** | Use `naming-standards` during Spec/Plan before writing public names. |
+| **New boundary, extension point, or interaction model** | Use `design-patterns` and `modular-structure` during Spec/Plan. |
 | **Bug fix** | Reproduce → write the failing test → fix → Verify → Finish. Skip 1–2. |
 | **Refactor** (no behavior change) | Build → Verify → Finish; leave `features/` untouched. |
 
 ## 1 · Spec
 
-Write `roadmap/specs/<feature>/{requirements,design,tasks}.md` in the format `roadmap/specs/README.md`
-defines, in the vocabulary of `knowledge/glossary.md`. Before coining any canonical name (glossary term, public type or field, config knob), search the prior art — domain literature, stack naming conventions, comparable tools; record provenance, or why none fits, in the glossary. Delegate the Design to the `spec-reviewer` — a subagent where the harness provides
-one, else review inline against its criteria — before presenting it.
+Write `roadmap/specs/<feature>/{requirements,design,tasks}.md` in the format
+`roadmap/specs/README.md` defines and the vocabulary of `knowledge/glossary.md`.
+Then loop:
+
+1. Review requirements, design, and tasks against `spec-reviewer`.
+2. Use `naming-standards` for new glossary terms, public APIs, config, metrics, files, and directories.
+3. Use `design-patterns` when boundaries, extension points, eventing, adapters, construction, or algorithm selection matter.
+4. Use `modular-structure` for placement, dependency direction, public/internal APIs, and directory shape.
+5. Use `performance` when the work touches hot paths, resource use, model/tool calls, or user-visible latency.
+6. Revise the spec and repeat if any review changes requirements, design, tasks, or vocabulary.
+
 **Gate:** no implementation until the Design is approved.
 
 ## 2 · Plan
@@ -56,6 +67,9 @@ one, else review inline against its criteria — before presenting it.
 Break the design into bite-sized TDD tasks in `roadmap/specs/<feature>/tasks.md` — exact
 paths, real code, a test per step. Claim the work by setting the owner on its card in
 `roadmap/ROADMAP.md` (the board); respect listed dependencies.
+For performance-sensitive work, include the baseline plan from `performance` before
+code: main vs feature, flag-off vs flag-on, old vs new algorithm, no-feature vs
+feature, or reference vs local, with common workload and correctness gate named.
 **Gate:** no code until the plan exists and is approved.
 
 ## 3 · Build

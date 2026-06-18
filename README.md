@@ -58,6 +58,12 @@ Installed once at user scope, these run in every repo:
 | `/foundry:bootstrap` | Installs the setup into the current repo: inspect → interview → copy → generate → verify |
 | `/foundry:update` | Refreshes installed templates on a version bump; never overwrites your content |
 | `code` skill | Drives feature work: spec → plan → build → verify → finish |
+| `performance` skill | Treats performance-sensitive work as a lifecycle concern: baseline → benchmark → profile → attribute |
+| `naming-standards` skill | Reviews glossary, API, file, metric, and config names before they become contracts |
+| `design-patterns` skill | Chooses patterns such as Strategy, Adapter, Observer, Factory, Builder, Facade, Decorator, Command, and State when they earn their complexity |
+| `modular-structure` skill | Reviews directory layout, module boundaries, dependency direction, and public/internal APIs |
+| `handoff` skill | Captures verified state and starts a same-harness successor session |
+| `extract-skill` skill | Distills reusable workflows from a session into user, repo, or plugin skills |
 | `spec-reviewer` agent | Reviews specs and context-resident prose against the glossary and writing style |
 
 ## Setup
