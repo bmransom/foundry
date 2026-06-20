@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Headless reviewer eval (Layer 3): run the spec-reviewer agent over the
+# Headless reviewer eval (Layer 3): run the spec-review skill over the
 # seeded fixture N times, then score recall and decoy hits mechanically
 # against the answer key (AC-5.3). Honest framing per design §Evals: at
 # affordable N this is a smoke alarm for large regressions, not statistics.
@@ -22,7 +22,11 @@ FOUNDRY_REPO="$(cd "$HARNESS/../.." && pwd)"
 FIXTURE_DIR="$FOUNDRY_REPO/evals/fixtures/reviewer"
 TREE="$FIXTURE_DIR/tree"
 ANSWER_KEY="$FIXTURE_DIR/answer-key.json"
-AGENT_FILE="$FOUNDRY_REPO/plugins/foundry/agents/spec-reviewer.md"
+REVIEW_SKILL="$FOUNDRY_REPO/plugins/foundry/skills/spec-review/SKILL.md"
+if [ ! -f "$REVIEW_SKILL" ]; then
+  echo "reviewer-eval: missing review skill $REVIEW_SKILL" >&2
+  exit 1
+fi
 RESULTS_DIR="$FOUNDRY_REPO/evals/results"
 
 SCORE_ONLY=0
@@ -110,7 +114,7 @@ case "$RUNS" in (*[!0-9]*|"") usage ;; esac
 echo "reviewer-eval: runs=$RUNS tree=$TREE"
 echo "reviewer-eval: results=$results"
 
-prompt="Read $AGENT_FILE and follow it exactly. Review roadmap/specs/widget-pricing/design.md. After the findings, output a footer block — one line per flagged item in the form: FLAGGED: <the exact offending term, identifier, or quoted phrase>. Include FLAGGED lines for flagged items only — anything noted as clean must NOT appear in a FLAGGED line."
+prompt="Read $REVIEW_SKILL and follow it exactly. Review roadmap/specs/widget-pricing/design.md. After the findings, output a footer block — one line per flagged item in the form: FLAGGED: <the exact offending term, identifier, or quoted phrase>. Include FLAGGED lines for flagged items only — anything noted as clean must NOT appear in a FLAGGED line."
 findings_files=()
 for ((run_number = 1; run_number <= RUNS; run_number++)); do
   log="$RESULTS_DIR/reviewer-$stamp-run$run_number.log"
