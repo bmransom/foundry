@@ -58,9 +58,27 @@ Acceptance criteria:
   hash when the file exists.
 - AC-2.8 WHEN a required repo guidance source is missing, THE SYSTEM SHALL fail
   preflight and report the missing path.
-- AC-2.9 WHEN the mediator runs `round`, THE SYSTEM SHALL run one Codex turn and
+- AC-2.9 WHEN `round` runs, THE SYSTEM SHALL run one Codex turn and
   one Claude Code turn, assign both turns the same round ID, and alternate the
   participant that runs first each round.
+- AC-2.10 WHEN the broker renders a participant prompt, THE SYSTEM SHALL include
+  the recorded mediator prompt (the `mediator_prompt` payload) and the current
+  open questions.
+- AC-2.11 WHEN `round` runs, THE SYSTEM SHALL resolve an existing session from
+  `--session-dir` and read `repo_root` from `session.json`; it SHALL refuse a
+  `--session-dir` with no `session.json` or whose recorded `session_id` does not
+  match the directory name.
+- AC-2.12 WHEN a participant CLI exits nonzero without a usage or rate limit, THE
+  SYSTEM SHALL append `participant_failed` with the prompt hash, exit status, and
+  debug raw path, and pause for mediator action.
+- AC-2.13 WHEN a participant turn is interrupted before `participant_final` is
+  recorded, THE SYSTEM SHALL resume the incomplete turn on the next `round`
+  without failing on the existing prompt payload.
+- AC-2.14 WHEN a round ends with `participant_limited` or `participant_failed`
+  before every participant produces a final, THE SYSTEM SHALL resume the same
+  round ID for the remaining participants rather than advance the round counter.
+- AC-2.15 WHEN the broker stores raw participant output, THE SYSTEM SHALL NOT
+  embed the prompt text and SHALL reference the prompt by SHA-256.
 
 ### US-3: Preserve an auditable session record
 

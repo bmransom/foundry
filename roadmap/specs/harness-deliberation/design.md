@@ -134,6 +134,10 @@ stores event metadata rather than prompt bodies.
 
 `raw.*` files are debug-only. They may differ by harness format, such as Codex
 logs or Claude Code JSON, and do not participate in rebuild or spec generation.
+They reference the prompt by SHA-256 and never embed the prompt text, so raw
+evidence can be shared without leaking prompt content. The Codex and Claude Code
+adapters pass the prompt on stdin rather than argv so the prompt never enters the
+recorded command vector.
 
 ## Event and state schema
 
@@ -177,9 +181,9 @@ latest valid event wins for effective state; older events stay in the ledger.
 
 A progress hash excludes raw output, wall-clock fields, and pure turn metadata.
 It includes effective questions, dispositions, deferred dissent, complete
-snapshots, and generated-spec outline entries. `session.json` stores
-`config.stall_rounds`, default `2`; that many consecutive rounds with unchanged
-progress hash emits `stall`.
+snapshots, and generated-spec outline entries. `session.json` stores `repo_root`,
+the `session_id`, and `config.stall_rounds` (default `2`); that many consecutive
+rounds with unchanged progress hash emits `stall`.
 
 ## Broker commands
 
@@ -188,7 +192,7 @@ The v1 command surface has six commands:
 | Command | Purpose |
 |---|---|
 | `start --prompt <file> --session <id> [--attach]` | Create session storage, record the initial mediator prompt, run preflight, and open tmux. The runner materializes inline user prompts to a file before calling the broker. |
-| `round` | Run one Codex turn and one Claude Code turn, alternating which participant runs first by round. |
+| `round --session-dir <dir>` | Resolve an existing session, render the mediator prompt plus open questions, and run one Codex turn and one Claude Code turn read-only, alternating which participant runs first by round. |
 | `decide --file <md-or-json>` | Record mediator decisions, revisions, and dispositions. |
 | `rebuild` | Verify hashes and regenerate Tier 3 views from Tiers 1 and 2. |
 | `spec --out roadmap/specs/<feature>` | Verify closure and generate `requirements.md`, `design.md`, and `tasks.md`. |
@@ -196,6 +200,10 @@ The v1 command surface has six commands:
 
 There is no v1 participant-count flag, compression flag, `/apply`, or
 `/promote`.
+
+Commands that operate on an existing session (`round`, `rebuild`, `decide`,
+`spec`) take `--session-dir`; `start` and `live-smoke` locate or create a session
+by `--session <id>` plus `--repo`.
 
 ## Data flow
 
@@ -205,13 +213,31 @@ worktree`, `.foundry/manifest.json` for both selected harnesses, harness
 availability through `harness-status.py`, and required repo guidance sources.
 Preflight failures stop the session with exact failed checks.
 
-**Round.** The broker renders compact state from `state.json` into the
-participant prompt, adds the previous peer `final.md`, writes `prompt.md`, runs
-the harness, captures `final.md`, records metadata and hashes, then appends
-`participant_final`. A usage or rate limit appends `participant_limited`,
-preserves the session, and waits for mediator action.
-Participants read only compact state and peer-readable final messages unless the
-mediator supplies named Tier 2 payloads.
+**Round.** `round` resolves an existing session from `--session-dir`, reading
+`repo_root` from `session.json`. It refuses a `--session-dir` with no
+`session.json` or whose recorded `session_id` does not match the directory name.
+The broker renders the turn prompt from the recorded mediator prompt (the
+`mediator_prompt` payload), the current open questions, compact state, the
+previous peer `final.md`, and repo guidance, so the first round is non-empty
+before any questions are seeded. Each turn then:
+
+1. writes `prompt.md`;
+2. runs the harness read-only (Codex `--sandbox read-only`, Claude Code read-only
+   tools);
+3. captures the returned text as `final.md`;
+4. records metadata and hashes and appends `participant_final`.
+
+A usage or rate limit appends `participant_limited`; an unclassified nonzero exit
+appends `participant_failed`; both preserve the session and wait for mediator
+action. Participants read only the mediator prompt, compact state, and
+peer-readable final messages unless the mediator supplies named Tier 2 payloads.
+
+The broker owns `final.md`: read-only participants return text and the broker
+persists it. `round` runs one round per invocation. If a turn is interrupted
+before `participant_final`, the next `round` resumes it — the prompt write is
+idempotent on a matching hash, and a round that recorded `participant_limited` or
+`participant_failed` for one participant resumes the same round ID for the
+remaining participants rather than advancing the counter.
 
 Each rendered prompt starts with repo guidance:
 
@@ -308,8 +334,10 @@ future Tier 3 work over the same event store.
 
 ## Testing strategy
 
-The eval suite must discriminate. Each test includes a seeded defect that the
-gate catches:
+The eval suite must discriminate, and the gate runs the deterministic tests
+directly (`tests/*_test.sh`), not a case-name grep. A case-name grep that exits
+nonzero whenever a fixture name exists asserts nothing and is replaced. Each test
+includes a seeded defect that the gate catches:
 
 1. Replay eval: delete Tier 3 views, rebuild, and require byte-identical output.
 2. Payload eval: corrupt `prompt.md` or `final.md`; `rebuild` fails.
@@ -321,10 +349,20 @@ gate catches:
    tasks make `spec` fail.
 7. Stall eval: seed no-op rounds; broker emits `stall`.
 8. Live smoke: one bounded Codex + Claude Code round records `prompt.md`,
-   `final.md`, and `participant_final` events for both participants.
+   `final.md`, and `participant_final` events for both participants, and a shape
+   check rejects an empty or boilerplate final so a no-op cannot pass as success.
 9. Availability eval: fake harness adapters cover missing command,
    unauthenticated, subscription-unavailable, usage-limited, rate-limited, and
    unknown-failure results without mutating the manifest.
+10. Command-surface eval: the advertised v1 commands from one canonical source
+    must equal the broker's implemented subcommands and their options; a doc-only
+    command with no parser fails. Runs as a `tests/*_test.sh`, not a name grep.
+11. Mediator-prompt-rendering eval: a session with a mediator prompt and a seeded
+    question renders a turn whose persisted `prompt.md` contains the mediator
+    prompt body and the question; dropping it from the renderer fails the test.
+12. Round-resume eval: an interrupted turn re-runs without an immutable-payload
+    error, and a `limited` or `failed` first participant leaves the second
+    participant's same-round turn still runnable.
 
 ## Exclusions
 

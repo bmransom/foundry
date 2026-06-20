@@ -85,4 +85,4 @@ model, forbidden terms, standing rules, or gate commands.
 
 | Work | Status | Spec | Depends on |
 |---|---|---|---|
-| harness-deliberation spec: requirements + design + tasks (@codex) | Validating — live smoke PASS (`live-smoke-20260619b`); `check-fast: PASS` | `roadmap/specs/harness-deliberation/` | harness-agnostic |
+| harness-deliberation spec: requirements + design + tasks (@codex) | In progress — dogfooding found `round` unwired and the brief never reaching participants; Wave 8 (F+E) opened to make `round` real and the evals discriminating; 0.1.2 release paused until it lands | `roadmap/specs/harness-deliberation/` | harness-agnostic |
