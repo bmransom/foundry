@@ -29,7 +29,7 @@ plugins/foundry/scripts/harness-deliberation-broker.py start \
 
 - `start --prompt <file> --session <id> [--attach]`
 - `round`
-- `decide --file <md-or-json>`
+- `decide --file <file.json>`
 - `rebuild`
 - `spec --out roadmap/specs/<feature>`
 - `live-smoke --session <id> [--prompt <file>]`

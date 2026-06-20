@@ -139,6 +139,12 @@ Acceptance criteria:
   SHALL record the proposal as a design decision request and SHALL NOT mutate the
   consumer repo worktree.
 
+> **v1 snapshot surface (deferred dissent).** AC-5.2/AC-5.4 capture and
+> reconstruction are v1 broker capabilities exercised by the snapshot evals, not a
+> v1 mediator command. A mediator-triggered `snapshot`/`reconstruct` CLI verb is
+> deferred from the six-command surface; "the mediator requests a snapshot" is
+> satisfied internally in v1 and graduates to a CLI verb in a later version.
+
 ### US-6: Generate a Foundry spec only after closure
 
 As a maintainer, I want `spec` to require a passing `rebuild` and closed

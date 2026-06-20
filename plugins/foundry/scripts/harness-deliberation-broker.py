@@ -2125,6 +2125,18 @@ def main(argv: list[str] | None = None) -> int:
                     f"{Path(args.session_dir).name!r}"
                 )
             repo = Path(store.session["repo_root"])
+            preflight = run_start_preflight(repo_root=repo)
+            if not preflight.ok:
+                messages = "\n".join(
+                    failure["message"] for failure in preflight.failures
+                )
+                print(
+                    "round preflight failed (harness availability drift?):\n"
+                    f"{messages}\n"
+                    "Fix the auth/subscription, or run /foundry:update to change the "
+                    "manifest harness set."
+                )
+                return 1
             run_round(
                 session_dir=args.session_dir,
                 participant_runner=_round_participant_runner(

@@ -176,7 +176,7 @@ through `decide --file`.
 - `rounds`: turn IDs grouped by round;
 - `last_progress_hash`: hash of progress-bearing state.
 
-Decision revisions use `supersedes` to point at the prior `decision_id`. The
+Decision revisions use `supersedes` to point at the prior decision's `event_id`. The
 latest valid event wins for effective state; older events stay in the ledger.
 
 A progress hash excludes raw output, wall-clock fields, and pure turn metadata.
@@ -193,13 +193,16 @@ The v1 command surface has six commands:
 |---|---|
 | `start --prompt <file> --session <id> [--attach]` | Create session storage, record the initial mediator prompt, run preflight, and open tmux. The runner materializes inline user prompts to a file before calling the broker. |
 | `round --session-dir <dir>` | Resolve an existing session, render the mediator prompt plus open questions, and run one Codex turn and one Claude Code turn read-only, alternating which participant runs first by round. |
-| `decide --file <md-or-json>` | Record mediator decisions, revisions, and dispositions. |
+| `decide --file <file.json>` | Record mediator decisions, revisions, and dispositions. Decisions are JSON; `supersedes` names a prior decision `event_id`. |
 | `rebuild` | Verify hashes and regenerate Tier 3 views from Tiers 1 and 2. |
 | `spec --out roadmap/specs/<feature>` | Verify closure and generate `requirements.md`, `design.md`, and `tasks.md`. |
 | `live-smoke --session <id> [--prompt <file>]` | Opt in to one real Codex plus Claude Code round, verify both `final.md` payloads, and fail if the consumer repo worktree changes. |
 
 There is no v1 participant-count flag, compression flag, `/apply`, or
-`/promote`.
+`/promote`. Snapshot capture and reconstruction are v1 broker capabilities
+(exercised by the snapshot evals and available to future automation), not a v1
+mediator command verb; a mediator-triggered `snapshot`/`reconstruct` CLI is
+deferred (US-5 records this as the snapshot-surface tradeoff).
 
 Commands that operate on an existing session (`round`, `rebuild`, `decide`,
 `spec`) take `--session-dir`; `start` and `live-smoke` locate or create a session

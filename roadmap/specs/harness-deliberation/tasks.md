@@ -199,7 +199,7 @@ are tracked here; decision IDs trace to the session.
   `run_tmux=False`) fails on placeholder/exiting panes or missing Tier 3 files.
   Done: `tests/harness_deliberation_start_tmux_test.sh` (real tmux) +
   `tests/harness_deliberation_start_test.sh` shape/Tier-3 assertions. [d0002, d0003]
-- [ ] T36: Re-run preflight/`_check_harness_statuses` at the top of the `round`
+- [x] T36: Re-run preflight/`_check_harness_statuses` at the top of the `round`
   CLI and refuse drift with auth/subscription or `/foundry:update` guidance. Gate:
   a de-selected or unavailable participant makes `round` exit nonzero before
   spending a turn. [AC-8.6, d0004]
@@ -208,14 +208,14 @@ are tracked here; decision IDs trace to the session.
   non-interactive `--attach` path. Gate: a non-interactive `start --attach` test
   asserts the printed attach command. Done:
   `tests/harness_deliberation_start_attach_test.sh`. [AC-1.6, d0005]
-- [ ] T38: Align the `decide` contract — implement Markdown + `decision_id`
+- [x] T38: Align the `decide` contract — implement Markdown + `decision_id`
   supersession, or correct `SKILL.md`/`design.md` to JSON + event-id; the
   command-surface eval asserts the chosen contract. Gate: the documented `decide`
   input parses. [d0006]
 - [x] T39: Route the `ParticipantFailed` raw write through `_format_raw_turn` so a
   failed `raw.log` carries the `prompt_sha256`/command envelope. Gate: a
   failed-turn test asserts `prompt_sha256` in `raw.log`. [AC-2.15, d0007]
-- [ ] T40: Resolve the snapshot-surface contradiction (deferred dissent) — expose
+- [x] T40: Resolve the snapshot-surface contradiction (deferred dissent) — expose
   `scratch`/`snapshot`/`reconstruct` subcommands, or explicitly defer
   mediator-triggered snapshots from v1 and reconcile US-5/AC-5.2 with the
   command table. Gate: the command-surface eval and US-5 agree. [d0008]

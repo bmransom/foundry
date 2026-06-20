@@ -162,6 +162,11 @@ def fake_round_factory(repo, timeout_s, budget_usd):
 
 
 broker._round_participant_runner = fake_round_factory
+# round now re-checks preflight (T36/AC-8.6); make the non-drift checks pass
+# hermetically so this positive case does not depend on real codex/claude/tmux.
+broker._command_exists = lambda name: True
+broker._run_command = lambda command, timeout_s: broker.CommandResult(0, "ok", "")
+broker._check_harness_statuses = ok_status
 code = broker.main(["round", "--session-dir", str(cli_start.session_dir)])
 assert_equal(code, 0, "round CLI exit code")
 cli_finals = [e for e in events_of(cli_start.session_dir) if e["type"] == "participant_final"]
