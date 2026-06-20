@@ -224,7 +224,11 @@ main() {
     if [ -n "$branch" ]; then echo "worktree: $worktree (branch $branch)"; fi
   else
     echo "tmux not found - run this manually:"
-    echo "cd $worktree && $pane_cmd"
+    if [ -n "$session_gitconfig" ]; then
+      echo "cd $worktree && GIT_CONFIG_GLOBAL=$session_gitconfig $pane_cmd"
+    else
+      echo "cd $worktree && $pane_cmd"
+    fi
     echo "prompt: $abs_prompt_file"
     if [ -n "$branch" ]; then echo "worktree: $worktree (branch $branch)"; fi
   fi
