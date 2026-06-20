@@ -1,5 +1,16 @@
 #!/usr/bin/env bash
 # Spawn the same agent harness in a fresh tmux session/window from a prompt file.
+#
+# Isolation: each spawn runs in its own git worktree on branch foundry/fs/<id>,
+# so concurrent sessions never collide on the working tree or branch. Isolation
+# is default-on; there is no opt-in flag.
+#
+# CAVEAT — worktrees SHARE .git/config. Linked worktrees share the common git
+# dir, so `git config --local` and `core.bare` writes reach the SHARED
+# .git/config; the worktree does NOT isolate it. The per-session
+# GIT_CONFIG_GLOBAL set below is a guardrail for GLOBAL-config writes, not a
+# boundary, and no PATH git shim is installed (a shim is brittle and gives false
+# assurance). Full .git/config isolation needs a per-session clone (deferred).
 set -euo pipefail
 
 existing_names() {
@@ -62,6 +73,23 @@ agent_command() {
   esac
 }
 
+is_git_repo() { git -C "$1" rev-parse --git-dir >/dev/null 2>&1; }
+
+# Linked worktree iff --git-dir differs from --git-common-dir.
+in_linked_worktree() {
+  local git_dir common_dir
+  git_dir="$(git -C "$1" rev-parse --git-dir 2>/dev/null)" || return 1
+  common_dir="$(git -C "$1" rev-parse --git-common-dir 2>/dev/null)" || return 1
+  [ "$git_dir" != "$common_dir" ]
+}
+
+# The commit origin/HEAD resolves to, then main, then HEAD — no network fetch.
+resolve_base() {
+  git -C "$1" rev-parse --verify -q origin/HEAD \
+    || git -C "$1" rev-parse --verify -q main \
+    || git -C "$1" rev-parse --verify -q HEAD
+}
+
 usage() {
   echo "usage: spawn-fresh-session.sh [--dry-run] [--print-harness] [--skip-permissions] --name <slug> [project-dir] < prompt.md" >&2
 }
@@ -97,9 +125,13 @@ main() {
   local safe_slug="${slug//[^[:alnum:]._-]/-}"
   local session_id prompt_dir prompt_file short_prompt pane_cmd
   session_id="$(date +%Y%m%d%H%M%S)-$safe_slug-$$"
+  # Support files (prompt, per-session gitconfig) live in the PRIMARY session
+  # dir under gitignored .foundry/tmp/, so they survive worktree retire and do
+  # not ride the ephemeral branch. The harness reads the prompt by absolute path.
   prompt_dir=".foundry/tmp/fresh-session/$session_id"
   prompt_file="$prompt_dir/prompt.md"
-  short_prompt="Read $prompt_file and follow it exactly."
+  local abs_prompt_file="$dir/$prompt_file"
+  short_prompt="Read $abs_prompt_file and follow it exactly."
 
   if ! pane_cmd="$(agent_command "$harness" "$skip" "$short_prompt")"; then
     echo "unknown harness - paste this prompt into a fresh agent session:" >&2
@@ -107,9 +139,62 @@ main() {
     exit 0
   fi
 
+  # --- Isolation: create a per-session worktree and launch the harness there.
+  # The source tree is never the harness cwd, so concurrent sessions never
+  # collide on the working tree or branch. Isolation is default-on (AC-1.7);
+  # there is no opt-in flag. dry-run is a preview and creates no git state.
+  local worktree="$dir" branch="" session_gitconfig=""
   if [ "$dry_run" -eq 0 ]; then
-    mkdir -p "$dir/$prompt_dir"
-    printf '%s\n' "$prompt" > "$dir/$prompt_file"
+    if ! is_git_repo "$dir"; then
+      # No git, no worktree. Refuse loudly unless explicitly allowed.
+      case "${FOUNDRY_SPAWN_ALLOW_NON_GIT:-}" in
+        1|true|yes)
+          echo "spawn-fresh-session: WARNING — '$dir' is not a git repo; spawning in place with NO worktree and NO branch. Isolation is lost; concurrent sessions can collide." >&2
+          ;;
+        *)
+          echo "spawn-fresh-session: REFUSING to spawn — '$dir' is not a git repo, so no worktree isolation is possible. Set FOUNDRY_SPAWN_ALLOW_NON_GIT=1 to spawn in place anyway (isolation lost)." >&2
+          exit 1
+          ;;
+      esac
+      mkdir -p "$dir/$prompt_dir"
+      printf '%s\n' "$prompt" > "$abs_prompt_file"
+    else
+      command -v git >/dev/null 2>&1 \
+        && git worktree --help >/dev/null 2>&1 \
+        || { echo "spawn-fresh-session: git worktree is unavailable" >&2; exit 1; }
+
+      mkdir -p "$dir/$prompt_dir"
+      printf '%s\n' "$prompt" > "$abs_prompt_file"
+
+      if in_linked_worktree "$dir"; then
+        # Handoff from a linked worktree: reuse it; never mint a new one, so the
+        # successor keeps the parent's uncommitted WIP (AC-2.1, AC-2.3).
+        worktree="$dir"
+      else
+        # Fresh session or a primary-tree handoff: promote to a new worktree.
+        worktree="$dir/$prompt_dir/worktree"
+        branch="foundry/fs/$session_id"
+        local base
+        base="$(resolve_base "$dir")" \
+          || { echo "spawn-fresh-session: cannot resolve a worktree base (origin/HEAD, main, HEAD)" >&2; exit 1; }
+        if ! git -C "$dir" worktree add -b "$branch" "$worktree" "$base" >/dev/null 2>&1; then
+          # Roll back any partial state; never start tmux on a failed add.
+          rm -rf "$worktree"
+          if git -C "$dir" rev-parse --verify -q "$branch" >/dev/null 2>&1; then
+            git -C "$dir" branch -D "$branch" >/dev/null 2>&1 || true
+          fi
+          echo "spawn-fresh-session: git worktree add failed for $branch" >&2
+          exit 1
+        fi
+      fi
+
+      # Guardrail (not a boundary): a per-session GIT_CONFIG_GLOBAL so a
+      # session's GLOBAL-config writes land in a throwaway file. Linked
+      # worktrees still SHARE .git/config; `git config --local` and core.bare
+      # writes reach the shared file and this guardrail does NOT isolate it.
+      session_gitconfig="$dir/$prompt_dir/gitconfig"
+      : > "$session_gitconfig"
+    fi
   fi
 
   read -r -a tmux_bin <<< "${AGENT_TMUX:-tmux}"
@@ -117,20 +202,35 @@ main() {
 
   if [ -n "${TMUX:-}" ]; then
     slug="$(existing_names | dedupe "$slug")"
-    emit "${tmux_bin[@]}" new-window -d -n "$slug" -c "$dir" "$pane_cmd"
+    if [ -n "$session_gitconfig" ]; then
+      emit env GIT_CONFIG_GLOBAL="$session_gitconfig" "${tmux_bin[@]}" new-window -d -n "$slug" -c "$worktree" -e GIT_CONFIG_GLOBAL="$session_gitconfig" "$pane_cmd"
+    else
+      emit "${tmux_bin[@]}" new-window -d -n "$slug" -c "$worktree" "$pane_cmd"
+    fi
     [ "$dry_run" -eq 1 ] || "${tmux_bin[@]}" display-message "fresh-session: spawned '$slug'"
     echo "spawned window: $slug"
-    echo "prompt: $prompt_file"
+    echo "prompt: $abs_prompt_file"
+    if [ -n "$branch" ]; then echo "worktree: $worktree (branch $branch)"; fi
   elif command -v "${tmux_bin[0]}" >/dev/null 2>&1; then
     slug="$(existing_names | dedupe "$slug")"
-    emit "${tmux_bin[@]}" new-session -d -s "$slug" -c "$dir" "$pane_cmd"
+    if [ -n "$session_gitconfig" ]; then
+      emit env GIT_CONFIG_GLOBAL="$session_gitconfig" "${tmux_bin[@]}" new-session -d -s "$slug" -c "$worktree" -e GIT_CONFIG_GLOBAL="$session_gitconfig" "$pane_cmd"
+    else
+      emit "${tmux_bin[@]}" new-session -d -s "$slug" -c "$worktree" "$pane_cmd"
+    fi
     echo "spawned detached session: $slug"
     echo "attach with: ${tmux_bin[*]} attach -t $slug"
-    echo "prompt: $prompt_file"
+    echo "prompt: $abs_prompt_file"
+    if [ -n "$branch" ]; then echo "worktree: $worktree (branch $branch)"; fi
   else
     echo "tmux not found - run this manually:"
-    echo "$pane_cmd"
-    echo "prompt: $prompt_file"
+    if [ -n "$session_gitconfig" ]; then
+      echo "cd $worktree && GIT_CONFIG_GLOBAL=$session_gitconfig $pane_cmd"
+    else
+      echo "cd $worktree && $pane_cmd"
+    fi
+    echo "prompt: $abs_prompt_file"
+    if [ -n "$branch" ]; then echo "worktree: $worktree (branch $branch)"; fi
   fi
 }
 

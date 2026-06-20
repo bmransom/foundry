@@ -20,7 +20,11 @@ main() {
   local brief="${2:?usage: spawn-extractor.sh [--dry-run] <skill-name> <brief-path> [project-dir]}"
   local dir="${3:-$PWD}"
   local slug="extract-$skill"
-  local prompt="Read $brief in full. Draft or revise the skill described there using the Agent Skills format. Preserve reusable procedure, exclude non-reusable details, add realistic eval prompts, validate the structure, then report back."
+  # Absolute draft path under the PRIMARY tree, so retiring the spawned
+  # session's worktree cannot delete the draft (the harness cwd is the
+  # worktree after isolation).
+  local draft="$dir/.agent/skill-extractions/$skill/draft-SKILL.md"
+  local prompt="Read $brief in full. Draft or revise the skill described there using the Agent Skills format. Preserve reusable procedure, exclude non-reusable details, add realistic eval prompts, validate the structure. Write the draft to the absolute path $draft, then report back."
 
   printf '%s\n' "$prompt" |
     "$(plugin_root)/scripts/spawn-fresh-session.sh" ${runner_args[@]+"${runner_args[@]}"} --name "$slug" "$dir"

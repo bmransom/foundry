@@ -95,7 +95,7 @@ parallel agent work safe and verifiable.
 
 | Work | Status | Spec | Depends on |
 |---|---|---|---|
-| spawn-isolation: worktree-per-session in the shared fresh-session runner (the parallel-safety enabler) + sandbox the evals | Ready — spec written 2026-06-20 (deliberated + spec-reviewed); pending design approval, then build | `roadmap/specs/spawn-isolation/` | — |
+| spawn-isolation: worktree-per-session in the shared fresh-session runner (the parallel-safety enabler) + sandbox the evals | Built on `feat/spawn-isolation` 2026-06-20 — T3–T11, T13 done test-first; `check-fast: PASS`, byte-identity PASS, all isolation/retire/eval-sandbox tests hermetic (codex/claude/tmux absent). Awaiting maintainer verification + PR | `roadmap/specs/spawn-isolation/` | — |
 | code-review: skill + numbered Review stage (Verify → Knowledge → Review → Finish); the green-but-wrong gate (complete-impl, docs-sync, robust tests, sensible defaults, simplicity) + an eval-gated cross-model drop-only refuter | Ready — spec written 2026-06-20 (deliberated + spec-reviewed + converged); pending design approval, then build | `roadmap/specs/code-review/` | spawn-isolation |
 | reviewer-eval repoint: point `evals/harness/reviewer-eval.sh` off the removed `agents/spec-reviewer.md` at the `spec-review` skill | Ready — small fix (both deliberations flagged the drift) | spec note | — |
 | issue-triage: GitHub issues as a signal source — host cron ingests read-only → durable triage ledger → human whether/how consult → mechanically-gated `issue-act` | Planned — design done (deliberated); spec to write | spec to write | self-improving loop S1+S3 |
