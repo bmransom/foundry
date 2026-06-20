@@ -102,11 +102,15 @@ def fake_live_runner(actor, prompt_path, raw_path):
     )
 
 
+# Fake command presence so preflight passes without real codex/claude/tmux
+# binaries (CI has none); keep the real command_runner so the worktree-change
+# guard below exercises actual `git status`.
 result = broker.run_live_smoke(
     repo_root=repo,
     session_id="smoke-demo",
     prompt_text="Run the opt-in live smoke.\n",
     participant_runner=fake_live_runner,
+    command_exists=lambda name: True,
     harness_status_checker=ok_status,
     run_tmux=False,
 )
@@ -151,6 +155,7 @@ try:
         session_id="mutating-smoke",
         prompt_text="Run the opt-in live smoke.\n",
         participant_runner=mutating_runner,
+        command_exists=lambda name: True,
         harness_status_checker=ok_status,
         run_tmux=False,
     )
