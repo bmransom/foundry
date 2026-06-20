@@ -103,10 +103,10 @@ every per-stack mapping. Produce:
 
 Read `references/verify.md`; run its checklist end to end and paste each
 output: file inventory, hooks installed, vitepress build, walking-skeleton
-Scenario green, `check-fast: PASS`. **Per-harness readability**: confirm each
-selected harness's instruction file resolves (`AGENTS.md` for every harness;
-`CLAUDE.md` → `AGENTS.md` when Claude Code is selected) and that no unselected
-harness's shim is present.
+Scenario green, harness availability, `check-fast: PASS`. **Per-harness
+readability**: confirm each selected harness's instruction file resolves
+(`AGENTS.md` for every harness; `CLAUDE.md` → `AGENTS.md` when Claude Code is
+selected) and that no unselected harness's shim is present.
 
 The gate must also **discriminate**: seed a failing check, watch the gate fail,
 remove the seed, watch it pass.

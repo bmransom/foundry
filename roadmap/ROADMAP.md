@@ -80,3 +80,9 @@ model, forbidden terms, standing rules, or gate commands.
 | Axis B — bootstrap emits per-harness: interview question, conditional `CLAUDE.md`, rules → `rules/`, `.foundry/manifest.json` + `harnesses` | Validating — gate green; foundry self-host manifest present (T12 knowledge.py → BACKLOG) | `roadmap/specs/harness-agnostic/` | Axis A |
 | Axis C — convention-3 retrofit migration + update read-path (new-then-legacy, no re-prompt, add-a-harness) | Validating — gate green | `roadmap/specs/harness-agnostic/` | Axis B |
 | Evals + self-host: manifest-enforcing readability eval + self-host convergence done; live matrix (codex/claude headless: bootstrap, migration, reviewer parity, dogfood) → BACKLOG | Validating — readability + convergence green; missing/mismatched manifest is now a failing eval case | `roadmap/specs/harness-agnostic/` | Axis C |
+
+### Epic 5 — Harness deliberation
+
+| Work | Status | Spec | Depends on |
+|---|---|---|---|
+| harness-deliberation spec: requirements + design + tasks (@codex) | Validating — live smoke PASS (`live-smoke-20260619b`); `check-fast: PASS` | `roadmap/specs/harness-deliberation/` | harness-agnostic |

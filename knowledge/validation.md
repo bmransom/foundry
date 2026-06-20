@@ -25,6 +25,8 @@ non-bypassable backstop) — the same script both times, so the two can never di
 | Knowledge | `python3 scripts/knowledge.py check` + `python3 scripts/test_knowledge.py` | missing or invalid frontmatter; stale `index.md`; knowledge.py regressions | inside the quick gate |
 | Script tests | `bash tests/*_test.sh` | script and template behavior regressions | inside the quick gate |
 | Context budget | `scripts/check-context-budget.sh` | plugin-resident prose exceeding its line budget | inside the quick gate |
+| Harness management fixture | `bash tests/harness_management_test.sh` | missing `harness-status.py` invocation; manifest mutation during verify; unsafe harness shim add/remove | inside the quick gate |
+| Harness deliberation live smoke (opt-in) | `python3 plugins/foundry/scripts/harness-deliberation-broker.py live-smoke --repo . --session live-smoke-20260619b --timeout-s 300 --claude-budget-usd 0.25` | real Codex + Claude Code turn protocol; last run PASS recorded both `final.md` payloads and left the worktree unchanged | manual opt-in |
 | Site build | `npm ci && npm run build` under `knowledge/` | broken site rendering | CI only |
 | Bootstrap eval (L2) | `evals/harness/bootstrap-eval.sh <fixture or all>` | a broken bootstrap; a vacuous generated gate; template regressions in consumer repos | manual + CI dispatch |
 | Update eval (L2) | `evals/harness/update-eval.sh <bootstrapped-tree>` | broken refresh; customization overwrites; seed writes | manual |

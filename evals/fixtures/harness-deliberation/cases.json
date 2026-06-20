@@ -1,0 +1,40 @@
+{
+  "cases": [
+    {
+      "name": "replay",
+      "covers": "Tier 3 replay and deterministic rebuild"
+    },
+    {
+      "name": "payload",
+      "covers": "payload hash and missing-payload failures"
+    },
+    {
+      "name": "snapshot",
+      "covers": "portable scratch snapshot reconstruction"
+    },
+    {
+      "name": "truncation",
+      "covers": "oversized snapshot truncation"
+    },
+    {
+      "name": "protocol",
+      "covers": "decision protocol and explicit dispositions"
+    },
+    {
+      "name": "spec",
+      "covers": "spec closure, traceability, and generated output"
+    },
+    {
+      "name": "stall",
+      "covers": "no-progress stall detection"
+    },
+    {
+      "name": "fake-participant",
+      "covers": "fake round prompts, finals, and raw-log exclusion"
+    },
+    {
+      "name": "availability-result",
+      "covers": "harness availability categories"
+    }
+  ]
+}

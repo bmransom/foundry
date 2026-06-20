@@ -42,9 +42,10 @@ Expected: every verbatim copy above appears.
 | Hooks installed | `scripts/install-hooks.sh && git config core.hooksPath` | `hooks installed (core.hooksPath=.githooks, N hook(s))` · `.githooks` |
 | Knowledge site builds | `cd knowledge && npm install && npm run build` | vitepress `build complete` |
 | Walking skeleton | the feature-runner command `check-fast.sh` names | the Scenario passes |
+| Harness availability | `python3 <plugin root>/scripts/harness-manage.py verify .` | prints and runs `harness-status.py . <manifest harnesses...>`; `.foundry/manifest.json` unchanged |
 | The quick gate | `scripts/check-fast.sh` | `check-fast: PASS` |
 
-Paste all four outputs.
+Paste all five outputs.
 
 ## 3 · Discrimination probe
 

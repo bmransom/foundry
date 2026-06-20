@@ -4,6 +4,16 @@
 
 Changes to the knowledge base, newest first. A reserved OKF file — no frontmatter.
 
+## 2026-06-19
+
+- **Update** Added **Session storage tier** provenance for harness deliberation
+  Tier 1 event ledger, Tier 2 immutable payloads, and Tier 3 rebuildable views.
+- **Update** Recorded the opt-in harness deliberation live smoke command and
+  PASS result in **Validation**.
+- **Update** Clarified that `harness-status.py` is the stored-result label for
+  **Harness availability**, not a separate glossary concept.
+- **Update** Added harness-deliberation vocabulary: **Harness availability**, **Broker**, **Harness deliberation** (multi-agent debate/deliberation prior art, Foundry harness terminology), **Participant**, **Mediator**, and **Deferred dissent** for the new `roadmap/specs/harness-deliberation/` spec.
+
 ## 2026-06-16
 
 - **Update** Added the **harness** term (an AI coding tool that runs foundry's skills; agent-harness-engineering vocabulary) and pointed the **Manifest** and **Convention version** entries at `.foundry/manifest.json` with the harness set — Wave 1 of harness-agnostic (`roadmap/specs/harness-agnostic/`).

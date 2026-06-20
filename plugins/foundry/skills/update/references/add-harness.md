@@ -7,15 +7,18 @@ no-op.
 
 ## Add
 
-1. Emit only the harness's shim:
-   - **claude-code** → `ln -s AGENTS.md CLAUDE.md` when `CLAUDE.md` is absent.
-   - a harness that reads `AGENTS.md` natively (Codex, Gemini, …) → no shim.
-2. Add it to `.foundry/manifest.json` `harnesses`.
-3. Run the canonical gate (no-regression); ask before committing.
+Run `python3 <plugin root>/scripts/harness-manage.py add <repo> <harness>`.
+
+The helper creates only that harness's shim and updates `.foundry/manifest.json`:
+**claude-code** gets `CLAUDE.md -> AGENTS.md` when absent; Codex and other harnesses
+that read `AGENTS.md` natively get no shim.
 
 ## Remove
 
-1. Delete only that harness's shim (e.g. `CLAUDE.md` for claude-code); leave `AGENTS.md`
-   and every shared file.
-2. Remove it from `harnesses`. Refuse to remove the last harness — a repo targets at
-   least one.
+Run `python3 <plugin root>/scripts/harness-manage.py remove <repo> <harness>`.
+
+The helper deletes only a Foundry-managed shim, leaves `AGENTS.md` and every shared
+file untouched, reports a custom shim instead of deleting it, and refuses to remove
+the last harness. Finish with `python3 <plugin root>/scripts/harness-manage.py
+verify <repo>` so `harness-status.py` checks the remaining manifest harnesses without
+editing the manifest.
