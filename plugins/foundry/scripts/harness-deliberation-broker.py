@@ -1217,6 +1217,17 @@ def _command_exists(command: str) -> bool:
     return shutil.which(command) is not None
 
 
+def _as_text(value: object) -> str:
+    """Decode subprocess output to str. `subprocess.TimeoutExpired.stdout`/`.stderr`
+    are bytes even under `text=True` (CPython does not decode on the timeout path),
+    so serializing them later raises 'bytes is not JSON serializable' (issue #6)."""
+    if value is None:
+        return ""
+    if isinstance(value, (bytes, bytearray)):
+        return value.decode("utf-8", "replace")
+    return value
+
+
 def _run_command(command: list[str], timeout_s: int) -> CommandResult:
     try:
         completed = subprocess.run(
@@ -1227,7 +1238,9 @@ def _run_command(command: list[str], timeout_s: int) -> CommandResult:
             timeout=timeout_s,
         )
     except subprocess.TimeoutExpired as exc:
-        return CommandResult(124, exc.stdout or "", exc.stderr or "timed out")
+        return CommandResult(
+            124, _as_text(exc.stdout), _as_text(exc.stderr) or "timed out"
+        )
     return CommandResult(completed.returncode, completed.stdout, completed.stderr)
 
 
@@ -1249,7 +1262,9 @@ def _run_command_with_input(
             timeout=timeout_s,
         )
     except subprocess.TimeoutExpired as exc:
-        return CommandResult(124, exc.stdout or "", exc.stderr or "timed out")
+        return CommandResult(
+            124, _as_text(exc.stdout), _as_text(exc.stderr) or "timed out"
+        )
     return CommandResult(completed.returncode, completed.stdout, completed.stderr)
 
 
