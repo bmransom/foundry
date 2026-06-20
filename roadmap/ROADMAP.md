@@ -85,4 +85,4 @@ model, forbidden terms, standing rules, or gate commands.
 
 | Work | Status | Spec | Depends on |
 |---|---|---|---|
-| harness-deliberation spec: requirements + design + tasks (@codex) | Validating — Wave 8 shipped in v0.1.2: `round` wired, mediator prompt in turns, `participant_failed` + round resume, raw-log redaction, discriminating evals (reviewer 1.0/0, lifecycle PASS); T1 maintainer approval + T3 real-deliberation dogfood remain | `roadmap/specs/harness-deliberation/` | harness-agnostic |
+| harness-deliberation spec: requirements + design + tasks (@codex) | Validating — Wave 8 shipped in v0.1.2; T3 dogfood done (real Codex + Claude deliberation over the spec, both finals + `rebuild: PASS`) → Wave 9 opened: 7 settled gap-fixes (cross-round peer context, live tmux, round drift check, AC-1.6 attach, decide contract, failed-turn raw, snapshot surface). T1 maintainer approval remains | `roadmap/specs/harness-deliberation/` | harness-agnostic |

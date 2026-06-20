@@ -18,7 +18,7 @@ dependency.
   dissent** with provenance, then update the knowledge log and index —
   `knowledge/glossary.md`, `knowledge/log.md`, `knowledge/index.md`. Gate:
   `python3 scripts/knowledge.py check`. [AC-4]
-- [ ] T3: Run a real harness deliberation session over the draft spec and apply
+- [x] T3: Run a real harness deliberation session over the draft spec and apply
   accepted findings. Gate: the saved session record includes both participant
   `final.md` payloads, and the board records every accepted finding's disposition
   and spec fix. [AC-2, AC-6]
@@ -177,5 +177,47 @@ mechanism.
   final and document the residual limit that `round` does not self-validate
   answer quality (dep T28). Gate: a no-op final fails the smoke shape check.
   [AC-1, AC-2]
-- [ ] T33: Re-run the canonical gate and re-cut the paused release. Gate:
+- [x] T33: Re-run the canonical gate and re-cut the paused release. Gate:
   `scripts/check-fast.sh` prints `check-fast: PASS` with Wave 8 landed. [T22]
+  Done: shipped in v0.1.2.
+
+## Wave 9 — Gaps from the T3 dogfood
+
+T3 ran a real Codex + Claude deliberation over this spec (session
+`t3-spec-dogfood`; both `final.md` recorded; `rebuild: PASS`; dispositions in the
+session record: 7 settled, 1 deferred-dissent, 1 rejected). The settled findings
+are tracked here; decision IDs trace to the session.
+
+- [ ] T34: Carry each peer's latest `final.md` across rounds, not just the
+  current round — `_peer_finals_for_round` is round-scoped, so round 2 opens with
+  `# Peer Finals - none`. Gate: a two-round render test fails when round 2's first
+  prompt has no prior peer final. [d0001]
+- [ ] T35: Make the live `start`/tmux path real and testable — long-lived panes
+  that tail status/`final.md`, export `FOUNDRY_HD_SESSION` + print command help,
+  and call `render_views()` in `start_session` so `state.md`/`transcript.md` exist
+  before the `state` window tails them. Gate: a real-tmux test (not
+  `run_tmux=False`) fails on placeholder/exiting panes or missing Tier 3 files.
+  [d0002, d0003]
+- [ ] T36: Re-run preflight/`_check_harness_statuses` at the top of the `round`
+  CLI and refuse drift with auth/subscription or `/foundry:update` guidance. Gate:
+  a de-selected or unavailable participant makes `round` exit nonzero before
+  spending a turn. [AC-8.6, d0004]
+- [ ] T37: Honor AC-1.6 in the CLI — detect `sys.stdout.isatty()` for
+  `is_interactive` and print the exact `tmux attach -t …` command on the
+  non-interactive `--attach` path. Gate: a non-interactive `start --attach` test
+  asserts the printed attach command. [AC-1.6, d0005]
+- [ ] T38: Align the `decide` contract — implement Markdown + `decision_id`
+  supersession, or correct `SKILL.md`/`design.md` to JSON + event-id; the
+  command-surface eval asserts the chosen contract. Gate: the documented `decide`
+  input parses. [d0006]
+- [ ] T39: Route the `ParticipantFailed` raw write through `_format_raw_turn` so a
+  failed `raw.log` carries the `prompt_sha256`/command envelope. Gate: a
+  failed-turn test asserts `prompt_sha256` in `raw.log`. [AC-2.15, d0007]
+- [ ] T40: Resolve the snapshot-surface contradiction (deferred dissent) — expose
+  `scratch`/`snapshot`/`reconstruct` subcommands, or explicitly defer
+  mediator-triggered snapshots from v1 and reconcile US-5/AC-5.2 with the
+  command table. Gate: the command-surface eval and US-5 agree. [d0008]
+
+Rejected (no action): the claim that the success-path raw log leaks `stdout` —
+AC-2.15 forbids embedding the prompt, not model output; the success path already
+omits the prompt and records `prompt_sha256` (prompt rides stdin). [d0009]
