@@ -1,0 +1,15 @@
+{
+  "fixture": "code-review",
+  "violations": [
+    { "id": "V1", "signature": "AC-2.1", "type": "unimplemented-ac" },
+    { "id": "V2", "signature": "sync complete", "type": "logging-mix-raw-print" },
+    { "id": "V3", "signature": "gargantuan_pricing_engine", "type": "oversized-function" },
+    { "id": "V4", "signature": "--purge-cache", "type": "public-cli-behavior-without-docs" },
+    { "id": "V5", "signature": "shipping job", "type": "debt-term-outside-replaces" }
+  ],
+  "decoys": [
+    { "id": "D1", "signature": "print --help", "type": "legitimate-cli-surface" },
+    { "id": "D2", "signature": "generated_catalog_fixture", "type": "large-generated-fixture" },
+    { "id": "D3", "signature": "estimate", "type": "debt-term-in-replaces-context" }
+  ]
+}
