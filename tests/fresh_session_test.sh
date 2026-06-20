@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
-# Dry-run and prompt-file checks for the shared fresh-session runner.
+# Dry-run, prompt-file, and isolation checks for the shared fresh-session runner.
+#
+# Hermetic: AGENT_TMUX=/bin/echo captures the launch command; TMUX=1 selects the
+# new-window path. No real claude/codex/pi/tmux binary is required.
 set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -22,8 +25,21 @@ for wrapper in "$SPEC" "$HANDOFF" "$EXTRACT"; do
     || fail "$wrapper must delegate to the shared fresh-session runner"
 done
 
+# A real git fixture: isolation creates worktrees against it.
 fixture="$(mktemp -d)"
-trap 'rm -rf "$fixture"' EXIT
+trap 'git -C "$fixture" worktree prune 2>/dev/null || true; rm -rf "$fixture"' EXIT
+git -C "$fixture" init -q -b main
+git -C "$fixture" config user.email "foundry@example.test"
+git -C "$fixture" config user.name "Foundry Test"
+printf '.foundry/tmp/\n' > "$fixture/.gitignore"
+printf '# fixture\n' > "$fixture/README.md"
+git -C "$fixture" add .gitignore README.md
+git -C "$fixture" commit -qm "initial"
+
+# extract_cwd <launch-line> -> the value passed to tmux -c.
+extract_cwd() {
+  awk '{for (i = 1; i < NF; i++) if ($i == "-c") { print $(i + 1); exit }}'
+}
 
 run_output="$(
   printf 'Review target.md and write report.md\n' |
@@ -36,10 +52,28 @@ case "$run_output" in
   *) fail "shared runner must launch codex with a short prompt-file instruction" ;;
 esac
 
+# Isolation: the launch cwd is the per-session worktree, not the source dir.
+launch_cwd="$(printf '%s\n' "$run_output" | grep new-window | extract_cwd)"
+case "$launch_cwd" in
+  "$fixture"/.foundry/tmp/fresh-session/*/worktree) ;;
+  *) fail "launch cwd must be the per-session worktree, not the source dir (got '$launch_cwd')" ;;
+esac
+[ -d "$launch_cwd" ] || fail "the launch cwd worktree must exist"
+case "$(git -C "$launch_cwd" branch --show-current)" in
+  foundry/fs/*) ;;
+  *) fail "the worktree must be checked out on a foundry/fs/<id> branch" ;;
+esac
+
+# The prompt lives under the PRIMARY session dir, passed by absolute path.
 prompt_file="$(find "$fixture/.foundry/tmp/fresh-session" -name prompt.md -print -quit)"
-[ -f "$prompt_file" ] || fail "shared runner must write prompt.md"
+[ -f "$prompt_file" ] || fail "shared runner must write prompt.md under the primary session dir"
+case "$prompt_file" in
+  "$launch_cwd"/*) fail "prompt.md must live in the primary tree, not inside the worktree" ;;
+esac
 grep -q "Review target.md" "$prompt_file" \
   || fail "prompt.md must contain the original workflow prompt"
+printf '%s\n' "$run_output" | grep -q "$prompt_file" \
+  || fail "the launch must reference the prompt by absolute primary-tree path"
 
 spec_output="$(
   TMUX=1 AGENT_HARNESS=claude AGENT_TMUX=/bin/echo \
