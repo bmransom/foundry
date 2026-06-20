@@ -84,6 +84,15 @@ Acceptance criteria:
 - AC-3.4 WHEN a new external source is added later (e.g. `telemetry`), THE SYSTEM
   SHALL ingest it as one more `source_kind` value with no change to the
   `signal_ingested` event schema.
+- AC-3.5 WHEN `source_kind=telemetry` and the `telemetry.enabled` flag
+  (`.foundry/self-improvement-config.json`) is OFF, THE SYSTEM SHALL refuse the
+  ingestion and record a `signal_rejected` event with reason `telemetry-disabled`,
+  writing nothing else to `.foundry/state/`.
+- AC-3.6 WHEN the `telemetry.enabled` flag is unset, THE SYSTEM SHALL treat telemetry
+  as OFF (default-off), so AC-3.5 applies.
+- AC-3.7 WHEN `source_kind` is an internal source (`eval`, `code-review`,
+  `spec-review`, `dogfood`, `issue-triage`), THE SYSTEM SHALL ingest it regardless of
+  the `telemetry.enabled` flag.
 
 ### US-4: Reject a signal that fails the redaction gate
 
@@ -163,5 +172,8 @@ Acceptance criteria:
 - The build pipeline (S4): deliberation, spec generation, the consent act gate.
 - External telemetry ingestion and anonymization — deferred until the internal loop
   is proven; S1 only names the `source_kind` seam.
+- The bootstrap/update prompt that sets the telemetry-enabled flag (default off) —
+  owned by the external-telemetry epic. S1 only *reads* the flag; it does not
+  implement the prompt (see design Dependencies).
 - GitHub issue ingestion mechanics — `issue-triage` plugs into the `signal_ingested`
   path as a `source_kind`; its own spec owns the read-only `gh` ingest.

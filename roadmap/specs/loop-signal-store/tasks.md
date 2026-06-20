@@ -17,7 +17,9 @@ and the test must fail before the change and pass after.
   context; apply findings before asking for design approval. Gate: review report has
   no findings, or every finding has a recorded disposition and fix. [Spec README]
 - [ ] T3: Confirm the loop-signal-store terms' glossary provenance — Signal,
-  Candidate, Metric, Candidate ledger, Redaction gate carry prior-art provenance in
+  Candidate, Metric, Candidate ledger, Redaction gate, the telemetry opt-in gate (with
+  its `telemetry.enabled` knob, the `.foundry/self-improvement-config.json` file, and
+  the `signal_rejected` reason `telemetry-disabled`) carry prior-art provenance in
   `knowledge/glossary.md` (added when this spec landed) and the three spec files use
   them consistently. Gate: `spec-review` (or the glossary contract) raises no
   un-provenanced canonical name across the three spec files. [US-3, US-5]
@@ -88,6 +90,22 @@ and the test must fail before the change and pass after.
   in the `score_review.py` shape (dep T10). Gate: the T10 ingest assertions PASS,
   including `source_kind` rejection and the metric shape. [AC-3.1, AC-3.2, AC-3.3,
   AC-3.4]
+- [ ] T11a: Extend `tests/loop_signal_store_test.sh` with telemetry opt-in gate
+  assertions, reading `telemetry.enabled` from `.foundry/self-improvement-config.json`
+  — telemetry-off (flag OFF or file/key absent) ⇒ ingest refused with a
+  `signal_rejected` reason `telemetry-disabled` and nothing else written to
+  `.foundry/state/`; telemetry-on ⇒ ingested; an internal `source_kind` ⇒ ingested
+  regardless of the flag. Add a seeded-defect arm: a mutant that ingests telemetry
+  while the flag is OFF makes the test fail (dep T10). Gate: the test fails against the
+  current store and the mutant arm flags the seeded defect. [AC-3.5, AC-3.6, AC-3.7]
+- [ ] T11b: Implement the telemetry opt-in gate in `loop-signal-store.py` — before the
+  redaction gate, read `telemetry.enabled` from `.foundry/self-improvement-config.json`
+  (absent/unset ⇒ OFF); when `source_kind=telemetry` and the flag is OFF, refuse and
+  record `signal_rejected` reason `telemetry-disabled`; ingest internal sources
+  regardless of the flag. S1 only reads the flag; the prompt that sets it is the
+  external-telemetry epic's (dep T11, T11a). Gate: the T11a assertions PASS —
+  telemetry-off refused, telemetry-on ingested, internal sources ingested regardless.
+  [AC-3.5, AC-3.6, AC-3.7]
 
 ## Wave 6 — Candidate aggregation and the read seam
 

@@ -25,11 +25,13 @@ leakage-prone raw zone under already-gitignored `.foundry/tmp/` means committing
 data requires defeating gitignore — a stronger guarantee than "remember not to
 commit."
 
-The **redaction gate** is the only writer of the committed zone. Every record bound
-for `.foundry/state/` passes the gate first; a record that carries a raw-text marker
-is rejected and recorded as `signal_rejected`, never written. The gate ships with
-its own discriminating eval: a seeded raw-leak (a path, secret, or PII string in a
-committed summary) must make the gate fail.
+The **redaction gate** is the only writer of clean committed records. Every clean
+record bound for `.foundry/state/` passes the gate first; a record that carries a
+raw-text marker is rejected and recorded as `signal_rejected`, never written. (The
+telemetry opt-in gate, §Telemetry opt-in gate, runs ahead of it and may write a
+`signal_rejected` rejection of its own.) The gate ships with its own discriminating
+eval: a seeded raw-leak (a path, secret, or PII string in a committed summary) must
+make the gate fail.
 
 ```mermaid
 flowchart TB
@@ -76,7 +78,8 @@ flowchart TB
 | Component | Location | Purpose |
 |---|---|---|
 | Signal store | `plugins/foundry/scripts/loop-signal-store.py` | The S1 store: append-only ledger, immutable payloads, rebuildable views, ingest, candidate aggregation. Built on storage mechanics copied from the broker (see Dependencies). |
-| Redaction gate | inside `loop-signal-store.py` | The single writer of the committed zone. Rejects any committed-bound record carrying a raw-text marker; records `signal_rejected`. |
+| Redaction gate | inside `loop-signal-store.py` | The single writer of clean committed records. Rejects any committed-bound record carrying a raw-text marker; records `signal_rejected`. |
+| Telemetry opt-in gate | inside `loop-signal-store.py`, ahead of the redaction gate | Refuses a `telemetry` signal unless `telemetry.enabled` (`.foundry/self-improvement-config.json`) is ON; records `signal_rejected` reason `telemetry-disabled`. Internal sources are unaffected. |
 | Raw zone | `.foundry/tmp/self-improvement/` (gitignored) | Raw signal payloads, by SHA-256. |
 | Candidate ledger | `.foundry/state/self-improvement/` (tracked) | `events.jsonl`, `payloads/`, rebuildable `ledger.md`. |
 | Store test | `tests/loop_signal_store_test.sh` | Proves append-only / immutable / rebuildable behavior and zone separation, with a seeded-defect arm (a mutant that writes raw bytes to `.foundry/state/` must fail). |
@@ -175,7 +178,7 @@ discipline:
 | `store_started` | committed | Repo root, store id, schema version. |
 | `signal_ingested` | committed | A signal entered. Carries `source_kind`, a hash-ref to the raw payload in the raw zone, and a generic summary. |
 | `metric_observed` | committed | A numeric eval sample derived from the `summary` record `evals/harness/score_review.py` emits — `fixture`, `runs`, `mean_recall`, `decoy_hits`, `verdict`. |
-| `signal_rejected` | committed | The redaction gate or a genericity/duplicate/scope check fired. Names the marker class or reason; carries no rejected raw content. |
+| `signal_rejected` | committed | The redaction gate, a genericity/duplicate/scope check, or the telemetry opt-in gate (reason `telemetry-disabled`) fired. Names the marker class or reason; carries no rejected raw content. |
 | `candidate_opened` | committed | A new aggregate problem, fingerprinted on the normalized cause. |
 | `candidate_revised` | committed | New evidence, score, scope, recurrence, or trend folded into an existing candidate. |
 | `candidate_closed` | committed | Resolution: duplicate, fixed, rejected, or shipped. |
@@ -185,6 +188,37 @@ discipline:
 in later as the `telemetry` value behind the same redaction gate — no schema change.
 `issue-triage` plugs in the same way; its own spec owns the read-only `gh` ingest
 that produces the raw payload.
+
+## Telemetry opt-in gate
+
+`telemetry` is **opt-in, default OFF** — the one **external-contribution** source,
+whose raw payload originates outside the repo and could leave it. The five internal
+sources (`eval`, `code-review`, `spec-review`, `dogfood`, `issue-triage`) are local and
+generic-by-construction through the redaction gate; they never leave the repo and are
+**always on**, unaffected by the flag.
+
+The store reads a single `telemetry.enabled` boolean from
+**`.foundry/self-improvement-config.json`** — a repo-local config file. It is *not* the
+manifest: `.foundry/manifest.json` is a managed lockfile (`/foundry:update` writes it
+to tell pristine from customized — see `knowledge/glossary.md` *Manifest*), the wrong
+home for a user-set preference. A subsystem-scoped `*-config.json` matches the
+established repo-local config convention — a verbatim tool's per-repo variation lives in
+a scoped seed config (`knowledge/knowledge-config.json`, `knowledge/.vitepress/site.json`;
+`roadmap/specs/foundry-core/design.md` §Template classes). A missing file or unset key
+reads as OFF — a repo with sensitive data must opt in.
+
+The gate is mechanical and lives in the ingest path, before the redaction gate:
+
+- `source_kind=telemetry` and `telemetry.enabled` OFF (or unset) → refuse ingestion,
+  record `signal_rejected` with reason `telemetry-disabled`, write nothing else to
+  `.foundry/state/`.
+- `source_kind=telemetry` and `telemetry.enabled` ON → ingest normally, through the
+  redaction gate like any other source.
+- an internal `source_kind` → ingest regardless of the flag.
+
+S1 only **reads** the flag. The bootstrap/update **prompt** that sets it (default off)
+is owned by the external-telemetry epic, recorded under Dependencies — S1 does not
+implement the prompt.
 
 ## Candidate identity and fingerprinting
 
@@ -206,9 +240,12 @@ filter lives in the S2 spec, not here.
 
 ## Redaction gate
 
-The gate is the single writer of the committed zone and the structural defense
-against raw-signal leakage. Every record bound for `.foundry/state/` — an ingest
-summary, a metric record, a candidate summary — passes the gate first.
+The gate is the single writer of *clean* committed records and the structural defense
+against raw-signal leakage. Every clean record bound for `.foundry/state/` — an ingest
+summary, a metric record, a candidate summary — passes the gate first. The telemetry
+opt-in gate runs ahead of it and may write a `signal_rejected` rejection
+(`telemetry-disabled`) directly, refusing a telemetry signal before any clean record
+forms.
 
 The gate rejects on a raw-text marker:
 
@@ -238,23 +275,27 @@ sequenceDiagram
     participant Committed as "Candidate ledger<br/>.foundry/state/"
 
     Source->>Store: ingest(source_kind, raw payload, summary)
-    Store->>Raw: write raw payload (by SHA-256)
-    Raw-->>Store: hash-ref
-    Store->>Gate: check summary + hash-ref (committed-bound)
 
-    alt raw-text marker found
-        Gate-->>Store: reject (marker class)
-        Store->>Committed: append signal_rejected (no raw content)
-    else clean
-        Gate-->>Store: pass
-        Store->>Committed: append signal_ingested (source_kind, hash-ref, summary)
-        opt fingerprint matches an open candidate
-            Store->>Committed: append candidate_revised
+    alt source_kind=telemetry and telemetry.enabled OFF (or unset)
+        Store->>Committed: append signal_rejected (reason telemetry-disabled)
+    else internal source, or telemetry enabled
+        Store->>Raw: write raw payload (by SHA-256)
+        Raw-->>Store: hash-ref
+        Store->>Gate: check summary + hash-ref (committed-bound)
+        alt raw-text marker found
+            Gate-->>Store: reject (marker class)
+            Store->>Committed: append signal_rejected (no raw content)
+        else clean
+            Gate-->>Store: pass
+            Store->>Committed: append signal_ingested (source_kind, hash-ref, summary)
+            opt fingerprint matches an open candidate
+                Store->>Committed: append candidate_revised
+            end
+            opt no match and exposes shared machinery
+                Store->>Committed: append candidate_opened (fingerprint)
+            end
+            Store->>Committed: rebuild ledger.md (hash re-validate, refuse on drift)
         end
-        opt no match and exposes shared machinery
-            Store->>Committed: append candidate_opened (fingerprint)
-        end
-        Store->>Committed: rebuild ledger.md (hash re-validate, refuse on drift)
     end
 ```
 
@@ -277,6 +318,11 @@ is committed: the loop's input is identical on every machine.
   S1's build depends on it but does not specify it. S1 starts on copied mechanics and
   rebases onto the base when it lands. Deferring the extraction past the broker's
   in-flight release avoids coupling S1 to the release train.
+- **Telemetry opt-in prompt (external-telemetry epic).** The bootstrap/update prompt
+  that writes `telemetry.enabled` to `.foundry/self-improvement-config.json` (default
+  off) belongs to the external-telemetry epic, not S1. S1 only reads the flag; until
+  the prompt ships, the absent file reads as OFF, so the default-off behavior holds
+  with no prompt.
 
 ## Testing strategy
 
