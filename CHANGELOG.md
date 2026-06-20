@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.1.3](https://github.com/bmransom/foundry/compare/v0.1.2...v0.1.3) (2026-06-20)
+
+
+### Features
+
+* **harness-deliberation:** cross-round peer finals + failed-turn raw envelope ([35fe644](https://github.com/bmransom/foundry/commit/35fe644fd256d3dfb58897f4321dfd50b5c207b4))
+* **harness-deliberation:** real start/tmux panes + tty-aware --attach ([67da976](https://github.com/bmransom/foundry/commit/67da9762491ace7523de73eafcd2a38655b8c5c2))
+* **harness-deliberation:** round drift check + decide/snapshot reconciliation ([9791046](https://github.com/bmransom/foundry/commit/9791046594dcd17ba476de5bade886257a23e37d))
+
+
+### Bug Fixes
+
+* **harness-deliberation:** decode timeout output (issue [#6](https://github.com/bmransom/foundry/issues/6)) ([53f177e](https://github.com/bmransom/foundry/commit/53f177eacd29b670bf268c05c59d635fb0614f10))
+* **rules:** point spec-conventions at the spec-review skill ([097895e](https://github.com/bmransom/foundry/commit/097895eeb27c22e2a2e07287fd45eb81386fb21d))
+
 ## [0.1.2](https://github.com/bmransom/foundry/compare/v0.1.1...v0.1.2) (2026-06-20)
 
 
