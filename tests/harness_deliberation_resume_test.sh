@@ -128,6 +128,10 @@ assert_equal(failed_events[-1]["actor"], "codex", "failed actor")
 assert_equal(failed_events[-1]["exit_code"], 3, "failed exit code")
 assert_equal(failed_events[-1]["payloads"]["prompt"]["path"], "turns/0001-codex/prompt.md", "failed prompt payload")
 assert "participant_final" not in [e["type"] for e in failed_events], "round stops after failure"
+failed_raw = (failed_start.session_dir / "turns/0001-codex/raw.log").read_text(encoding="utf-8")
+assert "prompt_sha256" in failed_raw, "failed raw.log must reference the prompt by sha256"
+assert failed_events[-1]["payloads"]["prompt"]["sha256"] in failed_raw, "failed raw.log sha matches the prompt payload"
+assert "boom from cli" in failed_raw, "failed raw.log keeps the failure detail"
 
 
 # 3. partial-round resume: a limited first participant does not burn the round.

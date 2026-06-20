@@ -371,10 +371,13 @@ def run_round(
     else:
         guidance = _guidance_for_round(events, round_id)
 
-    peer_finals: list[dict[str, str]] = _peer_finals_for_round(store, round_id)
+    latest_finals: dict[str, dict[str, str]] = _latest_finals_by_actor(store)
     for actor in remaining:
         turn_id = _next_turn_id(store._events(), actor)
         turn_dir = store.session_dir / "turns" / turn_id
+        peer_finals = [
+            latest_finals[peer] for peer in sorted(latest_finals) if peer != actor
+        ]
         prompt_text = _render_participant_prompt(
             session_id=store.session_id,
             actor=actor,
@@ -406,7 +409,16 @@ def run_round(
             return
         except ParticipantFailed as exc:
             raw_path.parent.mkdir(parents=True, exist_ok=True)
-            raw_path.write_text(f"{exc.detail}\n", encoding="utf-8")
+            raw_path.write_text(
+                _json_text(
+                    {
+                        "exit_code": exc.exit_code,
+                        "detail": exc.detail,
+                        "prompt_sha256": prompt_payload["sha256"],
+                    }
+                ),
+                encoding="utf-8",
+            )
             store.append_event(
                 "participant_failed",
                 {
@@ -435,13 +447,11 @@ def run_round(
                 "raw_path": f"turns/{turn_id}/raw.log",
             },
         )
-        peer_finals.append(
-            {
-                "actor": actor,
-                "path": final_payload["path"],
-                "content": result.final,
-            }
-        )
+        latest_finals[actor] = {
+            "actor": actor,
+            "path": final_payload["path"],
+            "content": result.final,
+        }
 
     _maybe_emit_stall(store, round_id)
     store.render_views()
@@ -1497,23 +1507,24 @@ def _guidance_for_round(
     return []
 
 
-def _peer_finals_for_round(store: SessionStore, round_id: str) -> list[dict[str, str]]:
-    peer_finals: list[dict[str, str]] = []
+def _latest_finals_by_actor(store: SessionStore) -> dict[str, dict[str, str]]:
+    """Each participant's most recent final.md across all rounds (latest wins).
+
+    Carries a peer's argument into later rounds so a new round does not restart
+    cold with empty peer finals.
+    """
+    latest: dict[str, dict[str, str]] = {}
     for event in store._events():
-        if (
-            event.get("type") != "participant_final"
-            or event.get("round_id") != round_id
-        ):
+        if event.get("type") != "participant_final":
             continue
         final_payload = event.get("payloads", {}).get("final", {})
         path = final_payload.get("path")
-        if not path:
+        actor = event.get("actor")
+        if not path or not actor:
             continue
         content = (store.session_dir / path).read_text(encoding="utf-8")
-        peer_finals.append(
-            {"actor": event.get("actor"), "path": path, "content": content}
-        )
-    return peer_finals
+        latest[actor] = {"actor": actor, "path": path, "content": content}
+    return latest
 
 
 def _next_turn_id(events: list[dict[str, Any]], actor: str) -> str:

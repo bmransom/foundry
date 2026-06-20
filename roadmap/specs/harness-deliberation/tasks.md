@@ -188,7 +188,7 @@ T3 ran a real Codex + Claude deliberation over this spec (session
 session record: 7 settled, 1 deferred-dissent, 1 rejected). The settled findings
 are tracked here; decision IDs trace to the session.
 
-- [ ] T34: Carry each peer's latest `final.md` across rounds, not just the
+- [x] T34: Carry each peer's latest `final.md` across rounds, not just the
   current round — `_peer_finals_for_round` is round-scoped, so round 2 opens with
   `# Peer Finals - none`. Gate: a two-round render test fails when round 2's first
   prompt has no prior peer final. [d0001]
@@ -210,7 +210,7 @@ are tracked here; decision IDs trace to the session.
   supersession, or correct `SKILL.md`/`design.md` to JSON + event-id; the
   command-surface eval asserts the chosen contract. Gate: the documented `decide`
   input parses. [d0006]
-- [ ] T39: Route the `ParticipantFailed` raw write through `_format_raw_turn` so a
+- [x] T39: Route the `ParticipantFailed` raw write through `_format_raw_turn` so a
   failed `raw.log` carries the `prompt_sha256`/command envelope. Gate: a
   failed-turn test asserts `prompt_sha256` in `raw.log`. [AC-2.15, d0007]
 - [ ] T40: Resolve the snapshot-surface contradiction (deferred dissent) — expose
