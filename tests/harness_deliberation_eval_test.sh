@@ -25,12 +25,10 @@ case "$clean_output" in
   *) fail "clean eval must pass" ;;
 esac
 
-for defect in payload spec availability-result; do
-  if "$EVAL" --seed-defect "$defect" "$REPO" >/tmp/foundry-hd-defect.out 2>&1; then
-    fail "seeded defect $defect must fail"
-  fi
-  grep -q "seeded defect caught: $defect" /tmp/foundry-hd-defect.out \
-    || fail "seeded defect $defect must be reported"
-done
+# The non-discriminating --seed-defect grep is retired; discrimination now lives
+# in the standalone tests (command-surface, mediator-prompt render, resume).
+if "$EVAL" --seed-defect payload "$REPO" >/dev/null 2>&1; then
+  fail "the retired --seed-defect flag must no longer be accepted"
+fi
 
 echo "harness_deliberation_eval_test: PASS"

@@ -107,14 +107,20 @@ class ParticipantLimited(Exception):
         self.retry_at = retry_at
 
 
+class ParticipantFailed(Exception):
+    def __init__(self, *, actor: str, exit_code: int, detail: str) -> None:
+        super().__init__(detail)
+        self.actor = actor
+        self.exit_code = exit_code
+        self.detail = detail
+
+
 def run_start_preflight(
     *,
     repo_root: Path | str,
     command_exists: Callable[[str], bool] | None = None,
     command_runner: Callable[[list[str], int], CommandResult] | None = None,
-    harness_status_checker: Callable[
-        [Path, list[str]], list[dict[str, object]]
-    ]
+    harness_status_checker: Callable[[Path, list[str]], list[dict[str, object]]]
     | None = None,
 ) -> PreflightResult:
     repo = Path(repo_root)
@@ -151,7 +157,9 @@ def run_start_preflight(
         if isinstance(value, list):
             present_harnesses = [str(item) for item in value]
             missing = [
-                harness for harness in REQUIRED_HARNESSES if harness not in present_harnesses
+                harness
+                for harness in REQUIRED_HARNESSES
+                if harness not in present_harnesses
             ]
             if missing:
                 failures.append(
@@ -183,13 +191,17 @@ def run_start_preflight(
                 }
             )
 
-    if manifest and not [failure for failure in failures if failure["check"] == "command"]:
+    if manifest and not [
+        failure for failure in failures if failure["check"] == "command"
+    ]:
         for status in harness_status_checker(repo, REQUIRED_HARNESSES):
             if status.get("category") != "ok":
                 failures.append(
                     {
                         "check": "harness-status",
-                        "command": str(status.get("command", status.get("harness", ""))),
+                        "command": str(
+                            status.get("command", status.get("harness", ""))
+                        ),
                         "message": (
                             f"{status.get('harness')}: {status.get('category')}"
                             + (
@@ -214,9 +226,7 @@ def start_session(
     base_commit: str | None = None,
     command_exists: Callable[[str], bool] | None = None,
     command_runner: Callable[[list[str], int], CommandResult] | None = None,
-    harness_status_checker: Callable[
-        [Path, list[str]], list[dict[str, object]]
-    ]
+    harness_status_checker: Callable[[Path, list[str]], list[dict[str, object]]]
     | None = None,
     run_tmux: bool = True,
 ) -> StartResult:
@@ -342,25 +352,34 @@ def run_round(
 ) -> None:
     store = SessionStore.open(session_dir)
     repo = Path(store.session["repo_root"])
-    round_id = _next_round_id(store._events())
-    guidance = build_repo_guidance(repo)
-    store.append_event(
-        "repo_guidance",
-        {
-            "actor": "broker",
-            "round_id": round_id,
-            "guidance": guidance,
-        },
+    events = store._events()
+    round_id, remaining, is_new_round = _resume_round(events)
+    mediator_prompt = (store.session_dir / "mediator/prompt.md").read_text(
+        encoding="utf-8"
     )
 
-    peer_finals: list[dict[str, str]] = []
-    for actor in _round_participants(round_id):
+    if is_new_round:
+        guidance = build_repo_guidance(repo)
+        store.append_event(
+            "repo_guidance",
+            {
+                "actor": "broker",
+                "round_id": round_id,
+                "guidance": guidance,
+            },
+        )
+    else:
+        guidance = _guidance_for_round(events, round_id)
+
+    peer_finals: list[dict[str, str]] = _peer_finals_for_round(store, round_id)
+    for actor in remaining:
         turn_id = _next_turn_id(store._events(), actor)
         turn_dir = store.session_dir / "turns" / turn_id
         prompt_text = _render_participant_prompt(
             session_id=store.session_id,
             actor=actor,
             round_id=round_id,
+            mediator_prompt=mediator_prompt,
             guidance=guidance,
             state_md=_current_state_md(store),
             peer_finals=peer_finals,
@@ -383,6 +402,23 @@ def run_round(
             if exc.retry_at:
                 event["retry_at"] = exc.retry_at
             store.append_event("participant_limited", event)
+            store.render_views()
+            return
+        except ParticipantFailed as exc:
+            raw_path.parent.mkdir(parents=True, exist_ok=True)
+            raw_path.write_text(f"{exc.detail}\n", encoding="utf-8")
+            store.append_event(
+                "participant_failed",
+                {
+                    "actor": exc.actor,
+                    "round_id": round_id,
+                    "turn_id": turn_id,
+                    "exit_code": exc.exit_code,
+                    "detail": exc.detail,
+                    "payloads": {"prompt": prompt_payload},
+                    "raw_path": f"turns/{turn_id}/raw.log",
+                },
+            )
             store.render_views()
             return
 
@@ -420,9 +456,7 @@ def run_live_smoke(
     participant_runner: Callable[[str, Path, Path], ParticipantResult] | None = None,
     command_exists: Callable[[str], bool] | None = None,
     command_runner: Callable[[list[str], int], CommandResult] | None = None,
-    harness_status_checker: Callable[
-        [Path, list[str]], list[dict[str, object]]
-    ]
+    harness_status_checker: Callable[[Path, list[str]], list[dict[str, object]]]
     | None = None,
     timeout_s: int = 180,
     claude_budget_usd: str = DEFAULT_CLAUDE_LIVE_SMOKE_BUDGET_USD,
@@ -468,6 +502,9 @@ def run_live_smoke(
     ]
     if len(final_events) != len(REQUIRED_HARNESSES):
         raise RuntimeError("live smoke did not record final.md for both participants")
+    for event in final_events:
+        final_path = started.session_dir / event["payloads"]["final"]["path"]
+        _assert_final_shape(event["actor"], final_path.read_text(encoding="utf-8"))
     return {
         "session_dir": str(started.session_dir),
         "participants": [event["actor"] for event in final_events],
@@ -480,6 +517,18 @@ def run_live_smoke(
         ],
         "worktree_unchanged": True,
     }
+
+
+FINAL_MIN_CHARS = 16
+
+
+def _assert_final_shape(actor: str, final: str) -> None:
+    """Reject an empty or boilerplate final so a no-op cannot pass as success."""
+    if len(final.strip()) < FINAL_MIN_CHARS:
+        raise RuntimeError(
+            f"{actor} final is empty or too short to be a real turn "
+            f"({len(final.strip())} chars < {FINAL_MIN_CHARS})"
+        )
 
 
 def apply_decisions(
@@ -616,11 +665,23 @@ def capture_snapshot(
         diff_result.stdout,
     )
     if byte_ceiling is None:
-        configured_ceiling = store.session.get("config", {}).get("snapshot_byte_ceiling")
-        byte_ceiling = int(configured_ceiling) if configured_ceiling is not None else None
+        configured_ceiling = store.session.get("config", {}).get(
+            "snapshot_byte_ceiling"
+        )
+        byte_ceiling = (
+            int(configured_ceiling) if configured_ceiling is not None else None
+        )
 
     untracked_result = runner(
-        ["git", "-C", str(worktree), "ls-files", "--others", "--exclude-standard", "-z"],
+        [
+            "git",
+            "-C",
+            str(worktree),
+            "ls-files",
+            "--others",
+            "--exclude-standard",
+            "-z",
+        ],
         30,
     )
     if untracked_result.exit_code != 0:
@@ -629,7 +690,9 @@ def capture_snapshot(
     untracked: list[dict[str, Any]] = []
     captured_bytes = 0
     omitted_bytes = 0
-    for relative_path in sorted(path for path in untracked_result.stdout.split("\0") if path):
+    for relative_path in sorted(
+        path for path in untracked_result.stdout.split("\0") if path
+    ):
         _validate_relative_payload_path(relative_path)
         source = worktree / relative_path
         data = source.read_bytes()
@@ -718,15 +781,28 @@ def reconstruct_snapshot(
     output = Path(output_dir)
     if output.exists():
         raise ValueError(f"output directory already exists: {output}")
-    snapshot_record = _read_json(store.session_dir / "snapshots" / snapshot_id / "snapshot.json")
+    snapshot_record = _read_json(
+        store.session_dir / "snapshots" / snapshot_id / "snapshot.json"
+    )
     if not snapshot_record.get("complete", False):
         raise ValueError(f"snapshot is incomplete: {snapshot_id}")
 
-    clone = runner(["git", "clone", "--quiet", str(store.session["repo_root"]), str(output)], 60)
+    clone = runner(
+        ["git", "clone", "--quiet", str(store.session["repo_root"]), str(output)], 60
+    )
     if clone.exit_code != 0:
-        raise RuntimeError(f"failed to clone repo for snapshot reconstruction: {clone.stderr}")
+        raise RuntimeError(
+            f"failed to clone repo for snapshot reconstruction: {clone.stderr}"
+        )
     checkout = runner(
-        ["git", "-C", str(output), "checkout", "--quiet", snapshot_record["base_commit"]],
+        [
+            "git",
+            "-C",
+            str(output),
+            "checkout",
+            "--quiet",
+            snapshot_record["base_commit"],
+        ],
         30,
     )
     if checkout.exit_code != 0:
@@ -802,8 +878,12 @@ def generate_spec(*, session_dir: Path | str, out_dir: Path | str) -> dict[str, 
             raise ValueError(f"missing traceability for decision: {decision_id}")
 
         for section, items in outputs.items():
-            if not isinstance(items, list) or not all(isinstance(item, str) for item in items):
-                raise ValueError(f"unsupported decision output for {decision_id}: {section}")
+            if not isinstance(items, list) or not all(
+                isinstance(item, str) for item in items
+            ):
+                raise ValueError(
+                    f"unsupported decision output for {decision_id}: {section}"
+                )
             for item in items:
                 sections[section].append(
                     {
@@ -816,7 +896,9 @@ def generate_spec(*, session_dir: Path | str, out_dir: Path | str) -> dict[str, 
     output = Path(out_dir)
     output.mkdir(parents=True, exist_ok=True)
     files = {
-        "requirements.md": _render_generated_spec_file("Requirements", sections["requirements"]),
+        "requirements.md": _render_generated_spec_file(
+            "Requirements", sections["requirements"]
+        ),
         "design.md": _render_generated_spec_file(
             "Design",
             sections["design"],
@@ -842,7 +924,9 @@ def build_repo_guidance(repo_root: Path | str) -> list[dict[str, object]]:
         ("features/README.md", "feature-conventions", False),
         ("knowledge/validation.md", "gate-inventory", False),
     ]
-    guidance = [_guidance_entry(repo, path, role, required) for path, role, required in entries]
+    guidance = [
+        _guidance_entry(repo, path, role, required) for path, role, required in entries
+    ]
     for path in _active_spec_paths(repo):
         guidance.append(_guidance_entry(repo, path, "active-spec", False))
     for path in _architecture_concept_paths(repo):
@@ -900,12 +984,13 @@ class SessionStore:
 
     def write_payload(self, relative_path: str, content: str | bytes) -> dict[str, Any]:
         payload_path = self._payload_path(relative_path)
-        if payload_path.exists():
-            raise ValueError(f"immutable payload exists: {relative_path}")
-
         data = content.encode("utf-8") if isinstance(content, str) else content
-        payload_path.parent.mkdir(parents=True, exist_ok=True)
-        payload_path.write_bytes(data)
+        if payload_path.exists():
+            if payload_path.read_bytes() != data:
+                raise ValueError(f"immutable payload exists: {relative_path}")
+        else:
+            payload_path.parent.mkdir(parents=True, exist_ok=True)
+            payload_path.write_bytes(data)
         return {
             "path": relative_path,
             "sha256": hashlib.sha256(data).hexdigest(),
@@ -996,7 +1081,9 @@ class SessionStore:
     def _payload_path(self, relative_path: str) -> Path:
         path = PurePosixPath(relative_path)
         if path.is_absolute() or not path.parts or ".." in path.parts:
-            raise ValueError(f"payload path must stay within the session: {relative_path}")
+            raise ValueError(
+                f"payload path must stay within the session: {relative_path}"
+            )
         return self.session_dir / Path(*path.parts)
 
     def _events(self) -> list[dict[str, Any]]:
@@ -1008,7 +1095,9 @@ class SessionStore:
                 try:
                     events.append(json.loads(line))
                 except json.JSONDecodeError as exc:
-                    raise ValueError(f"invalid events.jsonl at line {line_number}") from exc
+                    raise ValueError(
+                        f"invalid events.jsonl at line {line_number}"
+                    ) from exc
         return events
 
     def _event_ids(self) -> set[str]:
@@ -1034,7 +1123,9 @@ def _read_json(path: Path) -> dict[str, Any]:
     return value
 
 
-def _read_manifest(repo_root: Path, failures: list[dict[str, str]]) -> dict[str, Any] | None:
+def _read_manifest(
+    repo_root: Path, failures: list[dict[str, str]]
+) -> dict[str, Any] | None:
     path = repo_root / ".foundry/manifest.json"
     if not path.is_file():
         failures.append(
@@ -1125,100 +1216,155 @@ def _materialize_live_smoke_prompt(
     return prompt_path
 
 
+LIVE_SMOKE_BOUNDARY = (
+    "# Live Smoke Boundary\n"
+    "This is an opt-in smoke test. Do not edit files or run tools. "
+    "Reply with one concise sentence confirming that you read the prompt.\n"
+)
+
+ROUND_OUTPUT_CONTRACT = (
+    "# Output Contract\n"
+    "Return your final answer as peer-readable Markdown with these sections:\n"
+    "## Position\n"
+    "## Answers To Open Questions\n"
+    "## Risks\n"
+    "## Challenges To Peer Finals\n"
+    "## Recommended Changes\n"
+    "If a section has nothing yet (for example no peer finals on the first turn), "
+    'write "none". Do not edit files; you have read-only tools for grounding.\n'
+)
+
+
 def _live_participant_runner(
     repo: Path,
     timeout_s: int,
     claude_budget_usd: str,
 ) -> Callable[[str, Path, Path], ParticipantResult]:
     def runner(actor: str, prompt_path: Path, raw_path: Path) -> ParticipantResult:
-        prompt_text = prompt_path.read_text(encoding="utf-8")
-        live_prompt = (
-            f"{prompt_text.rstrip()}\n\n"
-            "# Live Smoke Boundary\n"
-            "This is an opt-in smoke test. Do not edit files or run tools. "
-            "Reply with one concise sentence confirming that you read the prompt.\n"
+        prompt_text = prompt_path.read_text(encoding="utf-8").rstrip()
+        return _execute_harness_turn(
+            actor=actor,
+            repo=repo,
+            prompt_text=f"{prompt_text}\n\n{LIVE_SMOKE_BOUNDARY}",
+            raw_path=raw_path,
+            timeout_s=timeout_s,
+            claude_budget_usd=claude_budget_usd,
+            allowed_tools=None,
         )
-        if actor == "codex":
-            return _run_codex_live_turn(repo, live_prompt, raw_path, timeout_s)
-        if actor == "claude-code":
-            return _run_claude_live_turn(repo, live_prompt, timeout_s, claude_budget_usd)
-        raise ValueError(f"unsupported live participant: {actor}")
 
     return runner
 
 
-def _run_codex_live_turn(
+def _round_participant_runner(
+    repo: Path,
+    timeout_s: int,
+    claude_budget_usd: str,
+) -> Callable[[str, Path, Path], ParticipantResult]:
+    def runner(actor: str, prompt_path: Path, raw_path: Path) -> ParticipantResult:
+        prompt_text = prompt_path.read_text(encoding="utf-8").rstrip()
+        return _execute_harness_turn(
+            actor=actor,
+            repo=repo,
+            prompt_text=f"{prompt_text}\n\n{ROUND_OUTPUT_CONTRACT}",
+            raw_path=raw_path,
+            timeout_s=timeout_s,
+            claude_budget_usd=claude_budget_usd,
+            allowed_tools="Read,Grep,Glob",
+        )
+
+    return runner
+
+
+def _execute_harness_turn(
+    *,
+    actor: str,
     repo: Path,
     prompt_text: str,
     raw_path: Path,
     timeout_s: int,
+    claude_budget_usd: str,
+    allowed_tools: str | None,
 ) -> ParticipantResult:
-    final_path = raw_path.with_name("codex-final.txt")
-    command = [
-        "codex",
-        "exec",
-        "--cd",
-        str(repo),
-        "--sandbox",
-        "read-only",
-        "--color",
-        "never",
-        "--output-last-message",
-        str(final_path),
-        "-",
-    ]
-    result = _run_command_with_input(command, cwd=repo, stdin=prompt_text, timeout_s=timeout_s)
-    raw = _format_raw_command(command, result)
-    if result.exit_code != 0:
-        _raise_live_turn_failure("codex", result)
-    final = final_path.read_text(encoding="utf-8") if final_path.is_file() else result.stdout
-    return ParticipantResult(final=_ensure_trailing_newline(final.strip()), raw=raw)
+    """Run one harness turn read-only with the prompt on stdin.
+
+    The prompt is never placed on argv, so the recorded command vector cannot leak
+    it; the raw log references the prompt by SHA-256 only.
+    """
+    if actor == "codex":
+        final_path = raw_path.with_name("codex-final.txt")
+        command = [
+            "codex",
+            "exec",
+            "--cd",
+            str(repo),
+            "--sandbox",
+            "read-only",
+            "--color",
+            "never",
+            "--output-last-message",
+            str(final_path),
+            "-",
+        ]
+        result = _run_command_with_input(
+            command, cwd=repo, stdin=prompt_text, timeout_s=timeout_s
+        )
+        raw = _format_raw_turn(command, result, prompt_text)
+        _classify_turn_failure(actor, result)
+        final = (
+            final_path.read_text(encoding="utf-8")
+            if final_path.is_file()
+            else result.stdout
+        )
+        return ParticipantResult(final=_ensure_trailing_newline(final.strip()), raw=raw)
+    if actor == "claude-code":
+        command = [
+            "claude",
+            "-p",
+            "--output-format",
+            "text",
+            "--max-budget-usd",
+            claude_budget_usd,
+            "--permission-mode",
+            "dontAsk",
+            "--no-session-persistence",
+        ]
+        if allowed_tools:
+            command += ["--allowedTools", allowed_tools]
+        else:
+            command += ["--tools", ""]
+        result = _run_command_with_input(
+            command, cwd=repo, stdin=prompt_text, timeout_s=timeout_s
+        )
+        raw = _format_raw_turn(command, result, prompt_text)
+        _classify_turn_failure(actor, result)
+        return ParticipantResult(
+            final=_ensure_trailing_newline(result.stdout.strip()), raw=raw
+        )
+    raise ValueError(f"unsupported participant: {actor}")
 
 
-def _run_claude_live_turn(
-    repo: Path,
-    prompt_text: str,
-    timeout_s: int,
-    budget_usd: str,
-) -> ParticipantResult:
-    command = [
-        "claude",
-        "-p",
-        "--output-format",
-        "text",
-        "--max-budget-usd",
-        budget_usd,
-        "--permission-mode",
-        "dontAsk",
-        "--tools",
-        "",
-        "--no-session-persistence",
-        prompt_text,
-    ]
-    result = _run_command_with_input(command, cwd=repo, stdin="", timeout_s=timeout_s)
-    raw = _format_raw_command(command, result)
-    if result.exit_code != 0:
-        _raise_live_turn_failure("claude-code", result)
-    return ParticipantResult(final=_ensure_trailing_newline(result.stdout.strip()), raw=raw)
-
-
-def _raise_live_turn_failure(actor: str, result: CommandResult) -> None:
+def _classify_turn_failure(actor: str, result: CommandResult) -> None:
+    if result.exit_code == 0:
+        return
     detail = f"{result.stdout}\n{result.stderr}".strip()
     lower = detail.lower()
     if "usage limit" in lower or "quota" in lower or "usage cap" in lower:
         raise ParticipantLimited(actor=actor, category="usage-limited", detail=detail)
     if "rate limit" in lower or "rate-limited" in lower:
         raise ParticipantLimited(actor=actor, category="rate-limited", detail=detail)
-    raise RuntimeError(f"{actor} live smoke failed: {detail}")
+    raise ParticipantFailed(actor=actor, exit_code=result.exit_code, detail=detail)
 
 
-def _format_raw_command(command: list[str], result: CommandResult) -> str:
+def _format_raw_turn(
+    command: list[str], result: CommandResult, prompt_text: str
+) -> str:
     return _json_text(
         {
             "command": command,
             "exit_code": result.exit_code,
             "stdout": result.stdout,
             "stderr": result.stderr,
+            "prompt_sha256": hashlib.sha256(prompt_text.encode("utf-8")).hexdigest(),
         }
     )
 
@@ -1259,13 +1405,17 @@ def _git_head(
     repo_root: Path,
     command_runner: Callable[[list[str], int], CommandResult],
 ) -> str:
-    result = command_runner(["git", "-C", str(repo_root), "rev-parse", "--short", "HEAD"], 10)
+    result = command_runner(
+        ["git", "-C", str(repo_root), "rev-parse", "--short", "HEAD"], 10
+    )
     if result.exit_code != 0:
         raise RuntimeError("failed to read git HEAD")
     return result.stdout.strip()
 
 
-def _check_harness_statuses(repo_root: Path, harnesses: list[str]) -> list[dict[str, object]]:
+def _check_harness_statuses(
+    repo_root: Path, harnesses: list[str]
+) -> list[dict[str, object]]:
     status_path = Path(__file__).with_name("harness-status.py")
     spec = importlib.util.spec_from_file_location("harness_status", status_path)
     if spec is None or spec.loader is None:
@@ -1275,7 +1425,9 @@ def _check_harness_statuses(repo_root: Path, harnesses: list[str]) -> list[dict[
     return module.check_selected_harnesses(repo_root=repo_root, harnesses=harnesses)
 
 
-def _render_view_bytes(session_id: str, events: list[dict[str, Any]]) -> dict[str, bytes]:
+def _render_view_bytes(
+    session_id: str, events: list[dict[str, Any]]
+) -> dict[str, bytes]:
     state = _project_state(session_id, events)
     return {
         "state.json": _json_text(state).encode("utf-8"),
@@ -1304,6 +1456,64 @@ def _round_participants(round_id: str) -> list[str]:
     if number % 2 == 0:
         return ["claude-code", "codex"]
     return ["codex", "claude-code"]
+
+
+def _resume_round(events: list[dict[str, Any]]) -> tuple[str, list[str], bool]:
+    """Pick the round to run: resume the latest incomplete one, else start a new one.
+
+    Returns (round_id, participants_still_needing_a_final, is_new_round). A round is
+    "started" once it has a repo_guidance event; it is complete when every
+    participant has a participant_final for it.
+    """
+    started_rounds: list[str] = []
+    for event in events:
+        if event.get("type") == "repo_guidance":
+            round_id = event.get("round_id")
+            if isinstance(round_id, str) and round_id not in started_rounds:
+                started_rounds.append(round_id)
+    if started_rounds:
+        latest = started_rounds[-1]
+        finals = {
+            event.get("actor")
+            for event in events
+            if event.get("type") == "participant_final"
+            and event.get("round_id") == latest
+        }
+        remaining = [
+            actor for actor in _round_participants(latest) if actor not in finals
+        ]
+        if remaining:
+            return latest, remaining, False
+    new_round = _next_round_id(events)
+    return new_round, _round_participants(new_round), True
+
+
+def _guidance_for_round(
+    events: list[dict[str, Any]], round_id: str
+) -> list[dict[str, object]]:
+    for event in events:
+        if event.get("type") == "repo_guidance" and event.get("round_id") == round_id:
+            return event.get("guidance", [])
+    return []
+
+
+def _peer_finals_for_round(store: SessionStore, round_id: str) -> list[dict[str, str]]:
+    peer_finals: list[dict[str, str]] = []
+    for event in store._events():
+        if (
+            event.get("type") != "participant_final"
+            or event.get("round_id") != round_id
+        ):
+            continue
+        final_payload = event.get("payloads", {}).get("final", {})
+        path = final_payload.get("path")
+        if not path:
+            continue
+        content = (store.session_dir / path).read_text(encoding="utf-8")
+        peer_finals.append(
+            {"actor": event.get("actor"), "path": path, "content": content}
+        )
+    return peer_finals
 
 
 def _next_turn_id(events: list[dict[str, Any]], actor: str) -> str:
@@ -1362,6 +1572,7 @@ def _render_participant_prompt(
     session_id: str,
     actor: str,
     round_id: str,
+    mediator_prompt: str,
     guidance: list[dict[str, object]],
     state_md: str,
     peer_finals: list[dict[str, str]],
@@ -1371,6 +1582,10 @@ def _render_participant_prompt(
         "",
         f"- Session: {session_id}",
         f"- Round: {round_id}",
+        "",
+        "# Mediator Prompt",
+        "",
+        mediator_prompt.rstrip(),
         "",
         "# Repo Guidance",
     ]
@@ -1749,6 +1964,14 @@ def main(argv: list[str] | None = None) -> int:
         default=DEFAULT_CLAUDE_LIVE_SMOKE_BUDGET_USD,
     )
 
+    round_parser = subparsers.add_parser("round")
+    round_parser.add_argument("--session-dir", required=True)
+    round_parser.add_argument("--timeout-s", type=int, default=300)
+    round_parser.add_argument(
+        "--budget-usd",
+        default=DEFAULT_CLAUDE_LIVE_SMOKE_BUDGET_USD,
+    )
+
     args = parser.parse_args(argv)
     if args.command == "start":
         try:
@@ -1820,6 +2043,28 @@ def main(argv: list[str] | None = None) -> int:
         for final in result["finals"]:
             print(f"{final['actor']} final: {final['path']}")
         print("worktree: unchanged")
+        return 0
+
+    if args.command == "round":
+        try:
+            store = SessionStore.open(args.session_dir)
+            if store.session_id != Path(args.session_dir).name:
+                raise ValueError(
+                    f"session_id {store.session_id!r} does not match directory "
+                    f"{Path(args.session_dir).name!r}"
+                )
+            repo = Path(store.session["repo_root"])
+            run_round(
+                session_dir=args.session_dir,
+                participant_runner=_round_participant_runner(
+                    repo, args.timeout_s, args.budget_usd
+                ),
+            )
+        except Exception as exc:
+            print(str(exc))
+            return 1
+        print("round: PASS")
+        print(f"session: {args.session_dir}")
         return 0
 
     parser.error(f"unknown command {args.command}")

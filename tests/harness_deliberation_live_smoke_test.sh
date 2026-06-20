@@ -163,6 +163,15 @@ except RuntimeError as exc:
     assert "consumer repo worktree changed" in str(exc)
 else:
     raise AssertionError("mutating live smoke should fail")
+
+# Shape check: a no-op (empty/too-short) final must fail so it cannot pass as success.
+try:
+    broker._assert_final_shape("codex", "   ")
+except RuntimeError:
+    pass
+else:
+    raise AssertionError("empty final must fail the shape check")
+broker._assert_final_shape("claude-code", "a substantive multi-word final answer")
 PY
 
 if python3 "$BROKER" live-smoke --help 2>&1 | grep -q -- "--session"; then

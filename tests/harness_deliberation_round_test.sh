@@ -134,6 +134,8 @@ claude_prompt = seen_prompts["claude-code"]
 assert "AGENTS.md" in codex_prompt
 assert "knowledge/glossary.md" in codex_prompt
 assert "# Compact State" in codex_prompt
+assert "# Mediator Prompt" in codex_prompt, "turn prompt includes the mediator prompt heading"
+assert "Shape the spec." in codex_prompt, "turn prompt includes the mediator prompt body"
 assert "codex final" in claude_prompt
 assert "codex raw secret" not in claude_prompt
 assert_equal((started.session_dir / "turns/0001-codex/final.md").read_text(encoding="utf-8"), "codex final\n", "codex final file")

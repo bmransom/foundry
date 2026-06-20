@@ -135,45 +135,45 @@ reached participants, and the `--seed-defect` eval path asserted nothing. This
 wave completes `round` end-to-end and replaces the non-discriminating eval
 mechanism.
 
-- [ ] T26: Wire the `round` CLI over an existing session —
+- [x] T26: Wire the `round` CLI over an existing session —
   `round --session-dir <dir>` resolves the session, reads `repo_root` from
   `session.json`, refuses a missing/mismatched session, and calls `run_round`
   with the real participant runner, one round per invocation. Gate: a test
   drives `round` via the CLI over a prepared session and asserts a new
   `participant_final` per participant; a missing session exits nonzero with the
   path. [AC-2.9, AC-2.11]
-- [ ] T27: Render the mediator prompt and open questions into the turn prompt —
+- [x] T27: Render the mediator prompt and open questions into the turn prompt —
   `_render_participant_prompt` gains a `# Mediator Prompt` section read from the
   immutable `mediator_prompt` payload, keeping compact state and peer finals (dep
   T26). Gate: a `tests/*_test.sh` runs `run_round` with a fake runner on a session
   carrying a mediator prompt and a seeded question, then asserts the persisted
   `turns/0001-codex/prompt.md` contains the mediator prompt body and the question;
   dropping the `# Mediator Prompt` section fails the test. [AC-2.10]
-- [ ] T28: Split runner policy from execution and unify on stdin — one shared
+- [x] T28: Split runner policy from execution and unify on stdin — one shared
   adapter runs Codex/Claude read-only (Codex `--sandbox read-only`, Claude
   `--allowedTools "Read,Grep,Glob"`) with the prompt on stdin; `live-smoke` adds
   its confirm-receipt boundary, the real round adds a structured output contract
   (dep T26). Gate: the existing live-smoke test stays green; a test asserts the
   real-round prompt omits the `# Live Smoke Boundary` and that `raw.log` contains
   no prompt text. [AC-2.2, AC-2.15]
-- [ ] T29: Record `participant_failed` on unclassified nonzero exits via a
+- [x] T29: Record `participant_failed` on unclassified nonzero exits via a
   `ParticipantFailed` exception caught in `run_round`, mirroring
   `participant_limited` (dep T28). Gate: a fake nonzero participant appends
   `participant_failed` with the prompt hash and raw path and pauses the session.
   [AC-2.12]
-- [ ] T30: Make turns resumable — idempotent prompt write on a matching hash, and
+- [x] T30: Make turns resumable — idempotent prompt write on a matching hash, and
   resume the same `round_id` for participants lacking a final after a
   `limited`/`failed` first participant (deps T26, T29). Gate: re-running `round`
   after a half-written turn raises no immutable-payload error; after a
   limited/failed first participant the second participant's same-round turn still
   runs. [AC-2.13, AC-2.14]
-- [ ] T31: Replace the non-discriminating eval mechanism with real discrimination
+- [x] T31: Replace the non-discriminating eval mechanism with real discrimination
   — retire the `--seed-defect` name grep and its meta-test; add the
   command-surface eval (advertised v1 commands from one canonical source equal the
   broker's subcommands and options) and the mediator-prompt-rendering eval from
   T27 as `tests/*_test.sh` (deps T26, T27). Gate: a doc-only command with no parser fails
   the command-surface eval; both evals run inside `scripts/check-fast.sh`. [AC-7]
-- [ ] T32: Add a `live-smoke` shape check that rejects an empty or boilerplate
+- [x] T32: Add a `live-smoke` shape check that rejects an empty or boilerplate
   final and document the residual limit that `round` does not self-validate
   answer quality (dep T28). Gate: a no-op final fails the smoke shape check.
   [AC-1, AC-2]
