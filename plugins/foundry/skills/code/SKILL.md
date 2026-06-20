@@ -5,9 +5,10 @@ description: "Use when implementing, adding, changing, or fixing a feature in a 
 
 # The code lifecycle
 
-This is the high-level dispatcher for feature work in a foundry repo. Keep repo
-facts in `AGENTS.md`, `rules/`, and the knowledge base; use lower-level skills for
-judgment-heavy checks so this lifecycle stays small.
+The high-level dispatcher for feature work in a foundry repo. Keep repo facts in
+`AGENTS.md`, `rules/`, and the knowledge base; defer judgment-heavy checks to
+lower-level skills so this lifecycle stays small. When a specialized skill fits a
+stage, prefer it — it supersedes the method here; otherwise the stage's instruction stands.
 
 Every repo-specific detail comes from:
 
@@ -33,13 +34,14 @@ not start a later stage until the prior gate is met.
 - [ ] **3 Build** — feature-file Scenario first, then TDD red→green. GATE: new behavior has its Scenario before its code.
 - [ ] **4 Verify** — the repo's canonical gate green. GATE: a recorded PASS, pasted — not a claim.
 - [ ] **5 Knowledge** — `python3 scripts/knowledge.py check` clean; touched concepts updated. GATE: no stale concept or `index.md`.
-- [ ] **6 Finish** — branch first, ask before push, move the card. GATE: `Done` needs the recorded gate PASS.
+- [ ] **6 Review** — `code-review` in fresh context; fix every blocking finding. GATE: no commit or PR with an unresolved blocking finding.
+- [ ] **7 Finish** — branch first, ask before push, move the card. GATE: `Done` needs the recorded gate PASS.
 
 ## 0 · Frame — pick the path
 
 | Work | Path |
 |---|---|
-| **New feature** | All stages 1 → 6. |
+| **New feature** | All stages 1 → 7. |
 | **Enhancement** of existing behavior | Update the affected Scenario in `features/` + the touched stages; a light spec note, not a full `roadmap/specs/<feature>/`. |
 | **Performance-sensitive change** | Use `performance` during Spec/Plan/Verify, then follow the matching feature, enhancement, bug-fix, or refactor path. |
 | **Naming, API, or vocabulary change** | Use `naming-standards` during Spec/Plan before writing public names. |
@@ -51,14 +53,13 @@ not start a later stage until the prior gate is met.
 
 Write `roadmap/specs/<feature>/{requirements,design,tasks}.md` in the format
 `roadmap/specs/README.md` defines and the vocabulary of `knowledge/glossary.md`.
-Then loop:
+Then loop, revising and repeating whenever a review changes the spec or vocabulary:
 
 1. Use `spec-review` in fresh context for requirements, design, and tasks.
 2. Use `naming-standards` for new glossary terms, public APIs, config, metrics, files, and directories.
 3. Use `design-patterns` when boundaries, extension points, eventing, adapters, construction, or algorithm selection matter.
 4. Use `modular-structure` for placement, dependency direction, public/internal APIs, and directory shape.
 5. Use `performance` when the work touches hot paths, resource use, model/tool calls, or user-visible latency.
-6. Revise the spec and repeat if any review changes requirements, design, tasks, or vocabulary.
 
 **Gate:** no implementation until the Design is approved.
 
@@ -68,16 +69,15 @@ Break the design into bite-sized TDD tasks in `roadmap/specs/<feature>/tasks.md`
 paths, real code, a test per step. Claim the work by setting the owner on its card in
 `roadmap/ROADMAP.md` (the board); respect listed dependencies.
 For performance-sensitive work, include the baseline plan from `performance` before
-code: main vs feature, flag-off vs flag-on, old vs new algorithm, no-feature vs
-feature, or reference vs local, with common workload and correctness gate named.
+code (main vs feature, flag-off vs flag-on, old vs new), naming the workload and correctness gate.
 **Gate:** no code until the plan exists and is approved.
 
 ## 3 · Build
 
 **Feature-file first.** New observable behavior gets a Scenario in `features/`
-*before* its implementation; `features/README.md` says which file and contract kind.
-Then TDD: red → green. Respect `AGENTS.md` Boundaries. Stage **explicit paths** when
-you commit — never `git add -A` (the tree may be shared by parallel agents).
+*before* its implementation (`features/README.md` says which file and contract kind);
+then TDD red → green. Respect `AGENTS.md` Boundaries. Stage **explicit paths** when you
+commit — never `git add -A` (the tree may be shared by parallel agents).
 **Gate:** the new behavior has a feature-file Scenario before its code.
 
 ## 4 · Verify
@@ -87,12 +87,20 @@ Run the repo's canonical gate — the command `AGENTS.md` Commands names.
 
 ## 5 · Knowledge
 
-Run `python3 scripts/knowledge.py check` (frontmatter lint) on any new or changed concept.
-Regenerate the listing (`python3 scripts/knowledge.py index`) and log the change in
-`knowledge/log.md`. Update `AGENTS.md` if a convention changed.
+Run `python3 scripts/knowledge.py check` on any new or changed concept, regenerate the
+listing (`python3 scripts/knowledge.py index`), and log the change in `knowledge/log.md`.
+Update `AGENTS.md` if a convention changed.
 **Gate:** no finish with a stale concept or `index.md`.
 
-## 6 · Finish
+## 6 · Review
+
+Run `code-review` in fresh context, then fix every **blocking** finding; **advisory**
+findings (size tripwires) inform but permit Finish. A docs/knowledge finding loops
+back to **Knowledge** first. Re-run until none remain; if blocking findings persist
+after **three** rounds, stop and escalate — they signal a design problem, not a wording fix.
+**Gate:** no commit or PR with an unresolved blocking finding.
+
+## 7 · Finish
 
 Branch first if you are on the default branch. **Ask before you commit or push.**
 Move the card on `roadmap/ROADMAP.md` Validating → Done. If a real failure showed the
@@ -110,9 +118,3 @@ closed only by a mechanical change (gate, lint, rule, or eval case), never prose
 | "`git add -A` is faster." | The tree may be shared; stage explicit paths only. |
 
 Violating the letter of a gate is violating its spirit.
-
-## Enhancement
-
-This skill is the high-level flow. If a more specialized skill fits a stage — design,
-planning, testing, debugging, review, finishing — prefer it; it supersedes the method
-here. Otherwise the stage's instruction stands.
