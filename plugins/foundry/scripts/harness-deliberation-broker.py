@@ -10,6 +10,7 @@ import json
 import re
 import shutil
 import subprocess
+import sys
 from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
 from typing import Any, Callable
@@ -270,6 +271,8 @@ def start_session(
             "payloads": {"prompt": prompt_payload},
         },
     )
+    # Render Tier 3 views before tmux so the state window has files to tail.
+    store.render_views()
 
     tmux_session = f"foundry-hd-{session_id}"
     tmux_commands = build_tmux_commands(
@@ -296,6 +299,42 @@ def start_session(
     )
 
 
+def _participant_pane_command(session_dir: Path, actor: str) -> str:
+    """A long-lived pane that follows one participant's latest final.md.
+
+    tmux runs pane commands through the user's ``default-shell`` (often zsh), so
+    this avoids shell globs — under zsh an unmatched glob aborts with a noisy
+    ``no matches found`` — and lists the turns directory, filtering by slug.
+    """
+    slug = TURN_SLUG_BY_HARNESS.get(actor, actor.replace("-code", ""))
+    turns_dir = f"{session_dir}/turns"
+    return (
+        "while :; do clear; "
+        f"printf '== %s (latest final) ==\\n\\n' '{actor}'; "
+        f"t=\"$(ls -t '{turns_dir}' 2>/dev/null | grep -- '-{slug}$' | head -n1)\"; "
+        f'if [ -n "$t" ]; then cat \'{turns_dir}\'/"$t"/final.md 2>/dev/null; '
+        f"else printf '(waiting for %s...)\\n' '{actor}'; fi; "
+        "sleep 2; done"
+    )
+
+
+def _mediator_pane_command(session_dir: Path) -> str:
+    """A long-lived shell that exports the session path and prints broker help."""
+    help_lines = [
+        "Foundry harness deliberation — broker commands:",
+        '  round   --session-dir "$FOUNDRY_HD_SESSION"',
+        '  decide  --session-dir "$FOUNDRY_HD_SESSION" --file <decisions.md>',
+        '  rebuild --session-dir "$FOUNDRY_HD_SESSION"',
+        '  spec    --session-dir "$FOUNDRY_HD_SESSION" --out roadmap/specs/<feature>',
+    ]
+    quoted = " ".join("'" + line + "'" for line in help_lines)
+    return (
+        f'export FOUNDRY_HD_SESSION="{session_dir}"; '
+        f"printf '%s\\n' {quoted}; "
+        'exec "${SHELL:-/bin/sh}"'
+    )
+
+
 def build_tmux_commands(
     *,
     repo_root: Path,
@@ -313,7 +352,7 @@ def build_tmux_commands(
             "control",
             "-c",
             str(repo_root),
-            "printf 'codex pane\\n'",
+            _participant_pane_command(session_dir, "codex"),
         ],
         [
             "tmux",
@@ -321,7 +360,9 @@ def build_tmux_commands(
             "-t",
             f"{tmux_session}:control",
             "-h",
-            "printf 'claude-code pane\\n'",
+            "-c",
+            str(repo_root),
+            _participant_pane_command(session_dir, "claude-code"),
         ],
         [
             "tmux",
@@ -329,7 +370,9 @@ def build_tmux_commands(
             "-t",
             f"{tmux_session}:control",
             "-v",
-            "printf 'mediator command shell\\n'",
+            "-c",
+            str(repo_root),
+            _mediator_pane_command(session_dir),
         ],
         [
             "tmux",
@@ -1985,13 +2028,15 @@ def main(argv: list[str] | None = None) -> int:
 
     args = parser.parse_args(argv)
     if args.command == "start":
+        # AC-1.6: attach only from a real terminal; otherwise print the command.
+        is_interactive = sys.stdout.isatty()
         try:
             result = start_session(
                 repo_root=args.repo,
                 prompt_file=args.prompt,
                 session_id=args.session,
                 attach=args.attach,
-                is_interactive=True,
+                is_interactive=is_interactive,
                 run_tmux=not args.dry_run,
             )
         except Exception as exc:

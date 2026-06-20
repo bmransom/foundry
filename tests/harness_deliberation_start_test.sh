@@ -158,8 +158,16 @@ assert_equal(result.tmux_session, "foundry-hd-demo-start", "tmux session name")
 assert_equal(result.attach_command, "tmux attach -t foundry-hd-demo-start", "attach command")
 assert any(command[:4] == ["tmux", "new-session", "-d", "-s"] and "control" in command for command in result.tmux_commands), "control window command"
 assert any(command[:3] == ["tmux", "new-window", "-t"] and "state" in command for command in result.tmux_commands), "state window command"
-assert any("codex pane" in " ".join(command) for command in result.tmux_commands), "codex pane command"
-assert any("claude-code pane" in " ".join(command) for command in result.tmux_commands), "claude pane command"
+# Panes follow each participant's latest final.md (long-lived, not placeholders).
+joined = [" ".join(command) for command in result.tmux_commands]
+assert not any("codex pane" in command for command in joined), "placeholder codex pane survives"
+assert any("-codex" in command and "final.md" in command for command in joined), "codex final pane command"
+assert any("-claude" in command and "final.md" in command for command in joined), "claude final pane command"
+assert any("FOUNDRY_HD_SESSION" in command for command in joined), "mediator pane exports FOUNDRY_HD_SESSION"
+
+# render_views ran during start, so the state window has Tier 3 views to tail.
+assert (session_dir / "state.md").exists(), "state.md missing after start"
+assert (session_dir / "transcript.md").exists(), "transcript.md missing after start"
 
 events = [
     json.loads(line)

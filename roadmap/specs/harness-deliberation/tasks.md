@@ -192,20 +192,22 @@ are tracked here; decision IDs trace to the session.
   current round — `_peer_finals_for_round` is round-scoped, so round 2 opens with
   `# Peer Finals - none`. Gate: a two-round render test fails when round 2's first
   prompt has no prior peer final. [d0001]
-- [ ] T35: Make the live `start`/tmux path real and testable — long-lived panes
+- [x] T35: Make the live `start`/tmux path real and testable — long-lived panes
   that tail status/`final.md`, export `FOUNDRY_HD_SESSION` + print command help,
   and call `render_views()` in `start_session` so `state.md`/`transcript.md` exist
   before the `state` window tails them. Gate: a real-tmux test (not
   `run_tmux=False`) fails on placeholder/exiting panes or missing Tier 3 files.
-  [d0002, d0003]
+  Done: `tests/harness_deliberation_start_tmux_test.sh` (real tmux) +
+  `tests/harness_deliberation_start_test.sh` shape/Tier-3 assertions. [d0002, d0003]
 - [ ] T36: Re-run preflight/`_check_harness_statuses` at the top of the `round`
   CLI and refuse drift with auth/subscription or `/foundry:update` guidance. Gate:
   a de-selected or unavailable participant makes `round` exit nonzero before
   spending a turn. [AC-8.6, d0004]
-- [ ] T37: Honor AC-1.6 in the CLI — detect `sys.stdout.isatty()` for
+- [x] T37: Honor AC-1.6 in the CLI — detect `sys.stdout.isatty()` for
   `is_interactive` and print the exact `tmux attach -t …` command on the
   non-interactive `--attach` path. Gate: a non-interactive `start --attach` test
-  asserts the printed attach command. [AC-1.6, d0005]
+  asserts the printed attach command. Done:
+  `tests/harness_deliberation_start_attach_test.sh`. [AC-1.6, d0005]
 - [ ] T38: Align the `decide` contract — implement Markdown + `decision_id`
   supersession, or correct `SKILL.md`/`design.md` to JSON + event-id; the
   command-surface eval asserts the chosen contract. Gate: the documented `decide`
