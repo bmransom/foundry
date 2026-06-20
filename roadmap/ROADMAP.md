@@ -85,4 +85,19 @@ model, forbidden terms, standing rules, or gate commands.
 
 | Work | Status | Spec | Depends on |
 |---|---|---|---|
-| harness-deliberation spec: requirements + design + tasks (@codex) | Validating — Wave 8 shipped in v0.1.2; T3 dogfood done (real Codex + Claude deliberation over the spec, both finals + `rebuild: PASS`) → Wave 9 opened: 7 settled gap-fixes (cross-round peer context, live tmux, round drift check, AC-1.6 attach, decide contract, failed-turn raw, snapshot surface). T1 maintainer approval remains | `roadmap/specs/harness-deliberation/` | harness-agnostic |
+| harness-deliberation spec: requirements + design + tasks (@codex) | Validating — Wave 8 (v0.1.2) + Wave 9 (T34–T40: cross-round peer context, live tmux, round drift check, AC-1.6 attach, decide doc-align, failed-turn raw, snapshot deferral) + issue #6 timeout-crash fix shipped to `main` @ 9791046; 0.1.3 Release PR #5 open (ships after the L3 eval gate). Remaining: T1 maintainer approval | `roadmap/specs/harness-deliberation/` | harness-agnostic |
+
+### Epic 6 — Self-improving loop
+
+Cron-driven self-improvement: signals (evals, dogfood findings, GitHub issues) → human-gated
+A/B consult → harness deliberation → spec → `code`. Built on two Tier-1 enablers that make
+parallel agent work safe and verifiable.
+
+| Work | Status | Spec | Depends on |
+|---|---|---|---|
+| spawn-isolation: worktree-per-session in the shared fresh-session runner (the parallel-safety enabler) + sandbox the evals | Ready — spec written 2026-06-20 (deliberated + spec-reviewed); pending design approval, then build | `roadmap/specs/spawn-isolation/` | — |
+| code-review: skill + numbered Review stage (Verify → Knowledge → Review → Finish); the green-but-wrong gate (complete-impl, docs-sync, robust tests, sensible defaults, simplicity) + an eval-gated cross-model drop-only refuter | Ready — spec written 2026-06-20 (deliberated + spec-reviewed + converged); pending design approval, then build | `roadmap/specs/code-review/` | spawn-isolation |
+| reviewer-eval repoint: point `evals/harness/reviewer-eval.sh` off the removed `agents/spec-reviewer.md` at the `spec-review` skill | Ready — small fix (both deliberations flagged the drift) | spec note | — |
+| issue-triage: GitHub issues as a signal source — host cron ingests read-only → durable triage ledger → human whether/how consult → mechanically-gated `issue-act` | Planned — design done (deliberated); spec to write | spec to write | self-improving loop S1+S3 |
+| self-improving loop S1–S4: signal store → proposer cron → A/B consult UI → deliberate→spec→code pipeline | Planned — design/decomposition done; spec to write | spec to write | spawn-isolation, code-review |
+| external telemetry + anonymization: opt-in conversation contribution + anonymization core + adversarial leakage eval | Backlog — deferred until the internal loop is proven | spec to write | self-improving loop |
