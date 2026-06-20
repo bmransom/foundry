@@ -5,6 +5,11 @@
 # Hermetic: AGENT_TMUX=/bin/echo, TMUX=1. No real claude/codex/tmux required.
 set -euo pipefail
 
+# Hermetic against the git-hook environment: a hook exports GIT_DIR/GIT_WORK_TREE
+# etc., which would hijack `git init` of the fixture repos below. Clear them.
+unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_OBJECT_DIRECTORY GIT_PREFIX \
+      GIT_CONFIG_PARAMETERS GIT_CONFIG_GLOBAL GIT_CONFIG_SYSTEM 2>/dev/null || true
+
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 RUNNER="$REPO/plugins/foundry/scripts/spawn-fresh-session.sh"
 
