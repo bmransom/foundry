@@ -4,6 +4,14 @@
 
 Changes to the knowledge base, newest first. A reserved OKF file — no frontmatter.
 
+## 2026-06-20
+
+- **Update** Registered the **Code-review eval (L3)** in **Validation**
+  (`evals/harness/code-review-eval.sh`) — manual, required green for a version
+  bump; the A/B arm gates cross-model refuter enablement. No glossary entry: code
+  review is generic prior art, provenance lives in the SKILL header (mirroring
+  `spec-review`).
+
 ## 2026-06-19
 
 - **Update** Added **Session storage tier** provenance for harness deliberation

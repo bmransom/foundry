@@ -31,4 +31,5 @@ non-bypassable backstop) — the same script both times, so the two can never di
 | Bootstrap eval (L2) | `evals/harness/bootstrap-eval.sh <fixture or all>` | a broken bootstrap; a vacuous generated gate; template regressions in consumer repos | manual + CI dispatch |
 | Update eval (L2) | `evals/harness/update-eval.sh <bootstrapped-tree>` | broken refresh; customization overwrites; seed writes | manual |
 | Reviewer eval (L3) | `evals/harness/reviewer-eval.sh [N]` | spec-reviewer missing seeded violations or flagging decoys (precision/recall) | manual; required green for a version bump |
+| Code-review eval (L3) | `evals/harness/code-review-eval.sh [N]` | code-review missing seeded defects or flagging decoys; the cross-model refuter dropping a real defect (the A/B gates refuter enablement) | manual; required green for a version bump |
 | Lifecycle eval (L3) | `evals/harness/lifecycle-eval.sh <bootstrapped-tree>` | the code skill skipping a stage artifact (spec, feature-file-first, pasted PASS, board card) | manual; required green for a version bump |
