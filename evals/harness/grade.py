@@ -17,6 +17,9 @@ Expectations schema (all top-level keys optional except "fixture"):
   content:   [{"name"?, "path", "pattern", "must_exist"}]
              — patterns compile with re.MULTILINE | re.DOTALL, so "^### Epic 0"
                anchors lines and "a.*b" asserts ordering across lines.
+  tree_content: [{"name", "glob", "pattern", "must_exist"}]
+             — like content but greps every file matching glob (recursive "**");
+               must_exist:true needs >=1 hit, false forbids the pattern anywhere.
   manifest:  {"path", "min_files", "conventionVersion"?, "harnesses"?} — JSON
              with >= min_files entries in "files"; optional convention and
              harness-set checks.
@@ -24,6 +27,7 @@ Expectations schema (all top-level keys optional except "fixture"):
 """
 
 import argparse
+import glob
 import json
 import os
 import re
@@ -116,6 +120,29 @@ def check_content(tree, spec):
     return True, f"pattern {pattern!r} {verb} in {path} as expected"
 
 
+def check_tree_content(tree, spec):
+    glob_pattern = spec["glob"]
+    pattern = spec["pattern"]
+    must_exist = spec["must_exist"]
+    matches = sorted(
+        path
+        for path in glob.glob(os.path.join(tree, glob_pattern), recursive=True)
+        if os.path.isfile(path)
+    )
+    hits = [
+        os.path.relpath(path, tree)
+        for path in matches
+        if re.search(pattern, read_text(path) or "", re.MULTILINE | re.DOTALL)
+    ]
+    if must_exist and not hits:
+        return False, f"required pattern {pattern!r} not found under {glob_pattern}"
+    if not must_exist and hits:
+        return False, f"forbidden pattern {pattern!r} found in {hits}"
+    verb = "found" if hits else "absent"
+    where = f"in {hits}" if hits else f"under {glob_pattern}"
+    return True, f"pattern {pattern!r} {verb} {where} as expected"
+
+
 def check_manifest(tree, spec):
     path = spec["path"]
     min_files = spec["min_files"]
@@ -168,6 +195,9 @@ def grade(expectations, tree):
         case = spec.get("name", f"content:{spec['path']}:{spec['pattern']}")
         ok, detail = check_content(tree, spec)
         yield case, ok, detail
+    for spec in expectations.get("tree_content", []):
+        ok, detail = check_tree_content(tree, spec)
+        yield spec["name"], ok, detail
     if "manifest" in expectations:
         spec = expectations["manifest"]
         ok, detail = check_manifest(tree, spec)

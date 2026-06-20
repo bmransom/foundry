@@ -45,6 +45,20 @@ BASE_EXPECTATIONS = {
             "must_exist": True,
         },
     ],
+    "tree_content": [
+        {
+            "name": "uses-logger",
+            "glob": "src/**/*.py",
+            "pattern": "logger\\.(info|warning|error|debug)\\(",
+            "must_exist": True,
+        },
+        {
+            "name": "no-print",
+            "glob": "src/**/*.py",
+            "pattern": "^[ \\t]*print\\(",
+            "must_exist": False,
+        },
+    ],
     "manifest": {
         "path": ".foundry/manifest.json",
         "min_files": 2,
@@ -59,6 +73,11 @@ def build_complete_tree(root: Path) -> None:
     (root / "knowledge").mkdir(parents=True)
     (root / "roadmap").mkdir(parents=True)
     (root / "features").mkdir(parents=True)
+    (root / "src" / "app").mkdir(parents=True)
+    (root / "src" / "app" / "main.py").write_text(
+        "import logging\n\nlogger = logging.getLogger(__name__)\n\n\n"
+        "def handle():\n    logger.info('request.handled', extra={'status': 200})\n"
+    )
     (root / "AGENTS.md").write_text(
         "# AGENTS.md — fake\n\nIntro.\n\n## Commands\n\n`scripts/check-fast.sh`\n"
     )
@@ -230,6 +249,20 @@ class GradeDiscriminationTest(unittest.TestCase):
             )
         )
         self.assertEqual(verdict_of(records, "gate-portable"), "fail")
+
+    def test_required_tree_content_missing_fails(self):
+        records = self.grade_broken(
+            lambda tree: (tree / "src" / "app" / "main.py").write_text("x = 1\n")
+        )
+        self.assertEqual(verdict_of(records, "uses-logger"), "fail")
+
+    def test_forbidden_tree_content_present_anywhere_fails(self):
+        records = self.grade_broken(
+            lambda tree: (tree / "src" / "app" / "debug.py").write_text(
+                "import logging\n\nlogger = logging.getLogger()\nprint('debug')\n"
+            )
+        )
+        self.assertEqual(verdict_of(records, "no-print"), "fail")
 
     def test_manifest_with_too_few_entries_fails(self):
         records = self.grade_broken(

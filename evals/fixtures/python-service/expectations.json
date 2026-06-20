@@ -45,11 +45,14 @@
     "forbidden_sections": []
   },
   "content": [
-    {"name": "app-emits-structured-wide-event", "path": "src/catalog/main.py", "pattern": "structlog", "must_exist": true},
     {"name": "ci-installs-deps-before-gate", "path": ".github/workflows/check-fast.yml", "pattern": "pip install.*check-fast\\.sh", "must_exist": true},
     {"name": "roadmap-has-epic-0", "path": "roadmap/ROADMAP.md", "pattern": "^### Epic 0", "must_exist": true},
     {"name": "gate-runs-vocab-lint", "path": "scripts/check-fast.sh", "pattern": "vocab-lint", "must_exist": true},
     {"name": "gate-runs-pytest", "path": "scripts/check-fast.sh", "pattern": "pytest", "must_exist": true}
+  ],
+  "tree_content": [
+    {"name": "app-uses-structured-logging", "glob": "src/**/*.py", "pattern": "logger\\.(info|warning|error|debug|exception|critical)\\(", "must_exist": true},
+    {"name": "logging-standardized-no-print", "glob": "src/**/*.py", "pattern": "^[ \\t]*print\\(", "must_exist": false}
   ],
   "manifest": {
     "path": ".foundry/manifest.json",
