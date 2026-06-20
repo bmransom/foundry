@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.1.2](https://github.com/bmransom/foundry/compare/v0.1.1...v0.1.2) (2026-06-20)
+
+
+### Features
+
+* **harness-deliberation:** add two-harness mediated design session ([54c3d7e](https://github.com/bmransom/foundry/commit/54c3d7e500761e3e93893f0ece4a3c70bc1a1c25))
+* **harness-deliberation:** wire round + discriminating evals (Wave 8) ([3a18d36](https://github.com/bmransom/foundry/commit/3a18d36fe7bd8536ced0322bdbf2abdefc54092b))
+
+
+### Bug Fixes
+
+* **eval:** grade the wide-event instruction, not a specific library ([61532f5](https://github.com/bmransom/foundry/commit/61532f5bbe50c3db9d53f45ca9b53253235f2b0f))
+
 ## [0.1.1](https://github.com/bmransom/foundry/compare/v0.1.0...v0.1.1) (2026-06-16)
 
 
