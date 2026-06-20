@@ -8,8 +8,11 @@
 The signal store is the self-improving loop's durable memory. It reuses the
 broker's storage discipline — append-only event ledger, immutable hashed payloads,
 rebuildable views (`SessionStore`, `harness-deliberation-broker.py`) — but with a
-loop-specific closed event set and one new structural property: it splits by signal
-sensitivity across the existing gitignore boundary.
+loop-specific closed event set and two new structural properties: it splits by
+signal sensitivity across the existing gitignore boundary, and — unlike the
+broker's per-session `SessionStore`, where one session has one writer — it is a
+single shared store many sources write to concurrently, so it serializes writes
+under an advisory lock (§Concurrency model).
 
 | Zone | Location | Contents | Committed? |
 |---|---|---|---|
@@ -78,11 +81,12 @@ flowchart TB
 | Component | Location | Purpose |
 |---|---|---|
 | Signal store | `plugins/foundry/scripts/loop-signal-store.py` | The S1 store: append-only ledger, immutable payloads, rebuildable views, ingest, candidate aggregation. Built on storage mechanics copied from the broker (see Dependencies). |
+| Store write lock | `.foundry/state/self-improvement/store.lock` (advisory `flock`) | Serializes the write critical section so concurrent writers never tear the ledger, open a duplicate candidate, or race the write-if-absent payload check (§Concurrency model). Held only on the write path; reads never acquire it. |
 | Redaction gate | inside `loop-signal-store.py` | The single writer of clean committed records. Rejects any committed-bound record carrying a raw-text marker; records `signal_rejected`. |
 | Telemetry opt-in gate | inside `loop-signal-store.py`, ahead of the redaction gate | Refuses a `telemetry` signal unless `telemetry.enabled` (`.foundry/self-improvement-config.json`) is ON; records `signal_rejected` reason `telemetry-disabled`. Internal sources are unaffected. |
 | Raw zone | `.foundry/tmp/self-improvement/` (gitignored) | Raw signal payloads, by SHA-256. |
 | Candidate ledger | `.foundry/state/self-improvement/` (tracked) | `events.jsonl`, `payloads/`, rebuildable `ledger.md`. |
-| Store test | `tests/loop_signal_store_test.sh` | Proves append-only / immutable / rebuildable behavior and zone separation, with a seeded-defect arm (a mutant that writes raw bytes to `.foundry/state/` must fail). |
+| Store test | `tests/loop_signal_store_test.sh` | Proves append-only / immutable / rebuildable behavior and zone separation, with a seeded-defect arm (a mutant that writes raw bytes to `.foundry/state/` must fail). Includes a discriminating concurrency arm — N concurrent writers, no torn line, one candidate per fingerprint, consistent rebuild; dropping the lock makes it fail (§Concurrency model). |
 | Redaction-gate eval | `evals/harness/redaction-gate-eval.sh` + `evals/fixtures/redaction-gate/` | Discriminating eval: a seeded raw-leak in a committed summary must make the gate fail. |
 
 ## Committed-ledger layout
@@ -90,6 +94,7 @@ flowchart TB
 ```text
 .foundry/state/self-improvement/        # tracked, committed
   store.json                            # store_id, repo_root, schema version
+  store.lock                            # advisory flock — write critical section (not committed)
   events.jsonl                          # Tier 1: append-only event ledger
   payloads/                             # Tier 2: immutable, hashed — generic summaries only
   ledger.md                             # Tier 3: rebuildable candidate-ledger digest
@@ -97,6 +102,10 @@ flowchart TB
 .foundry/tmp/self-improvement/          # gitignored
   payloads/                             # raw signal payloads, by SHA-256, never committed
 ```
+
+`store.lock` is a runtime artifact, not loop memory: the store creates it on demand
+and gitignores it (`.foundry/state/self-improvement/store.lock`), so it never enters
+a commit even though it lives under the otherwise-tracked `.foundry/state/`.
 
 The split is mechanical. The store's committed writer targets `.foundry/state/`; the
 raw writer targets `.foundry/tmp/`. The committed writer is the redaction gate, so a
@@ -147,15 +156,27 @@ classDiagram
         +observe_metric(sample)
         #render_views() candidate ledger digest
         #validate_events() candidate/fingerprint
+        #write_critical_section() under store write lock
     }
     AppendOnlyStore <|-- SessionStore
     AppendOnlyStore <|-- SignalStore
     SignalStore --> RedactionGate : committed-zone writes pass through
+    SignalStore --> StoreWriteLock : write path serialized by
     class RedactionGate {
         <<this spec, S1>>
         +check(committed_bound_record) pass | reject(marker_class)
     }
+    class StoreWriteLock {
+        <<illustrative: the locked section, not a peer class>>
+        +acquire() advisory flock on store.lock
+        +release() on exit or process death
+    }
 ```
+
+The store write lock lives in `SignalStore`, not the extracted base — the broker's
+`SessionStore` is single-writer and needs no lock, so adding it to `AppendOnlyStore`
+would burden the broker with a guarantee it never uses. S1 wraps the broker's
+inherited `write_payload` / `append_event` calls in its own locked critical section.
 
 The class diagram shows the end-state after the extraction. Until that PR lands,
 `SignalStore` carries the copied mechanics inline (no `AppendOnlyStore` parent) and
@@ -167,6 +188,76 @@ out under Dependencies. This spec does not specify that refactor. S1 starts on
 storage mechanics copied from the broker, guarded by its own discrimination test,
 and rebases onto the extracted base once it lands — so S1 is unblocked by the
 broker's release train.
+
+## Concurrency model
+
+The broker's `SessionStore` assumes **one session, one writer** — its
+`append_event` writes with a bare `open("a")` and no lock, because two writers never
+touch the same session. S1 breaks that assumption: it is **one shared store many
+sources write to concurrently** — eval graders, code-review and spec-review hooks,
+dogfood findings, `issue-triage`, and (when enabled) telemetry can all ingest at the
+same time. Three races follow, none of which `O_APPEND` alone closes:
+
+1. **Torn ledger line.** A record can exceed the OS atomic-append size, so
+   interleaved `O_APPEND` writes can splice two records into one corrupt line.
+2. **Duplicate candidate.** Two ingests of the same NEW fingerprint each read the
+   view, each see no existing candidate, and each emit `candidate_opened` — a
+   read-modify-write race that opens two candidates for one cause.
+3. **Payload write-if-absent race (TOCTOU — time-of-check-to-time-of-use).** The
+   "refuse if bytes differ" check (AC-2.2) reads then writes; without serialization
+   two writers race between the existence check and the write.
+
+### The store write lock
+
+S1 serializes the **write critical section** behind a **store write lock** — an
+advisory `flock` on `.foundry/state/self-improvement/store.lock`. Every writer
+follows the same sequence under the held lock:
+
+1. **Acquire** the exclusive `flock`.
+2. **Read the current view** — the latest candidates and the payload index.
+3. **Decide** open-or-revise candidate and write-if-absent payload.
+4. **Append** the event(s) to `events.jsonl` and write payloads.
+5. **Release** the lock.
+
+Holding the lock across read → decide → append collapses each race: appends never
+interleave (no torn line), the open-or-revise decision sees a consistent view (one
+candidate per fingerprint), and the write-if-absent check no longer races its write.
+
+Downstream sources that reuse S1's ingest path — `issue-triage`, for one — inherit
+this lock instead of inventing their own. S1 owns it once.
+
+### Lock-free reads
+
+Reads never acquire the write lock. The proposer (S2) reads an
+**eventually-consistent snapshot** of the append-only ledger; a `rebuild`
+re-validates every payload hash and so re-derives a correct view from the events
+regardless of any in-flight append. A reader that wants a point-in-time snapshot
+may take a brief **shared** `flock`, but the common path is lock-free — the
+append-only ledger means a reader either sees a complete trailing line or stops at
+the last newline, never a partially-decided candidate.
+
+### Crash safety
+
+The lock is **cooperative and crash-safe**, not transactional:
+
+- `flock` **releases on process death** — a writer killed mid-section frees the lock
+  for the next writer; no stale lock wedges the store.
+- A **partial trailing append** left by a crash is detected at the next `rebuild`
+  by JSON/hash validation and **ignored** — the broker's append-and-rebuild
+  discipline already refuses a malformed event, so a half-written final line is
+  dropped, never half-applied.
+- A rebuilt **view is written atomically** (temp file then `rename`, per AC-2b.7),
+  so a crash during view materialization never leaves a partially written
+  `ledger.md`.
+
+### Scope of the guarantee
+
+This is **process-level cooperative locking**: it holds only because every writer
+goes through the store API and takes the lock. It is **not** an OS guarantee against
+a process that bypasses the API and writes `events.jsonl` directly — advisory
+`flock` does not stop a writer that never asks for the lock. The store API is the
+sole sanctioned writer; the discrimination test (Testing strategy) proves the lock
+is actually held by failing when it is dropped.
 
 ## Event types
 
@@ -182,6 +273,9 @@ discipline:
 | `candidate_opened` | committed | A new aggregate problem, fingerprinted on the normalized cause. |
 | `candidate_revised` | committed | New evidence, score, scope, recurrence, or trend folded into an existing candidate. |
 | `candidate_closed` | committed | Resolution: duplicate, fixed, rejected, or shipped. |
+
+Every committed event above is appended inside the store write lock (§Concurrency
+model); no event reaches `events.jsonl` outside the serialized critical section.
 
 `source_kind` is the **external-telemetry seam.** Its closed set is `eval`,
 `code-review`, `spec-review`, `dogfood`, `issue-triage`, `telemetry`. Telemetry plugs
@@ -266,27 +360,36 @@ the evaluator; discrimination is.
 
 ## Data flow — ingest to committed candidate
 
+The write critical section (read view → decide → append) runs under the held store
+write lock; the raw-zone write precedes it and reads stay outside it.
+
 ```mermaid
 sequenceDiagram
     participant Source as "Signal source<br/>(eval / dogfood / issue)"
     participant Store as "Signal store"
     participant Raw as "Raw zone<br/>.foundry/tmp/"
+    participant Lock as "Store write lock<br/>store.lock (flock)"
     participant Gate as "Redaction gate"
     participant Committed as "Candidate ledger<br/>.foundry/state/"
 
     Source->>Store: ingest(source_kind, raw payload, summary)
+    Store->>Raw: write raw payload (by SHA-256)
+    Raw-->>Store: hash-ref
+
+    Store->>Lock: acquire exclusive flock
+    Note over Store,Committed: write critical section — read view, decide, append, release
 
     alt source_kind=telemetry and telemetry.enabled OFF (or unset)
         Store->>Committed: append signal_rejected (reason telemetry-disabled)
     else internal source, or telemetry enabled
-        Store->>Raw: write raw payload (by SHA-256)
-        Raw-->>Store: hash-ref
         Store->>Gate: check summary + hash-ref (committed-bound)
         alt raw-text marker found
             Gate-->>Store: reject (marker class)
             Store->>Committed: append signal_rejected (no raw content)
         else clean
             Gate-->>Store: pass
+            Store->>Committed: read current view (candidates + payload index)
+            Store->>Committed: write-if-absent payload (refuse on differing bytes)
             Store->>Committed: append signal_ingested (source_kind, hash-ref, summary)
             opt fingerprint matches an open candidate
                 Store->>Committed: append candidate_revised
@@ -294,10 +397,15 @@ sequenceDiagram
             opt no match and exposes shared machinery
                 Store->>Committed: append candidate_opened (fingerprint)
             end
-            Store->>Committed: rebuild ledger.md (hash re-validate, refuse on drift)
+            Store->>Committed: rebuild ledger.md (atomic temp+rename, hash re-validate)
         end
     end
+    Store->>Lock: release flock
 ```
+
+The telemetry write moved inside the critical section so its `signal_rejected`
+append is serialized with every other write — no append, rejection or accepted,
+escapes the lock.
 
 ## Read seam for downstream
 
@@ -308,6 +416,12 @@ candidates and their metric trends from `ledger.md` and the events under
 the candidate records are self-contained generic summaries; only the raw payloads
 they hash-ref are absent, and the read seam never needs them. This is why the ledger
 is committed: the loop's input is identical on every machine.
+
+The read seam is **lock-free** (§Concurrency model): S2 reads the append-only ledger
+without the store write lock, tolerating an in-flight append because a reader sees
+either a complete trailing line or the prior newline, never a half-decided
+candidate. A reader needing a strict point-in-time snapshot may take a brief shared
+`flock`, but the common path takes no lock.
 
 ## Dependencies
 
@@ -343,8 +457,17 @@ discrimination is.
    text lands in the committed zone.
 6. Fingerprint aggregation: a second signal matching an open candidate's fingerprint
    folds in via `candidate_revised` rather than opening a duplicate.
-7. **Seeded defect** — a mutant store that writes raw payload bytes into
+7. **Concurrency:** N writers ingest at once — some sharing one fingerprint, some
+   distinct, some appending payloads larger than the atomic-append size. After all
+   join, `events.jsonl` parses as one JSON object per line with no torn line, every
+   ingest's event is present, each shared fingerprint has exactly one
+   `candidate_opened`, and a fresh `rebuild` re-derives a consistent view.
+8. **Seeded defect (split)** — a mutant store that writes raw payload bytes into
    `.foundry/state/` (defeating the split) makes the test fail.
+9. **Seeded defect (lock)** — a mutant store whose write path drops the store write
+   lock makes the concurrency assertion fail (a torn line or a duplicate candidate
+   appears). Discrimination, not green-ness: the test proves the lock is held by
+   failing when it is removed.
 
 `evals/harness/redaction-gate-eval.sh` + `evals/fixtures/redaction-gate/` (new)
 seed a committed summary carrying a planted raw-leak — an absolute path, a secret

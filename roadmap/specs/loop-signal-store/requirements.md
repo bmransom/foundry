@@ -63,6 +63,44 @@ Acceptance criteria:
 - AC-2.5 WHEN the store appends an event, THE SYSTEM SHALL accept only a
   loop-specific closed event-type set and SHALL reject an unknown event type.
 
+### US-2b: Serialize concurrent writers under an advisory lock
+
+As a Foundry maintainer, I want the store safe under many concurrent writers —
+unlike the broker's per-session `SessionStore`, S1 is one shared store every
+source (eval, code-review, dogfood, issue-triage, telemetry) writes to at once —
+so concurrent ingests never tear the ledger, never open a duplicate candidate,
+and never race the write-if-absent payload check. Reads stay lock-free, and a
+crashed writer never leaves the store half-applied.
+
+Acceptance criteria:
+
+- AC-2b.1 WHEN the store enters its write critical section — read the current
+  view, decide open-or-revise candidate and write-if-absent payload, append the
+  event(s) — THE SYSTEM SHALL hold the store write lock (an advisory `flock` on a
+  lockfile under `.foundry/state/self-improvement/`) for the whole section and
+  release it on exit.
+- AC-2b.2 WHILE two writers ingest concurrently, including a record that exceeds
+  the OS atomic-append size, THE SYSTEM SHALL serialize their appends so the JSONL
+  ledger contains every event as a whole line and SHALL NOT produce a torn line.
+- AC-2b.3 WHEN two concurrent ingests carry the same NEW fingerprint, THE SYSTEM
+  SHALL open at most one candidate and fold the second into it via
+  `candidate_revised`, and SHALL NOT emit two `candidate_opened` events for that
+  fingerprint.
+- AC-2b.4 WHEN two concurrent ingests write the same payload path, THE SYSTEM
+  SHALL serialize the write-if-absent check so identical bytes write once and
+  differing bytes are refused as an immutable-payload violation (AC-2.2), with no
+  torn payload.
+- AC-2b.5 WHEN the store reads — the proposer (S2) reading a snapshot, or a
+  rebuild re-validating hashes — THE SYSTEM SHALL read the append-only ledger
+  without acquiring the write lock.
+- AC-2b.6 WHEN a writer dies mid-section, THE SYSTEM SHALL release the lock on
+  process death (`flock` semantics) and SHALL leave a recoverable store: a
+  rebuild detects a partial trailing append by hash/JSON validation and ignores
+  it, never half-applying it.
+- AC-2b.7 WHEN the store rebuilds a committed view, THE SYSTEM SHALL write it
+  atomically (temp file then rename) so a crash never leaves a partially written
+  view.
+
 ### US-3: Ingest signals from multiple sources behind one redaction gate
 
 As a Foundry maintainer, I want every signal — eval metric, dogfood finding, or

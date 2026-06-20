@@ -17,12 +17,13 @@ and the test must fail before the change and pass after.
   context; apply findings before asking for design approval. Gate: review report has
   no findings, or every finding has a recorded disposition and fix. [Spec README]
 - [ ] T3: Confirm the loop-signal-store terms' glossary provenance — Signal,
-  Candidate, Metric, Candidate ledger, Redaction gate, the telemetry opt-in gate (with
-  its `telemetry.enabled` knob, the `.foundry/self-improvement-config.json` file, and
-  the `signal_rejected` reason `telemetry-disabled`) carry prior-art provenance in
-  `knowledge/glossary.md` (added when this spec landed) and the three spec files use
-  them consistently. Gate: `spec-review` (or the glossary contract) raises no
-  un-provenanced canonical name across the three spec files. [US-3, US-5]
+  Candidate, Metric, Candidate ledger, Redaction gate, Store write lock, the telemetry
+  opt-in gate (with its `telemetry.enabled` knob, the
+  `.foundry/self-improvement-config.json` file, and the `signal_rejected` reason
+  `telemetry-disabled`) carry prior-art provenance in `knowledge/glossary.md` (added
+  when this spec landed) and the three spec files use them consistently. Gate:
+  `spec-review` (or the glossary contract) raises no un-provenanced canonical name
+  across the three spec files. [US-3, US-5, US-2b]
 
 ## Wave 2 — Append-only store mechanics (depends: `AppendOnlyStore` extraction, see design Dependencies)
 
@@ -129,6 +130,33 @@ and the test must fail before the change and pass after.
   `.foundry/tmp/` zone still exposes the committed ledger (simulate by removing the
   raw zone and re-reading) (dep T13). Gate: the read-seam test PASS — candidates
   resolve from `.foundry/state/` alone. [AC-6.1, AC-6.2, AC-6.3]
+
+## Wave 6b — Concurrency: serialize writers under the store write lock
+
+- [ ] T14a: Extend `tests/loop_signal_store_test.sh` with a **discriminating
+  concurrency arm** — spawn N concurrent writers against one store: some sharing a
+  single NEW fingerprint, some distinct, at least one appending a payload larger
+  than the OS atomic-append size. After all join, assert `events.jsonl` parses as
+  one JSON object per line with no torn line, every writer's event is present, each
+  shared fingerprint has exactly one `candidate_opened` (no duplicate), the
+  write-if-absent payload check held (identical bytes once, differing bytes refused),
+  and a fresh `rebuild` re-derives a consistent view. Assert lock-free reads: a
+  concurrent reader completes during an in-flight write without acquiring the write
+  lock. Add a seeded-defect arm: a
+  mutant whose write path drops the store write lock makes the arm fail (a torn line
+  or a duplicate candidate appears) (dep T13). Gate: the arm fails against the
+  lock-dropped mutant and against the current store, and passes only once the lock
+  is held. [AC-2b.1, AC-2b.2, AC-2b.3, AC-2b.4, AC-2b.5, AC-2b.6, AC-2b.7]
+- [ ] T14b: Implement the store write lock in `loop-signal-store.py` — an advisory
+  `flock` on `.foundry/state/self-improvement/store.lock`, gitignored — wrapping the
+  write critical section (acquire → read view → decide open-or-revise + write-if-absent
+  payload → append event(s) → release) around the inherited `write_payload` /
+  `append_event` calls; write rebuilt views atomically (temp file then `rename`); keep
+  reads lock-free; on rebuild detect and ignore a partial trailing append by
+  JSON/hash validation (dep T14a). Gate: the T14a concurrency arm PASS — no torn
+  line, one candidate per fingerprint, consistent rebuild — and the lock-dropped
+  mutant still fails it. [AC-2b.1, AC-2b.2, AC-2b.3, AC-2b.4, AC-2b.5, AC-2b.6,
+  AC-2b.7]
 
 ## Wave 7 — Review and finish
 
