@@ -60,10 +60,12 @@ dependency. Every task names the gate that proves it and the AC it satisfies.
 - [ ] T6: Encode the evidence-not-claims dimensions in `SKILL.md` — lifecycle
   evidence (read spec/diff/board/`validation.md`), complete implementation
   (AC → Scenario → test → code matrix; mechanical artifacts, not keyword
-  mapping), docs sync (RUN `python3 scripts/knowledge.py check`), domain language
-  (glossary terms; debt-term-in-`Replaces` is not a violation) (dep T5). Gate:
+  mapping), docs sync (RUN `python3 scripts/knowledge.py check`; verify each
+  `design.md` architecture/class diagram matches the shipped components/classes
+  and flag a drifted diagram), domain language (glossary terms;
+  debt-term-in-`Replaces` is not a violation) (dep T5). Gate:
   `tests/code_review_skill_test.sh` PASS; the SKILL names each evidence source.
-  [AC-3.1, AC-3.2, AC-3.3, AC-3.4, AC-4.1, AC-4.2]
+  [AC-3.1, AC-3.2, AC-3.3, AC-3.4, AC-3.5, AC-4.1, AC-4.2]
 - [ ] T7: Encode logging consistency, simplicity, clean interfaces, modular
   structure, sensible defaults, and robust tests in `SKILL.md` — production code
   must not mix raw `print`/`console.log`/`echo` with the Wide event for one unit

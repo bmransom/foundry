@@ -22,6 +22,41 @@ The runner reuses the broker's worktree call shape — `git -C <repo> worktree a
 -b <branch> <path> <base_commit>` (`create_scratch_worktrees` in
 `harness-deliberation-broker.py`).
 
+```mermaid
+flowchart TB
+    handoff["Handoff wrapper<br/>spawn-successor.sh"]
+    specReview["Spec-review wrapper<br/>spawn-spec-reviewer.sh"]
+    extractSkill["Extract-skill wrapper<br/>spawn-extractor.sh"]
+
+    runner["Shared runner<br/>spawn-fresh-session.sh<br/>(single isolation chokepoint)"]
+
+    handoff --> runner
+    specReview --> runner
+    extractSkill --> runner
+
+    runner -->|"linked worktree: --git-dir != --git-common-dir<br/>reuse it"| inheritReuse
+    runner -->|"primary tree: --git-dir == --git-common-dir<br/>promote once"| inheritPromote
+    runner -->|"git worktree add -b foundry/fs/&lt;id&gt;<br/>base origin/HEAD &rarr; main &rarr; HEAD, no fetch"| worktree
+    runner -->|"write prompt.md to primary tree"| primary
+
+    subgraph handoffInherit["Handoff inheritance"]
+        inheritReuse["Reuse parent worktree<br/>(linked-worktree)"]
+        inheritPromote["Promote to new worktree<br/>(primary tree)"]
+    end
+
+    subgraph session[".foundry/tmp/fresh-session/&lt;id&gt;"]
+        primary["Primary tree<br/>prompt.md (absolute path) + gitconfig + deliverables"]
+        worktree["Per-session worktree/<br/>branch foundry/fs/&lt;id&gt;<br/>the only checkout the harness sees"]
+    end
+
+    worktree --> harness
+    harness["Launched harness<br/>tmux -c worktree<br/>GIT_CONFIG_GLOBAL = per-session temp gitconfig"]
+
+    worktree -.->|"git worktree remove + git branch -d"| retire["worktree-retire.sh --delete-branch"]
+
+    evalSandbox["Eval sandbox<br/>clone/copy of the repo<br/>sibling change (independent of runner)<br/>config-mutating evals run against a clone, not the real repo"]
+```
+
 Two collision classes motivate the work, and worktrees fix only one:
 
 - **Working-tree and branch collisions** — concurrent sessions editing the same
@@ -58,10 +93,10 @@ Two collision classes motivate the work, and worktrees fix only one:
     ...                                        # branch foundry/fs/<session-id>
 ```
 
-The scaffolding — `prompt.md`, the per-session config — lives in the **primary**
+The support files — `prompt.md`, the per-session config — live in the **primary**
 session directory under gitignored `.foundry/tmp/`. Only the *checkout* lives in
-`worktree/`. Keeping scaffolding outside the worktree means it survives retire, it
-does not ride along on the ephemeral branch, and it does not nest a second
+`worktree/`. Keeping the support files outside the worktree means they survive
+retire, they do not ride along on the ephemeral branch, and they do not nest a second
 `.foundry/tmp/` inside the checkout. The harness launches with cwd = `worktree/`
 and reads the prompt by absolute path.
 
@@ -107,6 +142,29 @@ common_dir="$(git -C "$dir" rev-parse --git-common-dir)"
 
 A fresh independent session always isolates. A handoff in a linked worktree reuses
 it; a handoff in the primary tree promotes once to a new worktree, then stays.
+
+```mermaid
+sequenceDiagram
+    participant Caller as "Wrapper caller<br/>(handoff / spec-review / extract-skill)"
+    participant Runner as "Shared runner<br/>spawn-fresh-session.sh"
+    participant Git as "git"
+    participant Primary as "Primary tree"
+    participant Harness as "Launched harness"
+
+    Caller->>Runner: spawn (prompt on stdin, project dir)
+
+    alt handoff in a linked worktree
+        Runner->>Git: rev-parse --git-dir / --git-common-dir (differ)
+        Note over Runner,Git: reuse parent worktree; do not mint a new one
+    else fresh session or primary-tree handoff
+        Runner->>Git: git worktree add -b foundry/fs/&lt;id&gt; (base origin/HEAD &rarr; main &rarr; HEAD, no fetch)
+        Git-->>Runner: per-session worktree on branch foundry/fs/&lt;id&gt;
+    end
+
+    Runner->>Primary: write prompt.md (absolute path)
+    Runner->>Harness: launch in worktree (tmux -c worktree, GIT_CONFIG_GLOBAL = per-session temp)
+    Harness->>Primary: write deliverables (absolute primary-tree path)
+```
 
 ## Guardrail: per-session GIT_CONFIG_GLOBAL
 
@@ -184,20 +242,22 @@ no branch — before launching.
 
 ## Eval sandbox
 
-A `.git/config` corruption was recorded during development:
-`.agent/handoff/HANDOFF.md` notes a concurrent session that flipped `core.bare` to
-`true` and overwrote `[user]` to `foundry-eval`/`eval@foundry.local`. The incident
-was not reproducible from foundry's own test suite in isolation; the `foundry-eval`
-identity literal lives only in `evals/harness/test_grade_lifecycle.py`, so the
-likely writer was a concurrent eval run mutating git config inside the real repo.
-Worktrees alone do not fix this class: linked worktrees share the corrupted file.
+During development a concurrent eval run corrupted `.git/config` — it flipped
+`core.bare` to `true` and overwrote `[user]` to
+`foundry-eval`/`eval@foundry.local` (`.agent/handoff/HANDOFF.md`). The incident
+was not reproducible from foundry's own test suite in isolation. The `foundry-eval`
+identity literal appears in two eval flows — `evals/harness/test_grade_lifecycle.py`
+and `evals/harness/bootstrap-eval.sh` — both of which already write it into a tmp
+scratch tree, not the real repo, so neither is a proven culprit; the likely writer
+was nonetheless a concurrent eval run mutating git config. Worktrees alone do not
+fix this class: linked worktrees share the corrupted file.
 
 To prevent that risk, any eval entrypoint or flow that mutates git config — shell
 (`evals/harness/*.sh`) or Python — must operate on a clone or copy of the repo,
-never the real repo. The scope explicitly covers the implicated Python flow: the
-`foundry-eval` identity literal lives in `test_grade_lifecycle.py`, so the
-`*.sh` glob alone would leave the actual writer uncovered; the rule keys on "mutates
-git config," not on file extension. A run that fails midway leaves the real
+never the real repo. The rule keys on "mutates git config," not on file extension,
+because the `foundry-eval` identity literal appears in both a Python flow
+(`test_grade_lifecycle.py`) and a shell flow (`bootstrap-eval.sh`): a `*.sh`-only
+rule would miss the Python writer. A run that fails midway leaves the real
 `.git/config` untouched. This is a sibling change in the same spec because it closes
 the config-corruption class that worktree isolation alone leaves open.
 
@@ -239,9 +299,9 @@ proves the two retire copies match.
 Eval-sandbox coverage: a test (or the eval driver itself) asserts the eval runs
 against a clone/copy and the real repo's `.git/config` is byte-identical before and
 after; a seeded eval that writes to the real repo's config fails. The seeded writer
-is a Python config-mutating flow (e.g. `test_grade_lifecycle.py`), since that is the
-recorded failure mode — the `foundry-eval` identity literal that corrupted
-`.git/config` lives there, not in any `*.sh` script.
+is a Python config-mutating flow (e.g. `test_grade_lifecycle.py`), so the gate
+exercises a Python config writer (not just a `*.sh` script) — per the Eval sandbox
+section, the rule covers Python as well as shell.
 
 ## Deferred dissent — worktree-backed vs clone-backed isolation
 

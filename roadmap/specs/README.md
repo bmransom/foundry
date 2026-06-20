@@ -36,6 +36,15 @@ one testable behavior per criterion:
 Order `tasks.md` as waves: tasks within a wave are independent and can land in
 parallel; each wave builds on the last. Every task names the gate that proves it.
 
+## Diagrams
+
+`design.md` SHOULD include a Mermaid architecture or component diagram, and a class
+diagram where the component has object-oriented or typed structure — a shell-only
+component uses architecture plus data-flow, not a class diagram. Diagrams are reviewed
+twice: by `spec-review` at design time (accuracy and glossary vocabulary) and by
+`code-review`'s docs-sync at build time (the diagram matches the shipped code; drift is
+a finding).
+
 ## Review before approval
 
 Use `spec-review` in fresh context on the changed spec files and apply its findings

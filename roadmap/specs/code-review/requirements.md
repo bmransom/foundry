@@ -68,6 +68,9 @@ Acceptance criteria:
   to changed code alone.
 - AC-3.4 WHEN grading docs sync, THE SYSTEM SHALL run
   `python3 scripts/knowledge.py check` itself and SHALL NOT trust the report.
+- AC-3.5 WHEN grading docs sync, THE SYSTEM SHALL verify that any architecture or
+  class diagram in `design.md` matches the shipped components/classes and SHALL
+  flag a diagram that has drifted from the code.
 
 ### US-4: Hold the repo language and logging contract
 

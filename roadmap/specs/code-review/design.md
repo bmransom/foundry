@@ -94,7 +94,7 @@ the prompt forbids edits; the reviewer returns findings.
 ## Output contract
 
 The review writes the full report to the report path and prints it. The report
-tail is one canonical order — findings body, then footer, then verdict:
+tail carries three parts in order:
 
 1. The findings body — each finding carries severity, dimension, `file:line`,
    evidence, problem, and a concrete fix.
@@ -116,14 +116,14 @@ do not fail.
 ## Cross-model refuter
 
 The reviewer is a single agent, so its false positives correlate with its own
-model. The *refuter* — the refutation/critique role from multi-agent
-debate-and-deliberation systems (the same lineage the glossary cites for
-**Harness deliberation**), narrowed here to a single asymmetric DROP-only pass —
-cuts them with one pass, never a panel, vote, or debate. A panel adds coverage but
-also conformity risk; a debate collapses to sycophantic consensus and can argue a
-real finding away. The eval bar is
-recall ≥ 4/5 AND zero decoy hits, so the chosen form is asymmetric refutation: it
-can only raise precision. Agreement mechanisms can lower recall; this one cannot.
+model. Asymmetric refutation is the only form that can only raise precision.
+Agreement mechanisms — panels, debates — can lower recall: a panel adds coverage
+but also conformity risk, and a debate collapses to sycophantic consensus that can
+argue a real finding away. So the *refuter* — the refutation/critique role from
+multi-agent debate-and-deliberation systems (the same lineage the glossary cites
+for **Harness deliberation**) — is a single asymmetric DROP-only pass, never a
+panel, vote, or debate. The eval bar is recall ≥ 4/5 AND zero decoy hits, which
+this form meets without risking recall.
 
 **Flow.** After the reviewer emits its findings body and `FLAGGED:` footer, a
 second fresh-context refuter pass runs. The refuter receives ONLY the candidate
@@ -131,6 +131,24 @@ second fresh-context refuter pass runs. The refuter receives ONLY the candidate
 reasoning or report prose (context isolation, so the refuter cannot be talked
 into agreement). Per candidate finding it must either produce concrete evidence
 the finding is real (KEEP) or mark it DROP.
+
+The reviewer hands the refuter ONLY the candidate findings and the diff; the
+refuter returns a KEEP/DROP verdict per finding, and the wrapper produces the
+final footer and verdict:
+
+```mermaid
+sequenceDiagram
+    participant Reviewer as "Fresh-context reviewer"
+    participant Wrapper as "spawn-code-reviewer.sh"
+    participant Refuter as "Cross-model refuter (complementary harness family)"
+
+    Reviewer->>Wrapper: Candidate FLAGGED findings + verdict
+    Wrapper->>Refuter: Candidate findings + diff only (no report prose)
+    Note over Refuter: Per finding, KEEP with concrete evidence else DROP
+    Refuter->>Wrapper: KEEP/DROP per candidate finding
+    Wrapper->>Wrapper: Final footer (candidates minus DROPs)
+    Wrapper->>Wrapper: Recompute CODE_REVIEW verdict
+```
 
 **DROP-only power.** The refuter can only REMOVE a `FLAGGED:` finding; it can
 never ADD one. The combined system is therefore recall-monotone-down and
@@ -158,7 +176,7 @@ none trusts a self-claim.
 |---|---|---|
 | **Lifecycle evidence** | spec exists; Scenario-before-code where knowable; recorded gate PASS; Knowledge logged; board card state | Read `requirements/design/tasks.md`, the diff, `roadmap/ROADMAP.md`, `knowledge/validation.md`. Never trust self-claims — the gate decides, never the author's assertion. |
 | **Complete implementation** | every EARS AC and relevant task has code + a `features/` Scenario + a test | Build an **AC → Scenario → test → code** matrix from `requirements.md`/`tasks.md`; the Scenario+test mapping is the mechanical signal. Flag any AC with no artifact. Keyword-mapping an AC to changed code alone is not coverage. |
-| **Docs sync** | public behavior, commands, APIs, and concepts match code; no stale `index.md` | **Run** `python3 scripts/knowledge.py check` rather than trusting the report; diff README/knowledge/AGENTS against the change. |
+| **Docs sync** | public behavior, commands, APIs, and concepts match code; no stale `index.md`; architecture/class diagrams in `design.md` match the shipped components/classes | **Run** `python3 scripts/knowledge.py check` rather than trusting the report; diff README/knowledge/AGENTS against the change; compare each `design.md` architecture/class diagram against the shipped components/classes and flag a diagram that has drifted from the code. |
 | **Domain language** | glossary terms used; no debt terms; new canonical names cite provenance | Read `knowledge/glossary.md`; flag changed text that uses a term listed in the `Replaces (now debt)` column OUTSIDE that column. A debt term inside a glossary `Replaces` cell is documentation, not a violation. |
 | **Logging consistency** | production paths do not mix a raw `print`/`console.log`/`echo` with the Wide event for one unit of work | Grep the diff for raw output beside the structured event. A legitimate CLI surface such as `print --help` is not a violation. |
 | **Simplicity** | no needless abstraction, speculative config, pattern cosplay, or rewrite outside spec scope | Judgment, grounded in `plugins/foundry/skills/design-patterns/SKILL.md`. |
@@ -189,6 +207,30 @@ Knowledge and Finish:
 
 ```text
 Verify → Knowledge → Review → Finish
+```
+
+The Review stage expands into the reviewer, the cross-model refuter, and the gate
+that loops on a blocking finding (cap three rounds, then escalate):
+
+```mermaid
+flowchart TD
+    Verify[Verify] --> Knowledge[Knowledge]
+    Knowledge --> Review
+    Review --> Finish[Finish]
+
+    subgraph Review[Review stage]
+        direction TB
+        Spawn["spawn-code-reviewer.sh"] --> Reviewer["Fresh-context reviewer (read-only)"]
+        Reviewer --> Candidate["Candidate FLAGGED footer"]
+        Candidate --> Refuter["Cross-model refuter (complementary harness family, DROP-only)"]
+        Refuter --> Final["Final footer (candidates minus DROPs)"]
+        Final --> Verdict["Recomputed CODE_REVIEW verdict"]
+        Verdict --> Gate{"Blocking finding?"}
+    end
+
+    Gate -->|"No"| Finish
+    Gate -->|"Yes, rounds < 3"| Knowledge
+    Gate -->|"Yes, rounds = 3"| Escalate["Escalate to maintainer"]
 ```
 
 Review runs after Knowledge so docs, glossary, and `index.md` already reflect the
