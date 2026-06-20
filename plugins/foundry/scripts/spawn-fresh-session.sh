@@ -1,5 +1,16 @@
 #!/usr/bin/env bash
 # Spawn the same agent harness in a fresh tmux session/window from a prompt file.
+#
+# Isolation: each spawn runs in its own git worktree on branch foundry/fs/<id>,
+# so concurrent sessions never collide on the working tree or branch. Isolation
+# is default-on; there is no opt-in flag.
+#
+# CAVEAT — worktrees SHARE .git/config. Linked worktrees share the common git
+# dir, so `git config --local` and `core.bare` writes reach the SHARED
+# .git/config; the worktree does NOT isolate it. The per-session
+# GIT_CONFIG_GLOBAL set below is a guardrail for GLOBAL-config writes, not a
+# boundary, and no PATH git shim is installed (a shim is brittle and gives false
+# assurance). Full .git/config isolation needs a per-session clone (deferred).
 set -euo pipefail
 
 existing_names() {
