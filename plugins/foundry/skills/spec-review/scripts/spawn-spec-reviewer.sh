@@ -25,8 +25,11 @@ main() {
   local target="$1"
   local dir="${2:-$PWD}"
   local review_dir=".foundry/reports/spec-review"
-  local report="$review_dir/$(date +%Y%m%d%H%M%S)-spec-review.md"
-  local prompt="Use the spec-review skill to review $target in fresh context. Read knowledge/glossary.md and the AGENTS.md Writing style section first. Return findings only: location, problem, concrete fix, clean-file notes, and the highest-priority fix. Write the complete report to $report."
+  # Absolute report path under the PRIMARY tree, so retiring the spawned
+  # session's worktree cannot delete the report (the harness cwd is the
+  # worktree after isolation).
+  local report="$dir/$review_dir/$(date +%Y%m%d%H%M%S)-spec-review.md"
+  local prompt="Use the spec-review skill to review $target in fresh context. Read knowledge/glossary.md and the AGENTS.md Writing style section first. Return findings only: location, problem, concrete fix, clean-file notes, and the highest-priority fix. Write the complete report to the absolute path $report."
   [ "$dry_run" -eq 1 ] || mkdir -p "$dir/$review_dir"
 
   printf '%s\n' "$prompt" |
