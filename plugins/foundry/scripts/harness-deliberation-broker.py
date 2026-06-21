@@ -16,6 +16,20 @@ from pathlib import Path, PurePosixPath
 from typing import Any, Callable
 
 
+def _load_append_only_store():
+    module_path = Path(__file__).with_name("append_only_store.py")
+    spec = importlib.util.spec_from_file_location("append_only_store", module_path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"failed to load {module_path}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+_append_only_store = _load_append_only_store()
+AppendOnlyStore = _append_only_store.AppendOnlyStore
+
+
 REQUIRED_HARNESSES = ["codex", "claude-code"]
 REQUIRED_COMMANDS = ["tmux", "git", "codex", "claude"]
 TURN_SLUG_BY_HARNESS = {
@@ -51,8 +65,6 @@ KNOWN_EVENT_TYPES = {
 
 VALID_DECISION_DISPOSITIONS = {"settled", "rejected", "deferred-dissent"}
 PROGRESS_EVENT_TYPES = {"question", "decision", "snapshot", "truncation"}
-
-RESERVED_EVENT_FIELDS = {"event_id", "type", "created_at", "session_id"}
 
 
 class CommandResult:
@@ -987,19 +999,27 @@ def build_repo_guidance(repo_root: Path | str) -> list[dict[str, object]]:
     return guidance
 
 
-class SessionStore:
-    """Append-only event and immutable payload writer for one session."""
+class SessionStore(AppendOnlyStore):
+    """Deliberation session over the shared append-only store.
+
+    Composes `AppendOnlyStore` for the generic ledger and payload mechanics, and adds
+    the deliberation domain: the `session.json` manifest, the closed event-type set, the
+    decision-disposition guard, and the Tier-3 view rendering.
+    """
+
+    store_id_field = "session_id"
 
     def __init__(self, session_dir: Path | str) -> None:
         self.session_dir = Path(session_dir)
         self.session_path = self.session_dir / "session.json"
-        self.events_path = self.session_dir / "events.jsonl"
         if not self.session_path.is_file():
             raise FileNotFoundError(f"missing session.json: {self.session_path}")
-        if not self.events_path.is_file():
-            raise FileNotFoundError(f"missing events.jsonl: {self.events_path}")
         self.session = _read_json(self.session_path)
-        self.session_id = self.session["session_id"]
+        super().__init__(self.session_dir, self.session["session_id"])
+
+    @property
+    def session_id(self) -> str:
+        return self.store_id
 
     @classmethod
     def create(
@@ -1028,144 +1048,33 @@ class SessionStore:
             "created_at": _utc_now(),
         }
         _write_json(session_path, session)
-        events_path.write_text("", encoding="utf-8")
+        cls.init_ledger(path)
         return cls(path)
 
     @classmethod
     def open(cls, session_dir: Path | str) -> "SessionStore":
         return cls(session_dir)
 
-    def write_payload(self, relative_path: str, content: str | bytes) -> dict[str, Any]:
-        payload_path = self._payload_path(relative_path)
-        data = content.encode("utf-8") if isinstance(content, str) else content
-        if payload_path.exists():
-            if payload_path.read_bytes() != data:
-                raise ValueError(f"immutable payload exists: {relative_path}")
-        else:
-            payload_path.parent.mkdir(parents=True, exist_ok=True)
-            payload_path.write_bytes(data)
-        return {
-            "path": relative_path,
-            "sha256": hashlib.sha256(data).hexdigest(),
-            "bytes": len(data),
-        }
-
-    def append_event(self, event_type: str, fields: dict[str, Any]) -> dict[str, Any]:
+    def _validate_append(self, event_type: str, fields: dict[str, Any]) -> None:
         if event_type not in KNOWN_EVENT_TYPES:
             raise ValueError(f"unknown event type: {event_type}")
-        if not isinstance(fields, dict):
-            raise TypeError("event fields must be a dict")
-        reserved = RESERVED_EVENT_FIELDS.intersection(fields)
-        if reserved:
-            names = ", ".join(sorted(reserved))
-            raise ValueError(f"reserved event field supplied: {names}")
-        supersedes = fields.get("supersedes")
-        if supersedes is not None and supersedes not in self._event_ids():
-            raise ValueError(f"supersedes unknown event_id: {supersedes}")
 
-        event = {
-            "event_id": self._next_event_id(),
-            "type": event_type,
-            "created_at": _utc_now(),
-            "session_id": self.session_id,
-            **fields,
-        }
-        line = json.dumps(event, sort_keys=True, separators=(",", ":"))
-        with self.events_path.open("a", encoding="utf-8") as handle:
-            handle.write(f"{line}\n")
-        return event
-
-    def render_views(self) -> dict[str, Path]:
-        events = self._events()
-        return self._write_views(_render_view_bytes(self.session_id, events))
-
-    def rebuild(self) -> dict[str, Path]:
-        events = self._events()
-        self._validate_events(events)
-        view_bytes = _render_view_bytes(self.session_id, events)
-        for name, data in view_bytes.items():
-            path = self.session_dir / name
-            if path.exists() and path.read_bytes() != data:
-                raise ValueError(f"tier 3 view differs: {name}")
-        return self._write_views(view_bytes)
-
-    def _write_views(self, view_bytes: dict[str, bytes]) -> dict[str, Path]:
-        paths: dict[str, Path] = {}
-        for name, data in view_bytes.items():
-            path = self.session_dir / name
-            path.write_bytes(data)
-            paths[name] = path
-        return paths
+    def _render_view_bytes(self, events: list[dict[str, Any]]) -> dict[str, bytes]:
+        return _render_view_bytes(self.session_id, events)
 
     def _validate_events(self, events: list[dict[str, Any]]) -> None:
-        known_event_ids: set[str] = set()
         for event in events:
-            event_id = event.get("event_id")
-            if not event_id:
-                raise ValueError("event missing event_id")
             event_type = event.get("type")
             if event_type not in KNOWN_EVENT_TYPES:
                 raise ValueError(f"unknown event type: {event_type}")
-            if event.get("supersedes") and event["supersedes"] not in known_event_ids:
-                raise ValueError(f"supersedes unknown event_id: {event['supersedes']}")
             if event_type == "decision":
                 disposition = event.get("disposition")
                 if disposition not in VALID_DECISION_DISPOSITIONS:
-                    decision_id = event.get("decision_id", event_id)
+                    decision_id = event.get("decision_id", event.get("event_id"))
                     raise ValueError(
                         f"invalid disposition for {decision_id}: {disposition}"
                     )
-            for payload in _iter_payload_refs(event.get("payloads")):
-                self._validate_payload_ref(payload)
-            known_event_ids.add(event_id)
-
-    def _validate_payload_ref(self, payload: dict[str, Any]) -> None:
-        relative_path = payload.get("path")
-        expected_hash = payload.get("sha256")
-        if not relative_path or not expected_hash:
-            raise ValueError(f"payload reference missing path or sha256: {payload}")
-        payload_path = self._payload_path(relative_path)
-        if not payload_path.exists():
-            raise ValueError(f"missing payload: {relative_path}")
-        actual_hash = hashlib.sha256(payload_path.read_bytes()).hexdigest()
-        if actual_hash != expected_hash:
-            raise ValueError(f"payload hash mismatch: {relative_path}")
-
-    def _payload_path(self, relative_path: str) -> Path:
-        path = PurePosixPath(relative_path)
-        if path.is_absolute() or not path.parts or ".." in path.parts:
-            raise ValueError(
-                f"payload path must stay within the session: {relative_path}"
-            )
-        return self.session_dir / Path(*path.parts)
-
-    def _events(self) -> list[dict[str, Any]]:
-        events: list[dict[str, Any]] = []
-        with self.events_path.open(encoding="utf-8") as handle:
-            for line_number, line in enumerate(handle, start=1):
-                if not line.strip():
-                    continue
-                try:
-                    events.append(json.loads(line))
-                except json.JSONDecodeError as exc:
-                    raise ValueError(
-                        f"invalid events.jsonl at line {line_number}"
-                    ) from exc
-        return events
-
-    def _event_ids(self) -> set[str]:
-        return {event["event_id"] for event in self._events()}
-
-    def _next_event_id(self) -> str:
-        max_number = 0
-        for event in self._events():
-            event_id = event.get("event_id", "")
-            if isinstance(event_id, str) and event_id.startswith("e"):
-                try:
-                    max_number = max(max_number, int(event_id[1:]))
-                except ValueError:
-                    continue
-        return f"e{max_number + 1:06d}"
+        super()._validate_events(events)
 
 
 def _read_json(path: Path) -> dict[str, Any]:
