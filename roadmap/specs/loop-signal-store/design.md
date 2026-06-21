@@ -259,6 +259,14 @@ a process that bypasses the API and writes `events.jsonl` directly — advisory
 sole sanctioned writer; the discrimination test (Testing strategy) proves the lock
 is actually held by failing when it is dropped.
 
+**Single-host scope (v1).** The `flock` serializes writers on one filesystem — the
+v1 deployment, where the proposer cron and the local agents run on a single host
+(matching the host-resident decision for the loop's cron). Cross-clone /
+multi-machine concurrent writes to the committed `.foundry/state/` ledger are a
+**git-merge** concern, **out of v1 scope**: committing the ledger lets it survive and
+merge across clones for *reading*, but two machines writing it concurrently would
+need a merge driver or a coordination mechanism, deferred past v1.
+
 ## Event types
 
 A loop-specific closed set, mirroring the broker's append-and-rebuild validation
