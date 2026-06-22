@@ -1,485 +1,334 @@
-> **Status:** Ready (2026-06-20) — tracked on the [board](../../ROADMAP.md).
+> **Status:** Ready (2026-06-21) — tracked on the [board](../../ROADMAP.md).
 > Companion: [requirements.md](requirements.md), [tasks.md](tasks.md).
 
 # Design — loop signal store (S1)
 
 ## Architecture overview
 
-The signal store is the self-improving loop's durable memory. It reuses the
-broker's storage discipline — append-only event ledger, immutable hashed payloads,
-rebuildable views (`SessionStore`, `harness-deliberation-broker.py`) — but with a
-loop-specific closed event set and two new structural properties: it splits by
-signal sensitivity across the existing gitignore boundary, and — unlike the
-broker's per-session `SessionStore`, where one session has one writer — it is a
-single shared store many sources write to concurrently, so it serializes writes
-under an advisory lock (§Concurrency model).
+S1 is one **per-repo, append-only, two-zone store** plus a deterministic CLI that owns
+admission. It reuses the broker's storage discipline — append-only event ledger, immutable
+hashed payloads, rebuildable views (`SessionStore`, `harness-deliberation-broker.py`) — with
+a loop-specific closed event set, and unlike the broker's single-writer per-session store it
+is one shared store many sources write to concurrently, so it serializes writes under an
+advisory lock (§Concurrency model).
 
 | Zone | Location | Contents | Committed? |
 |---|---|---|---|
-| **Raw zone** | `.foundry/tmp/self-improvement/` (already gitignored, `.gitignore`) | Raw signal payloads: conversation excerpts, issue bodies, eval transcripts. Referenced by SHA-256, never by value. | No |
-| **Candidate ledger** | `.foundry/state/self-improvement/` (tracked — `.foundry/state/` is not in `.gitignore`) | The generic-by-construction event ledger of candidates and metrics: generic summaries, hash-refs into the raw zone. | Yes |
+| **Raw zone** | `.foundry/tmp/self-improvement/` (gitignored) | Raw payloads: conversation excerpts, transcripts, issue bodies. By SHA-256, never by value. | No |
+| **Candidate ledger** | `.foundry/state/self-improvement/` (tracked) | The closed-schema event ledger: bounded fields, hash-refs into the raw zone. | Yes |
 
-The candidate ledger is the machine-readable sibling of a COE — "a dated record of
-a real failure the setup permitted… closed only by a mechanical change"
-(`knowledge/glossary.md`). A candidate is a pre-COE signal of the same kind:
-committing it survives clones, makes ranking reviewable in pull requests, and the
-genericity rule guarantees it carries nothing user-specific. Putting the
-leakage-prone raw zone under already-gitignored `.foundry/tmp/` means committing raw
-data requires defeating gitignore — a stronger guarantee than "remember not to
-commit."
+Everything that can change consent, identity, counters, attribution, or committed state
+happens in the CLI — agents draft, the script admits (the `reg-determinism` line). The store
+is a plain portable CLI any harness, git hook, human, or CI can run, so it behaves identically
+under Claude Code and Codex. Three properties keep S1 small and verifiable:
 
-The **redaction gate** is the only writer of clean committed records. Every clean
-record bound for `.foundry/state/` passes the gate first; a record that carries a
-raw-text marker is rejected and recorded as `signal_rejected`, never written. (The
-telemetry opt-in gate, §Telemetry opt-in gate, runs ahead of it and may write a
-`signal_rejected` rejection of its own.) The gate ships with its own discriminating
-eval: a seeded raw-leak (a path, secret, or PII string in a committed summary) must
-make the gate fail.
+- **Closed-schema committed record.** Committed records carry only enums, hashes, counters,
+  and bounded fields — never free text. Closing the channel is the privacy lever; the
+  redaction gate guards what a closed field cannot. Putting the raw zone under
+  already-gitignored `.foundry/tmp/` means leaking raw data requires defeating gitignore.
+- **Computed liveness, no version comparison.** The append-only log is already a total order.
+  "Live / addressed / regressed" is computed from the event stream within a recency window. A
+  build identity is stored as an **opaque label, never compared** in v1 — the only seam a
+  later multi-version phase needs, with no ordering machinery now.
+- **Fingerprint = a script-canonicalized closed tuple.** A candidate is keyed by the
+  normalized cause, repo-independent by construction, so the same gap fingerprints identically
+  across repos (the join key the sibling cross-repo spec reads). The spike proved it: agents
+  produce divergent free-form slugs for one cause while a closed enum aligns — so the *agent
+  fills a closed enum* and the *script hashes the tuple*.
 
 ```mermaid
-flowchart TB
-    eval["Eval graders<br/>score_review.py NDJSON"]
-    dogfood["Dogfood findings"]
-    issue["GitHub issues<br/>(issue-triage, later)"]
-    telemetry["External telemetry<br/>(deferred seam)"]
-
-    eval --> ingest
-    dogfood --> ingest
-    issue --> ingest
-    telemetry -.->|"new source_kind, no schema change"| ingest
-
-    ingest["signal-store ingest<br/>source_kind on every signal"]
-
-    subgraph rawZone["Raw zone — .foundry/tmp/self-improvement/ (gitignored)"]
-        rawPayloads["Raw payloads<br/>by SHA-256, never by value"]
-    end
-
-    ingest -->|"raw bytes"| rawPayloads
-    ingest -->|"generic summary + hash-ref"| gate
-
-    gate{"Redaction gate<br/>raw-text marker?<br/>(path / secret / PII)"}
-    gate -->|"marker found"| rejected["signal_rejected<br/>nothing written to state/"]
-    gate -->|"clean"| aggregate
-
-    aggregate["Candidate aggregation<br/>fingerprint normalized cause"]
-
-    subgraph committed["Candidate ledger — .foundry/state/self-improvement/ (tracked)"]
-        events["events.jsonl<br/>Tier 1: append-only"]
-        payloads["payloads/<br/>Tier 2: immutable, hashed<br/>(generic summaries only)"]
-        views["ledger.md + candidates view<br/>Tier 3: rebuildable"]
-    end
-
-    aggregate --> events
-    aggregate --> payloads
-    events -->|"rebuild + hash re-validate"| views
-
-    views -->|"read seam: active candidates + metric trends"| proposer["S2 proposer cron<br/>(separate spec)"]
+flowchart TD
+  subgraph capture["Capture (US-9)"]
+    T1["Tier 1: instrumented skill<br/>broker participant_failed — deterministic"]
+    T2n["Tier 2: transcript scan<br/>grep markers + proximity, fold to root"]
+    T2f["agent SCOPE-FILTER<br/>foundry gap vs repo-domain"]
+    T2n --> T2f
+  end
+  subgraph cli["loop-signal-store.py — deterministic admission (under lock)"]
+    tel["telemetry opt-in gate"]
+    redact["redaction gate (fail-closed)"]
+    fp["fingerprint canonicalizer<br/>hash(affected_surface, failure_mode)"]
+    appnd["append event"]
+    tel --> redact --> fp --> appnd
+  end
+  T1 --> tel
+  T2f --> tel
+  redact -. "raw payload by sha256" .-> raw[".foundry/tmp/self-improvement/"]
+  appnd --> state[".foundry/state/self-improvement/"]
+  state --> views["rebuildable views<br/>computed liveness/regression"]
+  views --> s2["reader: S2 proposer"]
+  views --> agg["reader: local-multirepo aggregator"]
 ```
 
 ## Components
 
 | Component | Location | Purpose |
 |---|---|---|
-| Signal store | `plugins/foundry/scripts/loop-signal-store.py` | The S1 store: append-only ledger, immutable payloads, rebuildable views, ingest, candidate aggregation. Built on storage mechanics copied from the broker (see Dependencies). |
-| Store write lock | `.foundry/state/self-improvement/store.lock` (advisory `flock`) | Serializes the write critical section so concurrent writers never tear the ledger, open a duplicate candidate, or race the write-if-absent payload check (§Concurrency model). Held only on the write path; reads never acquire it. |
-| Redaction gate | inside `loop-signal-store.py` | The single writer of clean committed records. Rejects any committed-bound record carrying a raw-text marker; records `signal_rejected`. |
-| Telemetry opt-in gate | inside `loop-signal-store.py`, ahead of the redaction gate | Refuses a `telemetry` signal unless `telemetry.enabled` (`.foundry/self-improvement-config.json`) is ON; records `signal_rejected` reason `telemetry-disabled`. Internal sources are unaffected. |
-| Raw zone | `.foundry/tmp/self-improvement/` (gitignored) | Raw signal payloads, by SHA-256. |
-| Candidate ledger | `.foundry/state/self-improvement/` (tracked) | `events.jsonl`, `payloads/`, rebuildable `ledger.md`. |
-| Store test | `tests/loop_signal_store_test.sh` | Proves append-only / immutable / rebuildable behavior and zone separation, with a seeded-defect arm (a mutant that writes raw bytes to `.foundry/state/` must fail). Includes a discriminating concurrency arm — N concurrent writers, no torn line, one candidate per fingerprint, consistent rebuild; dropping the lock makes it fail (§Concurrency model). |
-| Redaction-gate eval | `evals/harness/redaction-gate-eval.sh` + `evals/fixtures/redaction-gate/` | Discriminating eval: a seeded raw-leak in a committed summary must make the gate fail. |
+| Store CLI | `plugins/foundry/scripts/loop-signal-store.py` | Admission, redaction, fingerprinting, append under lock, view rebuild, read |
+| Tier-1 emitters | callers (e.g. `harness-deliberation-broker.py`) | A foundry skill calls `loop-signal-store observe …` directly from a structured failure event |
+| Tier-2 capture | a Stop-hook narrower + an agent draft | Grep-proximity narrow → agent scope-filter → `observe` (ambient friction) |
+| Redaction gate | inside the CLI (committed-zone writer) | Reject free-text / path / secret / PII; the only committed-zone writer |
+| Telemetry opt-in gate | inside the CLI, ahead of redaction | Refuse `telemetry` unless `telemetry.enabled`; record `signal_rejected` reason `telemetry-disabled` |
+| Fingerprint canonicalizer | inside the CLI | `sha256` of the canonical `(affected_surface, failure_mode)` tuple |
+| Store write lock | `.foundry/state/self-improvement/store.lock` | Advisory `flock` serializing the write critical section |
+| Store test / redaction eval | `tests/loop_signal_store_test.sh`, `evals/harness/redaction-gate-eval.sh` | Discriminating tests with seeded defects |
 
 ## Committed-ledger layout
 
 ```text
 .foundry/state/self-improvement/        # tracked, committed
   store.json                            # store_id, repo_root, schema version
-  store.lock                            # advisory flock — write critical section (not committed)
+  store.lock                            # advisory flock — not committed (gitignored)
   events.jsonl                          # Tier 1: append-only event ledger
-  payloads/                             # Tier 2: immutable, hashed — generic summaries only
-  ledger.md                             # Tier 3: rebuildable candidate-ledger digest
-
+  payloads/                             # Tier 2: immutable, hashed — bounded records only
+  ledger.md                             # Tier 3: rebuildable candidate digest
 .foundry/tmp/self-improvement/          # gitignored
-  payloads/                             # raw signal payloads, by SHA-256, never committed
+  payloads/                             # raw payloads, by SHA-256, never committed
 ```
 
-`store.lock` is a runtime artifact, not loop memory: the store creates it on demand
-and gitignores it (`.foundry/state/self-improvement/store.lock`), so it never enters
-a commit even though it lives under the otherwise-tracked `.foundry/state/`.
+## Event types (closed v1 set)
 
-The split is mechanical. The store's committed writer targets `.foundry/state/`; the
-raw writer targets `.foundry/tmp/`. The committed writer is the redaction gate, so a
-raw-bearing record cannot reach `.foundry/state/` without the gate firing. The raw
-zone nests under already-gitignored `.foundry/tmp/`, matching the existing
-`fresh-session` and `harness-deliberation` raw zones.
+A small closed set; an unknown type is rejected at append and rebuild. Every event has
+`event_id` (monotonic), `created_at`, `store_id`, and is appended inside the store write lock.
 
-## Storage mechanics — reuse the pattern, not the closed event set
+| Event | Purpose |
+|---|---|
+| `store_started` | Repo root, store id, schema version. |
+| `candidate_observed` | One observation of a candidate (the admit path). Folds into a candidate by fingerprint. Carries the closed schema below. |
+| `candidate_decision` | The one resolution event: `resolved \| dismissed \| duplicate \| wontfix`. Liveness/regression are *computed* from the stream, never stored as `reopened`/`suppressed`/`regressed`. |
+| `signal_rejected` | The redaction gate or the telemetry opt-in gate fired. Names the marker class / reason only; carries no raw content. |
 
-The broker's `SessionStore` already enforces the right discipline: `write_payload`
-rejects any mutation of an existing payload (`harness-deliberation-broker.py`);
-`append_event` assigns a monotonic id and rejects unknown types; `rebuild`
-re-validates every payload hash and refuses if a Tier-3 view drifts;
-`_payload_path` refuses an absolute path or `..`. S1 reuses all of this.
+This collapses the earlier model's ingest/aggregate events
+(`signal_ingested`/`metric_observed`/`candidate_opened`/`candidate_revised`/`candidate_closed`)
+into `candidate_observed` + `candidate_decision`: an observation *is* the candidate's evidence
+(opened = first observation of a fingerprint; revised = a later one), and resolution is one
+decision with status computed (the `simplicity-audit` line).
 
-What S1 does **not** reuse is the vocabulary. `KNOWN_EVENT_TYPES` is a
-deliberation-specific module constant checked at append and at rebuild, and
-`_validate_events` hardcodes decision/disposition semantics. The clean cut is a
-base — `AppendOnlyStore` owning `create / write_payload / append_event(known_types) /
-_payload_path / _next_event_id / _validate_payload_ref` — with view-rendering and
-event-validation as subclass hooks. The broker's `SessionStore` becomes base +
-deliberation views; the signal store becomes base + loop views.
+### `candidate_observed` — the closed schema
 
-```mermaid
-classDiagram
-    class AppendOnlyStore {
-        <<extracted base, separate PR>>
-        +create()
-        +write_payload(path, content)
-        +append_event(type, fields, known_types)
-        +rebuild()
-        #_payload_path(path)
-        #_next_event_id()
-        #_validate_payload_ref(ref)
-        #render_views(events)*
-        #_validate_events(events)*
-    }
-    class SessionStore {
-        <<broker, existing>>
-        +KNOWN_EVENT_TYPES (deliberation)
-        #render_views() deliberation views
-        #validate_events() decision/disposition
-    }
-    class SignalStore {
-        <<this spec, S1>>
-        +KNOWN_EVENT_TYPES (loop)
-        +ingest(source_kind, raw, summary)
-        +observe_metric(sample)
-        #render_views() candidate ledger digest
-        #validate_events() candidate/fingerprint
-        #write_critical_section() under store write lock
-    }
-    AppendOnlyStore <|-- SessionStore
-    AppendOnlyStore <|-- SignalStore
-    SignalStore --> RedactionGate : committed-zone writes pass through
-    SignalStore --> StoreWriteLock : write path serialized by
-    class RedactionGate {
-        <<this spec, S1>>
-        +check(committed_bound_record) pass | reject(marker_class)
-    }
-    class StoreWriteLock {
-        <<illustrative: the locked section, not a peer class>>
-        +acquire() advisory flock on store.lock
-        +release() on exit or process death
-    }
-```
+Bounded fields only, no free text:
 
-The store write lock lives in `SignalStore`, not the extracted base — the broker's
-`SessionStore` is single-writer and needs no lock, so adding it to `AppendOnlyStore`
-would burden the broker with a guarantee it never uses. S1 wraps the broker's
-inherited `write_payload` / `append_event` calls in its own locked critical section.
-
-The class diagram shows the end-state after the extraction. Until that PR lands,
-`SignalStore` carries the copied mechanics inline (no `AppendOnlyStore` parent) and
-rebases onto the base when it ships — so the diagram's base/subclass split is the
-target, not a build prerequisite.
-
-**Sequencing:** the `AppendOnlyStore` extraction is a separate refactor PR, called
-out under Dependencies. This spec does not specify that refactor. S1 starts on
-storage mechanics copied from the broker, guarded by its own discrimination test,
-and rebases onto the extracted base once it lands — so S1 is unblocked by the
-broker's release train.
-
-## Concurrency model
-
-The broker's `SessionStore` assumes **one session, one writer** — its
-`append_event` writes with a bare `open("a")` and no lock, because two writers never
-touch the same session. S1 breaks that assumption: it is **one shared store many
-sources write to concurrently** — eval graders, code-review and spec-review hooks,
-dogfood findings, `issue-triage`, and (when enabled) telemetry can all ingest at the
-same time. Three races follow, none of which `O_APPEND` alone closes:
-
-1. **Torn ledger line.** A record can exceed the OS atomic-append size, so
-   interleaved `O_APPEND` writes can splice two records into one corrupt line.
-2. **Duplicate candidate.** Two ingests of the same NEW fingerprint each read the
-   view, each see no existing candidate, and each emit `candidate_opened` — a
-   read-modify-write race that opens two candidates for one cause.
-3. **Payload write-if-absent race (TOCTOU — time-of-check-to-time-of-use).** The
-   "refuse if bytes differ" check (AC-2.2) reads then writes; without serialization
-   two writers race between the existence check and the write.
-
-### The store write lock
-
-S1 serializes the **write critical section** behind a **store write lock** — an
-advisory `flock` on `.foundry/state/self-improvement/store.lock`. Every writer
-follows the same sequence under the held lock:
-
-1. **Acquire** the exclusive `flock`.
-2. **Read the current view** — the latest candidates and the payload index.
-3. **Decide** open-or-revise candidate and write-if-absent payload.
-4. **Append** the event(s) to `events.jsonl` and write payloads.
-5. **Release** the lock.
-
-Holding the lock across read → decide → append collapses each race: appends never
-interleave (no torn line), the open-or-revise decision sees a consistent view (one
-candidate per fingerprint), and the write-if-absent check no longer races its write.
-
-Downstream sources that reuse S1's ingest path — `issue-triage`, for one — inherit
-this lock instead of inventing their own. S1 owns it once.
-
-### Lock-free reads
-
-Reads never acquire the write lock. The proposer (S2) reads an
-**eventually-consistent snapshot** of the append-only ledger; a `rebuild`
-re-validates every payload hash and so re-derives a correct view from the events
-regardless of any in-flight append. A reader that wants a point-in-time snapshot
-may take a brief **shared** `flock`, but the common path is lock-free — the
-append-only ledger means a reader either sees a complete trailing line or stops at
-the last newline, never a partially-decided candidate.
-
-### Crash safety
-
-The lock is **cooperative and crash-safe**, not transactional:
-
-- `flock` **releases on process death** — a writer killed mid-section frees the lock
-  for the next writer; no stale lock wedges the store.
-- A **partial trailing append** left by a crash is detected at the next `rebuild`
-  by JSON/hash validation and **ignored** — the broker's append-and-rebuild
-  discipline already refuses a malformed event, so a half-written final line is
-  dropped, never half-applied.
-- A rebuilt **view is written atomically** (temp file then `rename`, per AC-2b.7),
-  so a crash during view materialization never leaves a partially written
-  `ledger.md`.
-
-### Scope of the guarantee
-
-This is **process-level cooperative locking**: it holds only because every writer
-goes through the store API and takes the lock. It is **not** an OS guarantee against
-a process that bypasses the API and writes `events.jsonl` directly — advisory
-`flock` does not stop a writer that never asks for the lock. The store API is the
-sole sanctioned writer; the discrimination test (Testing strategy) proves the lock
-is actually held by failing when it is dropped.
-
-**Single-host scope (v1).** The `flock` serializes writers on one filesystem — the
-v1 deployment, where the proposer cron and the local agents run on a single host
-(matching the host-resident decision for the loop's cron). Cross-clone /
-multi-machine concurrent writes to the committed `.foundry/state/` ledger are a
-**git-merge** concern, **out of v1 scope**: committing the ledger lets it survive and
-merge across clones for *reading*, but two machines writing it concurrently would
-need a merge driver or a coordination mechanism, deferred past v1.
-
-## Event types
-
-A loop-specific closed set, mirroring the broker's append-and-rebuild validation
-discipline:
-
-| Event | Zone | Purpose |
+| Field | Kind | Notes |
 |---|---|---|
-| `store_started` | committed | Repo root, store id, schema version. |
-| `signal_ingested` | committed | A signal entered. Carries `source_kind`, a hash-ref to the raw payload in the raw zone, and a generic summary. |
-| `metric_observed` | committed | A numeric eval sample derived from the `summary` record `evals/harness/score_review.py` emits — `fixture`, `runs`, `mean_recall`, `decoy_hits`, `verdict`. |
-| `signal_rejected` | committed | The redaction gate, a genericity/duplicate/scope check, or the telemetry opt-in gate (reason `telemetry-disabled`) fired. Names the marker class or reason; carries no rejected raw content. |
-| `candidate_opened` | committed | A new aggregate problem, fingerprinted on the normalized cause. |
-| `candidate_revised` | committed | New evidence, score, scope, recurrence, or trend folded into an existing candidate. |
-| `candidate_closed` | committed | Resolution: duplicate, fixed, rejected, or shipped. |
+| `candidate_fingerprint` | hash | `sha256(canonical(affected_surface, failure_mode))` |
+| `fingerprint_version` | int | the canonicalization algorithm version |
+| `affected_surface` | enum | the controlled vocab (below) |
+| `failure_mode` | enum | closed, **per**-`affected_surface` |
+| `category` | enum | `bug \| confusion \| missing-capability \| ambiguous-convention \| workflow-friction` |
+| `evidence_kind` | enum | `error \| repeated-question \| manual-workaround \| wrong-output \| explicit-user-feedback` |
+| `conversation_id` | hash | `hash(harness-native session id)`, adapter-stamped |
+| `root_conversation_id` | hash | subagent/child folds here; `= conversation_id` if no parent |
+| `source_kind` | enum | `eval \| code-review \| spec-review \| dogfood \| issue-triage \| telemetry` |
+| `source_harness` | enum/null | `claude-code \| codex \| system`; adapter-stamped, agent-supplied rejected |
+| `build_kind` / `build_label` | enum / opaque | stored, **never compared** in v1 |
+| `convention_version` | int | stamped, never gated in v1 |
+| `origin` / `origin_chain` | enum / list | carries `loop_generated` (design-output quarantine) |
+| `raw_payload_ref` | path+sha256 | reference into the gitignored zone |
 
-Every committed event above is appended inside the store write lock (§Concurrency
-model); no event reaches `events.jsonl` outside the serialized critical section.
+`candidate_decision`: `candidate_fingerprint`, `disposition`, `decision_source`
+(`human | coe | board`), `provenance_refs[]` (bounded: `coe_id | board_card | release_tag |
+spec_slug | eval_id` — never a raw path).
 
-`source_kind` is the **external-telemetry seam.** Its closed set is `eval`,
-`code-review`, `spec-review`, `dogfood`, `issue-triage`, `telemetry`. Telemetry plugs
-in later as the `telemetry` value behind the same redaction gate — no schema change.
-`issue-triage` plugs in the same way; its own spec owns the read-only `gh` ingest
-that produces the raw payload.
+**Closed enums.** `affected_surface` is the spike's controlled vocabulary
+(`harness-deliberation`, `spec-driven-dev`, `spec-review`, `code-review`, `update`,
+`bootstrap`, `handoff`, `spawn-isolation-worktree`, `check-fast-gates`, `glossary-naming`,
+`board-roadmap`, `code-skill`, `release-versioning`, `auto-memory`, `plugin-install`,
+`features-gherkin`, `vitepress-docs`, `other`). `failure_mode` is closed **per** surface. New
+enum values are additive, not a schema break.
 
-## Telemetry opt-in gate
+## Capture pipeline (US-9)
 
-`telemetry` is **opt-in, default OFF** — the one **external-contribution** source,
-whose raw payload originates outside the repo and could leave it. The five internal
-sources (`eval`, `code-review`, `spec-review`, `dogfood`, `issue-triage`) are local and
-generic-by-construction through the redaction gate; they never leave the repo and are
-**always on**, unaffected by the flag.
+| Tier | Source | Deterministic part | Judgment part |
+|---|---|---|---|
+| 1 | instrumented skill (broker `participant_failed`, a gate's nonzero exit) | the whole capture | none |
+| 2 | conversation transcript | grep markers + proximity, fold to root, top-N spans | the scope-filter |
 
-The store reads a single `telemetry.enabled` boolean from
-**`.foundry/self-improvement-config.json`** — a repo-local config file. It is *not* the
-manifest: `.foundry/manifest.json` is a managed lockfile (`/foundry:update` writes it
-to tell pristine from customized — see `knowledge/glossary.md` *Manifest*), the wrong
-home for a user-set preference. A subsystem-scoped `*-config.json` matches the
-established repo-local config convention — a verbatim tool's per-repo variation lives in
-a scoped seed config (`knowledge/knowledge-config.json`, `knowledge/.vitepress/site.json`;
-`roadmap/specs/foundry-core/design.md` §Template classes). A missing file or unset key
-reads as OFF — a repo with sensitive data must opt in.
+The **scope-filter is distinct from the genericity gate** (AC-9.3): it decides in/out of the
+foundry-mechanism domain; overfit is S2's judgment. Tier 2 surfaces top-N spans *relative to
+the transcript* (no absolute threshold — the spike found positive scores 13–434 across repos)
+and attributes to `root_conversation_id` (the spike's noisy "controls" were subagent
+transcripts — root-collapse is load-bearing).
 
-The gate is mechanical and lives in the ingest path, before the redaction gate:
-
-- `source_kind=telemetry` and `telemetry.enabled` OFF (or unset) → refuse ingestion,
-  record `signal_rejected` with reason `telemetry-disabled`, write nothing else to
-  `.foundry/state/`.
-- `source_kind=telemetry` and `telemetry.enabled` ON → ingest normally, through the
-  redaction gate like any other source.
-- an internal `source_kind` → ingest regardless of the flag.
-
-S1 only **reads** the flag. The bootstrap/update **prompt** that sets it (default off)
-is owned by the external-telemetry epic, recorded under Dependencies — S1 does not
-implement the prompt.
+**Quarantine scope (AC-5.5/5.6).** `loop_generated` quarantines a candidate whose evidence is
+the loop's own *design output* re-entering. It does **not** quarantine a foundry skill's
+*operational failure* during loop execution — a broker crash inside a deliberation is a
+first-class capability-gap signal.
 
 ## Candidate identity and fingerprinting
 
-A candidate aggregates signals by **normalized cause, not conversation.** The
-fingerprint is `source_kind + invariant + failing_signature + affected_surface`. A
-candidate opens only when a signal exposes shared machinery with a reproducible
-mechanical catch — as issue #6 did with the timeout regression test
-(`tests/harness_deliberation_timeout_test.sh`); a lone dogfood crash without that
-catch does not. A new signal whose fingerprint matches an open candidate folds in via
-`candidate_revised`; it does not open a duplicate.
+`candidate_fingerprint = sha256(canonicalize(affected_surface, failure_mode))`. Canonicalize
+excludes raw text, paths, repo names, timestamps, local identifiers, and the conversation id,
+so the fingerprint is repo-independent — the cross-repo join key. The agent classifies into the
+closed enums; the script hashes. `fingerprint_version` stamps the algorithm so it can evolve
+without orphaning events. A cause whose enum tuple is unknown is rejected — the canonicalizer
+is also a closed-vocabulary gate. A new observation whose fingerprint matches an open candidate
+folds in; it does not create a second candidate.
 
-A candidate record carries: `candidate_id`, status, title, problem statement,
-evidence event ids, source fingerprints, first-seen and last-seen, severity,
-recurrence, metric trend, genericity rationale, repro command, eval hook, estimated
-effort, and score inputs. Storing the score inputs keeps the proposer's later
-ranking challengeable. The eval hook is what lets S2 enforce evalability — a
-candidate with no seedable discriminating eval cannot become a proposal — but that
-filter lives in the S2 spec, not here.
+## Liveness and regression (computed)
+
+The append-only log is the source of truth; status is recomputed, never stored.
+
+- **Live** — a candidate's in-window distinct-`root_conversation_id` count reaches the
+  threshold N and no later `candidate_decision` applies. The **recency window** (a
+  maintainer-configurable count of distinct roots or number of days, default stated) replaces
+  any version-recency notion; observations age out by event order.
+- **Quiet** — an effective `candidate_decision` and no later qualifying observation.
+- **Regression-suspected → `for_review`** — a `candidate_observed` postdates the last
+  `candidate_decision` within the window. One post-decision observation flags review; it never
+  auto-acts, auto-resolves, or auto-suppresses. Automatic action on the resolution signal is
+  refused in v1 (it would need version comparison, deferred).
+
+## Storage mechanics — reuse the pattern, not the closed event set
+
+The broker's `SessionStore` enforces the right discipline: `write_payload` rejects mutation of
+an existing payload; `append_event` assigns a monotonic id and rejects unknown types; `rebuild`
+re-validates payload hashes and refuses on view drift; `_payload_path` refuses an absolute path
+or `..`. S1 reuses all of it. What S1 does not reuse is the vocabulary. The clean cut is a base
+— `AppendOnlyStore` owning `create / write_payload / append_event(known_types) / _payload_path /
+_next_event_id / _validate_payload_ref` — with view-rendering and event-validation as subclass
+hooks. Until that extraction PR lands (Dependencies), `SignalStore` carries the copied mechanics
+inline and rebases onto the base later, so S1 is unblocked by the broker's release train.
+
+```mermaid
+classDiagram
+  class AppendOnlyStore {
+    <<extracted base, separate PR>>
+    +create()
+    +write_payload(path, content)
+    +append_event(type, fields, known_types)
+    +rebuild()
+    #render_views(events)*
+    #validate_events(events)*
+  }
+  class SessionStore {
+    <<broker, existing>>
+    +KNOWN_EVENT_TYPES (deliberation)
+  }
+  class SignalStore {
+    <<this spec, S1>>
+    +KNOWN_EVENT_TYPES (loop)
+    +observe(source_kind, source_harness, raw, classification)
+    +decide(fingerprint, disposition, provenance_refs)
+    #render_views() candidate digest + computed liveness
+    #write_critical_section() under store write lock
+  }
+  AppendOnlyStore <|-- SessionStore
+  AppendOnlyStore <|-- SignalStore
+  SignalStore --> RedactionGate : committed writes pass through
+  SignalStore --> FingerprintCanonicalizer : closed-tuple hash
+```
+
+The store write lock lives in `SignalStore`, not the base — the broker is single-writer and
+needs no lock, so adding it to `AppendOnlyStore` would burden the broker with an unused
+guarantee.
+
+## Concurrency model
+
+The broker assumes one session, one writer. S1 breaks that: one shared store, many concurrent
+sources (eval graders, code-review/spec-review hooks, dogfood, issue-triage, telemetry). Three
+races follow, none closed by `O_APPEND` alone: a **torn ledger line** (a record exceeding the
+atomic-append size), a **duplicate candidate** (two ingests of one new fingerprint both fold-or-
+open), and a **payload write-if-absent TOCTOU**.
+
+S1 serializes the write critical section behind a **store write lock** — an advisory `flock` on
+`store.lock`: acquire → read view → decide fold → write-if-absent payload → append → release.
+Holding the lock across read→decide→append collapses all three races. **Reads are lock-free**
+over the append-only ledger (a reader sees a complete trailing line or stops at the prior
+newline). The lock is crash-safe: `flock` releases on process death; a partial trailing append
+is detected by JSON/hash validation at rebuild and ignored; a rebuilt view is written atomically
+(temp + rename). The guarantee is **process-level cooperative** locking — the store API is the
+sole sanctioned writer, and the discrimination test proves the lock is held by failing when it
+is dropped. **Single-host scope (v1):** the `flock` serializes writers on one filesystem;
+cross-machine concurrent writes to the committed ledger are a git-merge concern, out of v1 scope.
+
+## Telemetry opt-in gate
+
+`telemetry` is opt-in, default OFF — the one external-contribution `source_kind`, whose raw
+payload originates outside the repo. The five internal sources are local and
+generic-by-construction through the redaction gate, and are always on. The store reads a single
+`telemetry.enabled` boolean from `.foundry/self-improvement-config.json` (a repo-local config,
+*not* the managed `.foundry/manifest.json`); a missing file or unset key reads as OFF. Ahead of
+the redaction gate: `telemetry` with the flag off → refuse, record `signal_rejected` reason
+`telemetry-disabled`, write nothing else to `.foundry/state/`; `telemetry` with the flag on →
+ingest through the redaction gate; an internal source → ingest regardless. S1 only reads the
+flag; the bootstrap/update prompt that sets it (default off) is the external-telemetry epic's.
 
 ## Redaction gate
 
-The gate is the single writer of *clean* committed records and the structural defense
-against raw-signal leakage. Every clean record bound for `.foundry/state/` — an ingest
-summary, a metric record, a candidate summary — passes the gate first. The telemetry
-opt-in gate runs ahead of it and may write a `signal_rejected` rejection
-(`telemetry-disabled`) directly, refusing a telemetry signal before any clean record
-forms.
+The single writer of clean committed records and the structural defense against leakage. Every
+committed-bound record passes it. It rejects fail-closed on a free-text field (the closed schema
+admits none), an absolute path, a recognized secret token, or a PII pattern; on rejection it
+writes nothing to `.foundry/state/` and records `signal_rejected` naming the marker class only
+(never the matched text). It ships its own discriminating eval (Testing strategy).
 
-The gate rejects on a raw-text marker:
-
-- An absolute filesystem path (a leaked local path).
-- A recognized secret token (key/token patterns).
-- An email address or other PII pattern.
-
-On rejection the gate writes nothing to `.foundry/state/` and records a
-`signal_rejected` event naming the marker class (the event names the class, never the
-matched raw text). The gate also rejects on duplicate, overfit, private, or
-out-of-scope, each as a `signal_rejected` reason.
-
-The gate is a behavior-changing mechanism, so it ships with its own discriminating
-eval. The fixture seeds a committed summary that carries a planted raw-leak — a path,
-a secret, and a PII string — plus clean decoys. The eval fails if a planted leak
-passes the gate, and fails if a clean decoy is wrongly rejected. Green-ness is not
-the evaluator; discrimination is.
-
-## Data flow — ingest to committed candidate
-
-The write critical section (read view → decide → append) runs under the held store
-write lock; the raw-zone write precedes it and reads stay outside it.
+## Data flow — observe to committed candidate
 
 ```mermaid
 sequenceDiagram
-    participant Source as "Signal source<br/>(eval / dogfood / issue)"
-    participant Store as "Signal store"
-    participant Raw as "Raw zone<br/>.foundry/tmp/"
-    participant Lock as "Store write lock<br/>store.lock (flock)"
-    participant Gate as "Redaction gate"
-    participant Committed as "Candidate ledger<br/>.foundry/state/"
-
-    Source->>Store: ingest(source_kind, raw payload, summary)
-    Store->>Raw: write raw payload (by SHA-256)
-    Raw-->>Store: hash-ref
-
-    Store->>Lock: acquire exclusive flock
-    Note over Store,Committed: write critical section — read view, decide, append, release
-
-    alt source_kind=telemetry and telemetry.enabled OFF (or unset)
-        Store->>Committed: append signal_rejected (reason telemetry-disabled)
-    else internal source, or telemetry enabled
-        Store->>Gate: check summary + hash-ref (committed-bound)
-        alt raw-text marker found
-            Gate-->>Store: reject (marker class)
-            Store->>Committed: append signal_rejected (no raw content)
-        else clean
-            Gate-->>Store: pass
-            Store->>Committed: read current view (candidates + payload index)
-            Store->>Committed: write-if-absent payload (refuse on differing bytes)
-            Store->>Committed: append signal_ingested (source_kind, hash-ref, summary)
-            opt fingerprint matches an open candidate
-                Store->>Committed: append candidate_revised
-            end
-            opt no match and exposes shared machinery
-                Store->>Committed: append candidate_opened (fingerprint)
-            end
-            Store->>Committed: rebuild ledger.md (atomic temp+rename, hash re-validate)
-        end
+  participant Src as "Source (Tier 1 skill / Tier 2 agent)"
+  participant CLI as "loop-signal-store.py"
+  participant Raw as "Raw zone .foundry/tmp/"
+  participant Lock as "store.lock (flock)"
+  participant State as "Ledger .foundry/state/"
+  Src->>CLI: observe(source_kind, source_harness, raw, classification)
+  CLI->>Raw: write raw payload (by SHA-256)
+  CLI->>Lock: acquire exclusive flock
+  alt telemetry and flag OFF
+    CLI->>State: append signal_rejected (telemetry-disabled)
+  else internal, or telemetry ON
+    CLI->>CLI: redaction gate (committed-bound record)
+    alt marker found
+      CLI->>State: append signal_rejected (marker class, no raw text)
+    else clean
+      CLI->>CLI: canonicalize fingerprint (closed tuple), stamp source_harness
+      CLI->>State: write-if-absent payload; append candidate_observed
+      CLI->>State: rebuild ledger.md (atomic; recompute liveness)
     end
-    Store->>Lock: release flock
+  end
+  CLI->>Lock: release flock
 ```
 
-The telemetry write moved inside the critical section so its `signal_rejected`
-append is serialized with every other write — no append, rejection or accepted,
-escapes the lock.
+The raw-zone write precedes the telemetry and redaction checks by design: a telemetry-OFF
+refusal blocks only the committed write (AC-3.5), not the gitignored raw payload, which never
+leaves the host.
 
-## Read seam for downstream
+## Read seam
 
-S2 (proposer cron) reads the store through the rebuildable committed view — active
-candidates and their metric trends from `ledger.md` and the events under
-`.foundry/state/` — not by parsing raw payloads. On a fresh clone with no
-`.foundry/tmp/` raw zone, the committed ledger still exposes every candidate, because
-the candidate records are self-contained generic summaries; only the raw payloads
-they hash-ref are absent, and the read seam never needs them. This is why the ledger
-is committed: the loop's input is identical on every machine.
-
-The read seam is **lock-free** (§Concurrency model): S2 reads the append-only ledger
-without the store write lock, tolerating an in-flight append because a reader sees
-either a complete trailing line or the prior newline, never a half-decided
-candidate. A reader needing a strict point-in-time snapshot may take a brief shared
-`flock`, but the common path takes no lock.
-
-## Dependencies
-
-- **`AppendOnlyStore` base-class extraction (separate refactor PR).** The base class
-  extracted from the broker's `SessionStore` — `create / write_payload /
-  append_event(known_types) / _payload_path / _next_event_id /
-  _validate_payload_ref`, with view-rendering and event-validation as subclass hooks.
-  S1's build depends on it but does not specify it. S1 starts on copied mechanics and
-  rebases onto the base when it lands. Deferring the extraction past the broker's
-  in-flight release avoids coupling S1 to the release train.
-- **Telemetry opt-in prompt (external-telemetry epic).** The bootstrap/update prompt
-  that writes `telemetry.enabled` to `.foundry/self-improvement-config.json` (default
-  off) belongs to the external-telemetry epic, not S1. S1 only reads the flag; until
-  the prompt ships, the absent file reads as OFF, so the default-off behavior holds
-  with no prompt.
+S2 and the local-multirepo aggregator read the rebuildable committed view — live candidates,
+evidence, the per-`source_harness` breakdown — never the raw zone. On a fresh clone with no raw
+zone the committed ledger still exposes every candidate (self-contained bounded records). The
+aggregator's `source_repo` is a read-time annotation; S1 emits no such field.
 
 ## Testing strategy
 
-Each test carries a seeded defect the gate catches. Green-ness is not the evaluator;
-discrimination is.
+Each gate ships a **discriminating** eval — a seeded defect must make it fail (never graded by
+green-ness); where an algorithm is verified, the oracle is independent of the code under test.
 
-`tests/loop_signal_store_test.sh` (new) runs against a temp store dir and asserts:
+| Eval | Discrimination |
+|---|---|
+| Redaction (keystone) | a planted path/secret/PII/free-text field in a committed record is rejected; a clean decoy passes — a no-op gate fails |
+| Fingerprint canonicalization | two divergent free-form slugs for one cause yield one fingerprint; two distinct causes do not collide |
+| Conversation dedupe | retries + spawned children share one `root_conversation_id`; a mutant counting raw occurrences inflates the bar and fails |
+| Telemetry zero-bytes | positive control: off ⇒ nothing committed; on ⇒ the same observation admits |
+| Quarantine scope | a loop *design-output* candidate is quarantined; an *operational failure* inside the loop is captured |
+| Concurrency | N writers ⇒ no torn line, one candidate per fingerprint, consistent rebuild; a lock-dropped mutant fails |
+| Storage discipline | append-only / immutable-payload / rebuildable-view violations rejected (modeled on the broker store tests) |
 
-1. An appended event lands in `events.jsonl` with a monotonic id; a rewrite attempt
-   is refused.
-2. A payload rewritten with different bytes is refused (immutable-payload
-   violation).
-3. A rebuild re-validates payload hashes and refuses when a committed view differs
-   from the recomputed view.
-4. An unknown event type is rejected at append and at rebuild.
-5. Zone separation: raw payloads land under `.foundry/tmp/self-improvement/`; the
-   committed ledger lands under `.foundry/state/self-improvement/`; no raw signal
-   text lands in the committed zone.
-6. Fingerprint aggregation: a second signal matching an open candidate's fingerprint
-   folds in via `candidate_revised` rather than opening a duplicate.
-7. **Concurrency:** N writers ingest at once — some sharing one fingerprint, some
-   distinct, some appending payloads larger than the atomic-append size. After all
-   join, `events.jsonl` parses as one JSON object per line with no torn line, every
-   ingest's event is present, each shared fingerprint has exactly one
-   `candidate_opened`, and a fresh `rebuild` re-derives a consistent view.
-8. **Seeded defect (split)** — a mutant store that writes raw payload bytes into
-   `.foundry/state/` (defeating the split) makes the test fail.
-9. **Seeded defect (lock)** — a mutant store whose write path drops the store write
-   lock makes the concurrency assertion fail (a torn line or a duplicate candidate
-   appears). Discrimination, not green-ness: the test proves the lock is held by
-   failing when it is removed.
+**Vertical slice (Wave 1 — the first build):** instrument the broker's `participant_failed` →
+a `candidate_observed` (Tier 1, `source_kind=dogfood`, `source_harness=claude-code`,
+`affected_surface=harness-deliberation`, `failure_mode=per-turn-budget-exceeded`) → the candidate
+view surfaces the budget-cap gap. The broker already emits the event (2 such failures recorded
+this session); this slice proves capture → S1 → candidate end-to-end on a skill we own,
+dogfooding first. Its first surfaced candidate would be "raise the default per-turn budget."
 
-`evals/harness/redaction-gate-eval.sh` + `evals/fixtures/redaction-gate/` (new)
-seed a committed summary carrying a planted raw-leak — an absolute path, a secret
-token, and a PII string — plus clean decoys. The eval fails if any planted leak
-passes the gate, and fails if a clean decoy is wrongly rejected. This is the gate's
-own discriminating eval per the standing rule that a behavior-changing mechanism
-ships with one.
+## Dependencies
+
+- The two-zone convention (`.foundry/tmp/` gitignored, `.foundry/state/` committed).
+- `.foundry/manifest.json` `harnesses` (the `source_harness` adapter check).
+- The `reg-determinism` partition and closed-schema rule govern admission.
+- **`AppendOnlyStore` extraction (separate refactor PR)** — S1 starts on copied broker
+  mechanics and rebases onto the base when it lands; not specified here.
+- **Telemetry opt-in prompt (external-telemetry epic)** — S1 only reads the flag; absent file
+  reads as OFF.
+- Consumed by the sibling `local-multirepo-aggregate` spec (reads the committed ledger,
+  unchanged) and later S2.

@@ -1,168 +1,58 @@
-> **Status:** Ready (2026-06-20) — tracked on the [board](../../ROADMAP.md).
+> **Status:** Ready (2026-06-21) — tracked on the [board](../../ROADMAP.md).
 > Companion: [requirements.md](requirements.md), [design.md](design.md).
 
 # Tasks — loop signal store (S1)
 
-Waves run top to bottom. Tasks within a wave are parallel unless they name a
-dependency. Each task is written test-first: the gate is the test that proves it,
-and the test must fail before the change and pass after.
+Waves run top to bottom; tasks within a wave are parallel unless they name a dependency.
+Each task is test-first: the gate is the test that proves it, and the test must fail before
+the change and pass after. Wave 1 is the **vertical slice** — the smallest end-to-end proof,
+on a skill we own, before breadth.
 
-## Wave 1 — Spec and board
+## Wave 0 — Spec, board, glossary
 
-- [ ] T1: Add the `loop-signal-store` spec files and board card —
-  `roadmap/specs/loop-signal-store/{requirements,design,tasks}.md`,
-  `roadmap/ROADMAP.md`. Gate: `scripts/check-fast.sh` PASS after the spec files and
-  board card land. Approval: maintainer approval recorded on the board. [US-1]
-- [ ] T2: Run pre-approval `spec-review` on requirements, design, and tasks in fresh
-  context; apply findings before asking for design approval. Gate: review report has
-  no findings, or every finding has a recorded disposition and fix. [Spec README]
-- [ ] T3: Confirm the loop-signal-store terms' glossary provenance — Signal,
-  Candidate, Metric, Candidate ledger, Redaction gate, Store write lock, the telemetry
-  opt-in gate (with its `telemetry.enabled` knob, the
-  `.foundry/self-improvement-config.json` file, and the `signal_rejected` reason
-  `telemetry-disabled`) carry prior-art provenance in `knowledge/glossary.md` (added
-  when this spec landed) and the three spec files use them consistently. Gate:
-  `spec-review` (or the glossary contract) raises no un-provenanced canonical name
-  across the three spec files. [US-3, US-5, US-2b]
+- [ ] T1: Land the revised spec files + board card — `roadmap/specs/loop-signal-store/{requirements,design,tasks}.md`, `roadmap/ROADMAP.md`. Gate: `scripts/check-fast.sh` PASS. [US-1]
+- [ ] T2: Pre-approval `spec-review` on the three files in fresh context; apply findings. Gate: review report has no findings, or each has a recorded disposition + fix. [Spec README]
+- [ ] T3: Glossary provenance for the loop terms — `Candidate`, `Candidate ledger`, `Redaction gate`, `Store write lock`, `affected_surface`, `failure_mode`, `source_kind`/`source_harness`, `root conversation`, `recency window`, `candidate decision`, `loop_generated`/`origin_chain`, the telemetry opt-in gate. **Reconcile the drifted glossary entries** — `Candidate` fingerprint inputs → `(affected_surface, failure_mode)`; `Metric` → mark `metric_observed` deferred (not a v1 event); `Redaction gate` → trim to free-text/path/secret/PII (overfit → S2, dedup → fingerprint-fold). Gate: `spec-review` raises no un-provenanced or drifted canonical name. [US-6]
 
-## Wave 2 — Append-only store mechanics (depends: `AppendOnlyStore` extraction, see design Dependencies)
+## Wave 1 — Vertical slice (broker `participant_failed` → S1 candidate)
 
-- [ ] T4: Add `tests/loop_signal_store_test.sh` against a temp store dir, modeled on
-  `tests/harness_deliberation_snapshot_test.sh`. Assert: an appended event gets a
-  monotonic id; a rewrite is refused; a payload rewritten with different bytes is
-  refused; a rebuild re-validates payload hashes and refuses on view drift; an
-  unknown event type is rejected at append and rebuild. Add a seeded-defect arm: a
-  mutant store that mutates an existing event passes only if discrimination fails.
-  Gate: the test fails against an empty/stub store and the mutant arm flags the
-  seeded defect. [AC-2.1, AC-2.2, AC-2.3, AC-2.4, AC-2.5]
-- [ ] T5: Implement the store's append-only / immutable-payload / rebuildable-view
-  mechanics and the closed loop event set in
-  `plugins/foundry/scripts/loop-signal-store.py`, built on storage mechanics copied
-  from the broker's `SessionStore` (the `AppendOnlyStore` base lands separately; this
-  task starts on copied mechanics) (dep T4). Gate: `tests/loop_signal_store_test.sh`
-  PASS for the storage assertions. [AC-2.1, AC-2.2, AC-2.3, AC-2.4, AC-2.5]
+- [ ] T4: Add `tests/loop_signal_store_slice_test.sh` — drive a minimal store: append `store_started` + a `candidate_observed` from a synthetic broker `participant_failed` (`source_kind=dogfood`, `source_harness=claude-code`, `affected_surface=harness-deliberation`, `failure_mode=per-turn-budget-exceeded`); assert the candidate view surfaces it. Seeded-defect arm: a mutant that drops the observation surfaces nothing → fail. Gate: the test fails against an empty store and passes once the slice lands. [US-9 AC-9.1, US-2]
+- [ ] T5: Minimal store in `plugins/foundry/scripts/loop-signal-store.py` — append-only `events.jsonl`, the closed v1 event set, an `observe` entrypoint, and a minimal candidate view (dep T4). Gate: T4 PASS. [AC-2.1, AC-2.5, AC-9.1]
+- [ ] T6: Instrument `harness-deliberation-broker.py` to call `loop-signal-store observe …` on `participant_failed`, mapping the failure detail to the closed `failure_mode` enum (Tier 1, deterministic) (dep T5). Gate: a broker `participant_failed` (the recorded budget-cap failures) produces a `candidate_observed`; the candidate view names the budget-cap gap. [AC-9.1, AC-5.6]
 
-## Wave 3 — Two-zone storage and the store header
+## Wave 2 — Full store mechanics + two-zone split
 
-- [ ] T6: Extend `tests/loop_signal_store_test.sh` with zone-separation assertions —
-  raw payloads land under `.foundry/tmp/self-improvement/`, the committed ledger
-  lands under `.foundry/state/self-improvement/`, no raw signal text lands in the
-  committed zone — and the `store_started` event records repo root and schema
-  version. Add a seeded-defect arm: a mutant store that writes raw payload bytes into
-  `.foundry/state/` makes the test fail (dep T5). Gate: the test fails against the
-  current store and the mutant arm flags the seeded defect. [AC-1.1, AC-1.2,
-  AC-1.2b, AC-1.3, AC-1.4]
-- [ ] T7: Implement the two-zone split in the store — a raw writer targeting
-  `.foundry/tmp/self-improvement/` by SHA-256 and a committed writer targeting
-  `.foundry/state/self-improvement/` — and emit `store_started` on init (dep T6).
-  Gate: the T6 zone-separation assertions PASS; no raw text reaches the committed
-  zone. [AC-1.1, AC-1.2, AC-1.2b, AC-1.3, AC-1.4]
+- [ ] T7: Extend the store test — append-only monotonic ids, rewrite refused, immutable-payload (differing bytes refused), rebuild re-validates hashes + refuses on view drift, unknown event type rejected; zone separation (raw under `.foundry/tmp/self-improvement/`, committed under `.foundry/state/self-improvement/`, no raw text committed). Seeded-defect arm: a mutant writing raw bytes to `.foundry/state/` fails (dep T5). Gate: fails against the minimal store, passes after T8. [AC-1.1–1.4, AC-2.1–2.4]
+- [ ] T8: Implement the two-zone split + full append-only/immutable/rebuildable mechanics (copied broker `SessionStore` mechanics; rebase onto `AppendOnlyStore` when it lands) (dep T7). Gate: T7 PASS. [AC-1.1–1.4, AC-2.1–2.4]
 
-## Wave 4 — Redaction gate and its discriminating eval
+## Wave 3 — Closed schema + redaction gate
 
-- [ ] T8: Add `evals/fixtures/redaction-gate/` and `evals/harness/redaction-gate-eval.sh`
-  — seed a committed-bound summary carrying a planted raw-leak (an absolute path, a
-  secret token, a PII string) plus clean decoys; the eval fails if any planted leak
-  passes the gate or if a clean decoy is wrongly rejected. Gate: the eval fails
-  against a no-op gate (every seeded leak passes) — discrimination, not green-ness.
-  [AC-4.1, AC-4.2, AC-4.3, AC-4.7]
-- [ ] T9: Implement the redaction gate as the single committed-zone writer in
-  `loop-signal-store.py` — reject on a raw-text marker (path / secret / PII) and on
-  duplicate / overfit / private / out-of-scope, write nothing to `.foundry/state/`
-  on rejection, and record `signal_rejected` naming the marker class or reason
-  (never the matched raw text) (dep T8). Gate: `evals/harness/redaction-gate-eval.sh`
-  PASS — every planted leak is rejected, every clean decoy passes. [AC-4.1, AC-4.2,
-  AC-4.3, AC-4.4, AC-4.5, AC-4.6, AC-4.7]
+- [ ] T9: Add `evals/harness/redaction-gate-eval.sh` + `evals/fixtures/redaction-gate/` — seed a committed-bound record with a planted path, secret, PII, and a free-text field, plus clean decoys; the eval fails if any planted leak passes OR a clean decoy is wrongly rejected. Gate: fails against a no-op gate (discrimination). [AC-4.1–4.5]
+- [ ] T10: Implement the redaction gate as the single committed-zone writer + closed-schema validation (reject any free-text field) (dep T9). Gate: redaction eval PASS. [AC-4.1–4.5]
 
-## Wave 5 — Signal ingest and metric observation
+## Wave 4 — Fingerprint canonicalization + closed enums
 
-- [ ] T10: Extend `tests/loop_signal_store_test.sh` with ingest assertions — a
-  `signal_ingested` event carries `source_kind`, a hash-ref to the raw payload, and a
-  generic summary; an unrecognized `source_kind` is rejected; a `metric_observed`
-  event carries the `score_review.py` summary fields — `fixture`, `runs`,
-  `mean_recall`, `decoy_hits`, `verdict`; the `telemetry` seam value ingests with no
-  schema change beyond the `source_kind` value. Add a seeded-defect
-  arm: ingest with `source_kind` outside the closed set must be rejected (dep T7,
-  T9). Gate: the test fails against the current store and the mutant arm flags the
-  seeded defect. [AC-3.1, AC-3.2, AC-3.3, AC-3.4]
-- [ ] T11: Implement signal ingest and metric observation in `loop-signal-store.py` —
-  route every signal through the raw writer then the redaction gate, record
-  `signal_ingested` with the closed `source_kind` set, and record `metric_observed`
-  in the `score_review.py` shape (dep T10). Gate: the T10 ingest assertions PASS,
-  including `source_kind` rejection and the metric shape. [AC-3.1, AC-3.2, AC-3.3,
-  AC-3.4]
-- [ ] T11a: Extend `tests/loop_signal_store_test.sh` with telemetry opt-in gate
-  assertions, reading `telemetry.enabled` from `.foundry/self-improvement-config.json`
-  — telemetry-off (flag OFF or file/key absent) ⇒ ingest refused with a
-  `signal_rejected` reason `telemetry-disabled` and nothing else written to
-  `.foundry/state/`; telemetry-on ⇒ ingested; an internal `source_kind` ⇒ ingested
-  regardless of the flag. Add a seeded-defect arm: a mutant that ingests telemetry
-  while the flag is OFF makes the test fail (dep T10). Gate: the test fails against the
-  current store and the mutant arm flags the seeded defect. [AC-3.5, AC-3.6, AC-3.7]
-- [ ] T11b: Implement the telemetry opt-in gate in `loop-signal-store.py` — before the
-  redaction gate, read `telemetry.enabled` from `.foundry/self-improvement-config.json`
-  (absent/unset ⇒ OFF); when `source_kind=telemetry` and the flag is OFF, refuse and
-  record `signal_rejected` reason `telemetry-disabled`; ingest internal sources
-  regardless of the flag. S1 only reads the flag; the prompt that sets it is the
-  external-telemetry epic's (dep T11, T11a). Gate: the T11a assertions PASS —
-  telemetry-off refused, telemetry-on ingested, internal sources ingested regardless.
-  [AC-3.5, AC-3.6, AC-3.7]
+- [ ] T11: Add a fingerprint test — two divergent free-form cause descriptions classified to the same `(affected_surface, failure_mode)` tuple yield one fingerprint; two distinct tuples do not collide; an unknown surface/failure_mode is rejected; `fingerprint_version` stamped. Seeded-defect arm: a mutant hashing agent free-form text produces two fingerprints for one cause → fail. Gate: fails before, passes after T12. [AC-6.1, AC-6.3, AC-6.5]
+- [ ] T12: Implement the fingerprint canonicalizer (`sha256` of the canonical closed tuple, excluding raw text/paths/ids) + the closed `affected_surface` and per-surface `failure_mode` enums; stamp the AC-4.6 closed-schema fields on `candidate_observed` (`build_kind`/`build_label` never compared, `convention_version` stamped-not-gated, `fingerprint_version`, `origin`/`origin_chain`) (dep T11). Gate: T11 PASS and a `candidate_observed` carries every AC-4.6 field. [AC-4.6, AC-6.1–6.5]
 
-## Wave 6 — Candidate aggregation and the read seam
+## Wave 5 — Conversation recurrence, computed liveness, decision
 
-- [ ] T12: Extend `tests/loop_signal_store_test.sh` with aggregation assertions — a
-  `candidate_opened` event fingerprints on
-  `source_kind + invariant + failing_signature + affected_surface`; a second signal
-  matching that fingerprint folds in via `candidate_revised` (no duplicate
-  candidate); a candidate record carries every field in AC-5.3; `candidate_closed`
-  names a resolution; `ledger.md` rebuilds from the events alone. Add a seeded-defect
-  arm: a duplicate-opening mutant (ignores the fingerprint match) makes the test fail
-  (dep T11). Gate: the test fails against the current store and the mutant arm flags
-  the seeded defect. [AC-5.1, AC-5.2, AC-5.3, AC-5.4, AC-5.5]
-- [ ] T13: Implement candidate aggregation and the rebuildable ledger view in
-  `loop-signal-store.py` — fingerprint normalized causes, fold matches via
-  `candidate_revised`, carry every AC-5.3 field, close on resolution, and render
-  `ledger.md` from the events (dep T12). Gate: the T12 aggregation assertions PASS,
-  including no-duplicate folding and the ledger rebuild. [AC-5.1, AC-5.2, AC-5.3,
-  AC-5.4, AC-5.5]
-- [ ] T14: Add a read-seam test — the committed view exposes active candidates and
-  metric trends without parsing raw payloads, and a fresh clone with no
-  `.foundry/tmp/` zone still exposes the committed ledger (simulate by removing the
-  raw zone and re-reading) (dep T13). Gate: the read-seam test PASS — candidates
-  resolve from `.foundry/state/` alone. [AC-6.1, AC-6.2, AC-6.3]
+- [ ] T13: Add a recurrence/liveness test — distinct `root_conversation_id` counting (retries/children fold to root, don't inflate), the recency window, `live`/`quiet`/`regression-suspected` computed from the stream, one `candidate_decision` collapses resolution, a post-decision observation flags `for_review` (never auto-acts). Seeded-defect arm: a mutant counting raw occurrences inflates the bar → fail. Gate: fails before, passes after T14. [AC-5.1–5.4, AC-7.1–7.5]
+- [ ] T14: Implement conversation identity (adapter-stamped `conversation_id`/`root_conversation_id`, agent-supplied rejected), the recency window, computed liveness/regression, and `candidate_decision` (dep T13). Gate: T13 PASS. [AC-5.1–5.4, AC-7.1–7.5]
+- [ ] T14a: Add a quarantine-scope test — a `loop_generated` design-output candidate is quarantined; an operational failure inside the loop is captured (not quarantined). Gate: a mutant that quarantines operational failures fails. [AC-5.5, AC-5.6]
 
-## Wave 6b — Concurrency: serialize writers under the store write lock
+## Wave 6 — Tier-2 capture (Stop-hook narrower + scope-filter)
 
-- [ ] T14a: Extend `tests/loop_signal_store_test.sh` with a **discriminating
-  concurrency arm** — spawn N concurrent writers against one store: some sharing a
-  single NEW fingerprint, some distinct, at least one appending a payload larger
-  than the OS atomic-append size. After all join, assert `events.jsonl` parses as
-  one JSON object per line with no torn line, every writer's event is present, each
-  shared fingerprint has exactly one `candidate_opened` (no duplicate), the
-  write-if-absent payload check held (identical bytes once, differing bytes refused),
-  and a fresh `rebuild` re-derives a consistent view. Assert lock-free reads: a
-  concurrent reader completes during an in-flight write without acquiring the write
-  lock. Add a seeded-defect arm: a
-  mutant whose write path drops the store write lock makes the arm fail (a torn line
-  or a duplicate candidate appears) (dep T13). Gate: the arm fails against the
-  lock-dropped mutant and against the current store, and passes only once the lock
-  is held. [AC-2b.1, AC-2b.2, AC-2b.3, AC-2b.4, AC-2b.5, AC-2b.6, AC-2b.7]
-- [ ] T14b: Implement the store write lock in `loop-signal-store.py` — an advisory
-  `flock` on `.foundry/state/self-improvement/store.lock`, gitignored — wrapping the
-  write critical section (acquire → read view → decide open-or-revise + write-if-absent
-  payload → append event(s) → release) around the inherited `write_payload` /
-  `append_event` calls; write rebuilt views atomically (temp file then `rename`); keep
-  reads lock-free; on rebuild detect and ignore a partial trailing append by
-  JSON/hash validation (dep T14a). Gate: the T14a concurrency arm PASS — no torn
-  line, one candidate per fingerprint, consistent rebuild — and the lock-dropped
-  mutant still fails it. [AC-2b.1, AC-2b.2, AC-2b.3, AC-2b.4, AC-2b.5, AC-2b.6,
-  AC-2b.7]
+- [ ] T15: Harden `.foundry/tmp/loop-dryrun/capture_hook.py` into the Tier-2 narrower — grep closed marker-set + proximity, fold to `root_conversation_id`, surface top-N spans relative-not-absolute. Test: high recall on known-signal fixtures, pure-domain fixtures suppressed. Gate: a mutant using raw failure-grep (no proximity) floods false spans → fail. [AC-9.2, AC-9.4]
+- [ ] T16: Wire the Stop-hook entrypoint + the agent scope-filter contract (foundry-mechanism vs repo-domain, distinct from the genericity gate) feeding `observe` (dep T15). Gate: a domain-only transcript yields no `candidate_observed`; a foundry-gap transcript does. [AC-9.2, AC-9.3]
 
-## Wave 7 — Review and finish
+## Wave 7 — Concurrency, telemetry gate, read seam
 
-- [ ] T15: Re-run `spec-review` on requirements, design, and tasks after any
-  implementation-driven spec changes; apply findings. Gate: review report has no
-  findings, or every finding has a recorded disposition and fix. [Spec README]
-- [ ] T16: Run the canonical gate. Gate: `scripts/check-fast.sh` prints
-  `check-fast: PASS` with the store test, the redaction-gate eval, and the
-  glossary terms landed. [US-1, T1]
+- [ ] T17: Add the discriminating concurrency arm — N writers (shared + distinct fingerprints, a payload over the atomic-append size), assert no torn line, one candidate per fingerprint, lock-free reads, consistent rebuild; a lock-dropped mutant fails. Then implement the advisory `flock` write critical section + atomic view writes (dep T8, T14). Gate: the arm PASS, the lock-dropped mutant fails. [AC-2b.1–2b.7]
+- [ ] T18: Add the telemetry opt-in gate test (off ⇒ `signal_rejected` `telemetry-disabled`, nothing else written; on ⇒ admits; internal sources unaffected; positive control) + implement it ahead of redaction, reading `.foundry/self-improvement-config.json` (absent ⇒ OFF) (dep T10). Gate: the test PASS including the positive control. [AC-3.5–3.7]
+- [ ] T19: Add a read-seam test — the committed view exposes live candidates + the per-`source_harness` breakdown without parsing raw payloads; a fresh clone with no raw zone still exposes the ledger. Implement the read seam (dep T14). Gate: the test PASS. [AC-8.1–8.5]
+
+## Wave 8 — Review and finish
+
+- [ ] T20: Re-run `spec-review` after implementation-driven spec changes; apply findings. Gate: no findings, or each dispositioned + fixed. [Spec README]
+- [ ] T21: Run the canonical gate. Gate: `scripts/check-fast.sh` prints `check-fast: PASS` with the store test, the redaction-gate eval, the fingerprint eval, and the glossary terms landed. [US-1, T1]
