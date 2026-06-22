@@ -136,9 +136,15 @@ fi
 # prints `cd <worktree> && <command>`.
 notmuxdir="$scratch/notmux"
 mkdir -p "$notmuxdir"
-# A PATH with git but no tmux: use AGENT_TMUX pointing at a nonexistent binary
-# and unset TMUX so the runner takes the manual-print branch.
-manual_out="$(printf 'p\n' | AGENT_HARNESS=codex AGENT_TMUX=definitely-not-a-real-tmux-binary "$RUNNER" --name manual "$repo" 2>&1)"
+# A PATH with git but no usable tmux: AGENT_TMUX points at a nonexistent binary.
+# `env -u TMUX` forces the not-in-tmux branch so the runner prints the manual
+# `cd <worktree> && <command>` fallback. The other cases set TMUX=1; this one must
+# explicitly CLEAR it — an ambient TMUX (e.g. running the suite inside a tmux
+# session) would otherwise send the runner down the new-window path, where it
+# execs the missing binary and never reaches the fallback. `|| true` keeps the
+# runner's expected non-zero exit from tripping `set -e` under bash 3.2 (macOS),
+# so the output assertion below runs on every bash version and platform.
+manual_out="$(printf 'p\n' | env -u TMUX AGENT_HARNESS=codex AGENT_TMUX=definitely-not-a-real-tmux-binary "$RUNNER" --name manual "$repo" 2>&1 || true)"
 case "$manual_out" in
   *"cd "*"/worktree"*"&&"*"codex"*) ;;
   *) fail "AC-6.4: missing tmux must print 'cd <worktree> && <command>' (got: $manual_out)" ;;
