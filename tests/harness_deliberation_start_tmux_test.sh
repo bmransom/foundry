@@ -100,7 +100,7 @@ assert (session_dir / "state.md").exists(), "state.md missing after start (rende
 assert (session_dir / "transcript.md").exists(), "transcript.md missing after start"
 
 # Placeholder panes exit immediately and tear down the control window. Give the
-# session a moment to settle, then the control window must still hold three panes.
+# session a moment to settle, then the control window must still hold two panes.
 time.sleep(1.0)
 listed = subprocess.run(
     ["tmux", "list-panes", "-t", f"{tmux_session}:control", "-F", "#{pane_id}"],
@@ -109,7 +109,7 @@ listed = subprocess.run(
 )
 assert listed.returncode == 0, f"control window gone (panes exited): {listed.stderr!r}"
 panes = [line for line in listed.stdout.splitlines() if line.strip()]
-assert len(panes) == 3, f"expected 3 long-lived control panes, got {len(panes)}: {listed.stdout!r}"
+assert len(panes) == 2, f"expected 2 long-lived control panes (codex | claude), got {len(panes)}: {listed.stdout!r}"
 
 print("driver ok")
 PY

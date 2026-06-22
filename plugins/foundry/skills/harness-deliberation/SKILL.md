@@ -25,6 +25,16 @@ plugins/foundry/scripts/harness-deliberation-broker.py start \
   --prompt <prompt.md> --session <session-id> --repo <repo-root> [--attach]
 ```
 
+## Live view (optional)
+
+From inside a tmux pane (e.g. an active Claude Code session), run the round with two
+ephemeral viewer panes — codex | claude — opened ABOVE your pane and closed when the
+round finishes; mediate from the chat afterward:
+
+```bash
+plugins/foundry/skills/harness-deliberation/scripts/round-inline.sh --session-dir <dir>
+```
+
 ## V1 Commands
 
 - `start --prompt <file> --session <id> [--attach]`
@@ -33,6 +43,7 @@ plugins/foundry/scripts/harness-deliberation-broker.py start \
 - `rebuild`
 - `spec --out roadmap/specs/<feature>`
 - `live-smoke --session <id> [--prompt <file>]`
+- `pane-command --session-dir <dir> --actor codex|claude-code` (viewer-pane tail of that turn's latest final.md)
 
 ## Rules
 

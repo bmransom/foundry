@@ -163,7 +163,7 @@ joined = [" ".join(command) for command in result.tmux_commands]
 assert not any("codex pane" in command for command in joined), "placeholder codex pane survives"
 assert any("-codex" in command and "final.md" in command for command in joined), "codex final pane command"
 assert any("-claude" in command and "final.md" in command for command in joined), "claude final pane command"
-assert any("FOUNDRY_HD_SESSION" in command for command in joined), "mediator pane exports FOUNDRY_HD_SESSION"
+assert not any("FOUNDRY_HD_SESSION" in command for command in joined), "no mediator pane — mediation is chat-based"
 
 # render_views ran during start, so the state window has Tier 3 views to tail.
 assert (session_dir / "state.md").exists(), "state.md missing after start"
