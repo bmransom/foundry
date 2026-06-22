@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.1.4](https://github.com/bmransom/foundry/compare/v0.1.3...v0.1.4) (2026-06-22)
+
+
+### Features
+
+* **harness-deliberation:** split round budget default + tmux viewer panes, chat mediation ([#15](https://github.com/bmransom/foundry/issues/15)) ([2c4717b](https://github.com/bmransom/foundry/commit/2c4717b244105965da77d8b4b0e57c06b230ca08))
+
+
+### Bug Fixes
+
+* **spawn-isolation:** make fresh-session failmode test hermetic to ambient TMUX ([#14](https://github.com/bmransom/foundry/issues/14)) ([b8ff636](https://github.com/bmransom/foundry/commit/b8ff636b12e7084f866b52e3e39bf274c9b3c0fb))
+
 ## [0.1.3](https://github.com/bmransom/foundry/compare/v0.1.2...v0.1.3) (2026-06-20)
 
 
