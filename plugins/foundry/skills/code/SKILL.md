@@ -53,7 +53,7 @@ not start a later stage until the prior gate is met.
 
 Write `roadmap/specs/<feature>/{requirements,design,tasks}.md` in the format
 `roadmap/specs/README.md` defines and the vocabulary of `knowledge/glossary.md`.
-Consider all five skills below for every feature — apply each, or note **N/A** with a one-line reason; never skip silently. Re-loop on any spec or vocabulary change:
+Consider all five skills below for every feature — apply each, or note **N/A** with a reason. Name the metrics that tell whether the feature works, or N/A. Never skip silently; re-loop on any spec or vocabulary change:
 
 1. Use `spec-review` in fresh context (requirements, design, tasks) — the spec-convergence loop: re-review after each edit until `SPEC_REVIEW: CLEAN`, cap 10; at the cap, surface remaining `FLAGGED:` findings and hold the Design gate.
 2. Use `naming-standards` for new glossary terms, public APIs, config, metrics, files, and directories.
@@ -66,8 +66,8 @@ Consider all five skills below for every feature — apply each, or note **N/A**
 ## 2 · Plan
 
 Break the design into bite-sized TDD tasks in `roadmap/specs/<feature>/tasks.md` — exact
-paths, real code, a test per step. Claim the work by setting the owner on its card in
-`roadmap/ROADMAP.md` (the board); respect listed dependencies.
+paths, real code, a test per step. Claim the card in `roadmap/ROADMAP.md` by setting the
+owner, the branch, and any out-of-repo worktree path; respect listed dependencies.
 For performance-sensitive work, include the baseline plan from `performance` before
 code (main vs feature, flag-off vs flag-on, old vs new), naming the workload and correctness gate.
 **Gate:** no code until the plan exists and is approved.
