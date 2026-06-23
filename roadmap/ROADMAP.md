@@ -13,6 +13,9 @@ carries a status header that points here.
 
 - A **card** is one table row: `Work | Status | Spec | Depends on`. Claim a card by
   adding `(@<owner>)` to its Work cell.
+- An **In progress** card names where its work lives: the branch, and the absolute
+  worktree path when the work sits in a separate or out-of-repo worktree — so a harness
+  picking it up finds existing work instead of guessing.
 - Status flow: `Backlog → Ready → In progress → Validating → Done` (+ `Planned`,
   `Blocked` as a flag, `Superseded` terminal).
 - **`Done` requires a recorded gate PASS** once the gate exists — the gate is the
