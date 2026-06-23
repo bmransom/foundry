@@ -102,13 +102,13 @@ and the test must fail before the change and pass after.
 
 - [ ] T11: Sandbox the evals — every eval entrypoint or flow that mutates git
   config, shell (`evals/harness/*.sh`) or Python (the config-mutating flows such as
-  `evals/harness/test_grade_lifecycle.py` / `grade_lifecycle.py`, which hold the
-  `foundry-eval` identity literal traced to the recorded corruption), runs against a
-  clone/copy of the repo, never the real repo.
+  `evals/harness/test_grade_lifecycle.py` / `grade_lifecycle.py`), runs against a
+  clone/copy of the repo, never the real repo. Per the Eval sandbox section, the rule
+  keys on "mutates git config," not on file extension.
   Gate: a test asserts the real repo's `.git/config` is byte-identical before and
   after an eval run, and a seeded eval fails — the seeded writer is a Python
-  config-mutating flow, since that is the recorded failure mode, so the gate must
-  exercise a Python config writer (not just a `*.sh` script). [AC-7.1, AC-7.2]
+  config-mutating flow, so the gate exercises a Python config writer (not just a
+  `*.sh` script) and the rule covers both. [AC-7.1, AC-7.2]
 
 ## Wave 7 — Review and finish
 
