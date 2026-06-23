@@ -88,6 +88,8 @@ skill_grep "Replaces" \
   || fail "domain-language dimension must spare debt terms inside a glossary Replaces column"
 skill_grep "diagram" \
   || fail "docs-sync dimension must verify design.md diagrams against the code (AC-3.5)"
+skill_grep "Metrics section\|names metrics" \
+  || fail "docs-sync dimension must flag a design.md missing the Metrics section or its N/A"
 skill_grep "Wide event" \
   || fail "logging-consistency dimension must name the Wide event"
 skill_grep "print --help" \
