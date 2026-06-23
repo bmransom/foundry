@@ -52,10 +52,16 @@ grep -q ".foundry/reports/spec-review/" "$SKILL_MD" \
   || fail "spec-review must define repo-local review output"
 grep -q "scripts/spawn-spec-reviewer.sh" "$SKILL_MD" \
   || fail "spec-review must expose its fresh-context runner"
+grep -q "SPEC_REVIEW: CLEAN" "$SKILL_MD" \
+  || fail "spec-review must define the SPEC_REVIEW: CLEAN|FINDINGS verdict line (convergence stop token)"
+grep -q "FLAGGED:" "$SKILL_MD" \
+  || fail "spec-review must define machine-readable FLAGGED: finding lines"
 
 [ -x "$SCRIPT" ] || fail "spawn-spec-reviewer.sh must exist and be executable"
 [ "$(AGENT_HARNESS=codex "$SCRIPT" --print-harness)" = "codex" ] \
   || fail "spawn-spec-reviewer.sh must detect AGENT_HARNESS=codex"
+grep -q "SPEC_REVIEW:" "$SCRIPT" \
+  || fail "spawn-spec-reviewer prompt must instruct the SPEC_REVIEW verdict line"
 
 dry_run="$(
   TMUX=1 AGENT_HARNESS=claude AGENT_TMUX=/bin/echo \

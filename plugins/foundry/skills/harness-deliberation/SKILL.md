@@ -51,4 +51,4 @@ plugins/foundry/skills/harness-deliberation/scripts/round-inline.sh --session-di
 - `live-smoke` is opt-in because it spends real harness turns.
 - The mediator records questions and decisions.
 - Raw CLI output is debug evidence only.
-- Generated specs still need downstream `spec-review`.
+- Generated specs still need downstream `spec-review` — run the bounded spec-convergence loop (re-review to `SPEC_REVIEW: CLEAN`, cap 10) once after `spec --out`, not per turn.
