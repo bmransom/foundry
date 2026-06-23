@@ -53,7 +53,7 @@ The full grading table, evidence sources, and size tripwires live in
   signal; keyword-mapping an AC to changed code is not coverage.
 - **Docs sync** — RUN `python3 scripts/knowledge.py check` yourself; verify each
   `design.md` architecture/class diagram against the shipped components and flag a
-  drifted diagram.
+  drifted diagram; flag a `design.md` with no Metrics section and no N/A.
 - **Domain language** — flag a glossary debt term used outside its `Replaces`
   column, or a coined name with no provenance.
 - **Logging consistency** — flag a production path mixing a raw
