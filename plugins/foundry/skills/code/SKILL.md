@@ -55,12 +55,11 @@ Write `roadmap/specs/<feature>/{requirements,design,tasks}.md` in the format
 `roadmap/specs/README.md` defines and the vocabulary of `knowledge/glossary.md`.
 Then loop, revising and repeating whenever a review changes the spec or vocabulary:
 
-1. Use `spec-review` in fresh context for requirements, design, and tasks; this is the spec-convergence loop — re-review after each edit until `spec-review` returns `SPEC_REVIEW: CLEAN`, capped at 10 rounds.
+1. Use `spec-review` in fresh context (requirements, design, tasks) — the spec-convergence loop: re-review after each edit until `SPEC_REVIEW: CLEAN`, cap 10; at the cap, surface remaining `FLAGGED:` findings and hold the Design gate.
 2. Use `naming-standards` for new glossary terms, public APIs, config, metrics, files, and directories.
 3. Use `design-patterns` when boundaries, extension points, eventing, adapters, construction, or algorithm selection matter.
 4. Use `modular-structure` for placement, dependency direction, public/internal APIs, and directory shape.
 5. Use `performance` when the work touches hot paths, resource use, model/tool calls, or user-visible latency.
-6. Revise the spec and re-review until `SPEC_REVIEW: CLEAN`, or the spec-convergence cap (10) is hit — at the cap, surface the remaining `FLAGGED:` findings + changed files and hold the Design gate (never auto-approve).
 
 **Gate:** no implementation until the Design is approved.
 
