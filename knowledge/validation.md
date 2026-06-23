@@ -32,3 +32,4 @@ non-bypassable backstop) — the same script both times, so the two can never di
 | Update eval (L2) | `evals/harness/update-eval.sh <bootstrapped-tree>` | broken refresh; customization overwrites; seed writes | manual |
 | Reviewer eval (L3) | `evals/harness/reviewer-eval.sh [N]` | spec-reviewer missing seeded violations or flagging decoys (precision/recall) | manual; required green for a version bump |
 | Lifecycle eval (L3) | `evals/harness/lifecycle-eval.sh <bootstrapped-tree>` | the code skill skipping a stage artifact (spec, feature-file-first, pasted PASS, board card) | manual; required green for a version bump |
+| Spec-convergence eval (L3) | `SPEC_CONVERGENCE_DRIVER=<loop> evals/harness/spec-convergence-eval.sh` | the convergence loop reporting `SPEC_REVIEW: CLEAN` while a seeded house-style defect remains (fake-clean), caught by an independent grep oracle | manual; required green for a version bump |
