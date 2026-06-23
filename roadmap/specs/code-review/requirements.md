@@ -91,10 +91,11 @@ Acceptance criteria:
 - AC-4.4 WHEN a raw print is a legitimate CLI surface such as `print --help`, THE
   SYSTEM SHALL NOT flag it.
 
-### US-5: Flag oversized and footgun changes by judgment
+### US-5: Flag oversized, footgun, and inefficient changes by judgment
 
-As a maintainer, I want size, defaults, and simplicity findings surfaced with
-mechanical tripwires plus judgment, so size warnings inform rather than block.
+As a maintainer, I want size, defaults, simplicity, and efficiency findings
+surfaced with mechanical tripwires plus judgment, so size warnings inform rather
+than block and performance tuning opportunities surface without false blocks.
 
 Acceptance criteria:
 
@@ -109,6 +110,12 @@ Acceptance criteria:
   rewrite outside the spec scope, THE SYSTEM SHALL flag it under either the
   simplicity or the clean-interfaces dimension; the choice between those two
   dimensions is reviewer judgment and is not scored.
+- AC-5.5 WHEN the change introduces an avoidable inefficiency — a hot-path
+  algorithmic regression, redundant IO or model/tool calls, an unbounded
+  allocation, or per-item work that could be hoisted — THE SYSTEM SHALL flag it
+  under the performance dimension as a tuning opportunity, grounded in the
+  `performance` skill; a clear hot-path regression SHALL be blocking and a
+  cold-path opportunity SHALL be advisory.
 
 ### US-6: Require discriminating tests
 

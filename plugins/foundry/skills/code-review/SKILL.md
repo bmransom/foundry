@@ -1,6 +1,6 @@
 ---
 name: code-review
-description: Use when reviewing an implementation diff against its spec before Finish — grading lifecycle evidence, complete implementation, docs sync, domain language, logging, simplicity, interfaces, structure, defaults, and test discrimination from artifacts, never self-claims.
+description: Use when reviewing an implementation diff against its spec before Finish — grading lifecycle evidence, complete implementation, docs sync, domain language, logging, simplicity, interfaces, structure, efficiency, defaults, and test discrimination from artifacts, never self-claims.
 ---
 
 # Code Review
@@ -64,6 +64,9 @@ The full grading table, evidence sources, and size tripwires live in
 - **Modular structure** — size tripwires are **advisory** (new > 400, touched >
   800, +250 growth, function > 80 LOC; exclude generated/vendor/tests); a tripwire
   alone never fails.
+- **Performance / efficiency** — flag a hot-path algorithmic regression, redundant
+  IO/model/tool calls, or hoistable per-item work; a hot-path regression blocks, a
+  cold-path tuning opportunity is advisory (grounded in the `performance` skill).
 - **Sensible defaults** — flag footgun defaults or unexplained magic values.
 - **Robust tests** — flag a test that does not **discriminate** a seeded defect,
   exercises only a fake or the happy path, or omits failure/edge cases.

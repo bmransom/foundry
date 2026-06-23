@@ -98,6 +98,8 @@ skill_grep "400\|800\|250\|80" \
   || fail "size tripwires must name the LOC thresholds"
 skill_grep "discriminat" \
   || fail "robust-tests dimension must require tests that discriminate a seeded defect"
+skill_grep "[Pp]erformance\|efficien" \
+  || fail "code-review must grade a performance/efficiency dimension"
 
 # --- Refuter contract ------------------------------------------------------
 skill_grep "refuter\|refute\|Refuter" \
