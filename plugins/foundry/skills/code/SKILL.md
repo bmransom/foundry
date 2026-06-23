@@ -53,13 +53,13 @@ not start a later stage until the prior gate is met.
 
 Write `roadmap/specs/<feature>/{requirements,design,tasks}.md` in the format
 `roadmap/specs/README.md` defines and the vocabulary of `knowledge/glossary.md`.
-Then loop, revising and repeating whenever a review changes the spec or vocabulary:
+Consider all five skills below for every feature — apply each, or note **N/A** with a one-line reason; never skip silently. Re-loop on any spec or vocabulary change:
 
 1. Use `spec-review` in fresh context (requirements, design, tasks) — the spec-convergence loop: re-review after each edit until `SPEC_REVIEW: CLEAN`, cap 10; at the cap, surface remaining `FLAGGED:` findings and hold the Design gate.
 2. Use `naming-standards` for new glossary terms, public APIs, config, metrics, files, and directories.
-3. Use `design-patterns` when boundaries, extension points, eventing, adapters, construction, or algorithm selection matter.
-4. Use `modular-structure` for placement, dependency direction, public/internal APIs, and directory shape.
-5. Use `performance` when the work touches hot paths, resource use, model/tool calls, or user-visible latency.
+3. Use `design-patterns` for boundaries, extension points, eventing, adapters, construction, and algorithm selection.
+4. Use `modular-structure` for placement, bounded contexts, dependency direction, public/internal APIs, and directory shape.
+5. Use `performance` for hot paths, resource use, model/tool calls, and user-visible latency.
 
 **Gate:** no implementation until the Design is approved.
 
