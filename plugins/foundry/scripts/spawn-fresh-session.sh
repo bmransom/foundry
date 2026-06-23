@@ -200,6 +200,12 @@ main() {
   read -r -a tmux_bin <<< "${AGENT_TMUX:-tmux}"
   emit() { if [ "$dry_run" -eq 1 ]; then printf '%s\n' "$*"; else "$@"; fi; }
 
+  # Mark skill-spawned tmux sessions/windows with a reserved prefix so they are
+  # distinguishable from ad-hoc sessions at a glance and bulk-cleanable
+  # (e.g. `tmux ls | grep '^foundry-'`). Idempotent; overridable via FOUNDRY_TMUX_PREFIX.
+  local tmux_prefix="${FOUNDRY_TMUX_PREFIX:-foundry-}"
+  case "$slug" in "$tmux_prefix"*) ;; *) slug="$tmux_prefix$slug" ;; esac
+
   if [ -n "${TMUX:-}" ]; then
     slug="$(existing_names | dedupe "$slug")"
     if [ -n "$session_gitconfig" ]; then
