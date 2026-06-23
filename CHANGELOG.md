@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.6](https://github.com/bmransom/foundry/compare/v0.1.5...v0.1.6) (2026-06-23)
+
+
+### Features
+
+* **code-review:** the green-but-wrong review skill + numbered Review stage ([#10](https://github.com/bmransom/foundry/issues/10)) ([4134c5f](https://github.com/bmransom/foundry/commit/4134c5fbca39c498bd7bd7d07808e01159246b84))
+* **spawn-isolation:** reserved foundry- prefix on skill-spawned tmux sessions ([#19](https://github.com/bmransom/foundry/issues/19)) ([cd0e24b](https://github.com/bmransom/foundry/commit/cd0e24b80cf1ffdd9fbab8b99d40d544ebfaa924))
+
 ## [0.1.5](https://github.com/bmransom/foundry/compare/v0.1.4...v0.1.5) (2026-06-23)
 
 
