@@ -52,4 +52,15 @@ preferences not present in the repo contract.
 ## Output
 
 Return a findings list grouped by file. Each finding must include location, problem,
-and concrete fix. Note clean files briefly. End with the single highest-priority fix.
+a concrete fix, and a machine-readable `FLAGGED: <short signature>` line — one per
+finding; the convergence loop and `score_review.py` read these. Note clean files
+briefly, then the single highest-priority fix.
+
+End with a final verdict line — the **last line** of the report — exactly one of:
+
+- `SPEC_REVIEW: CLEAN` — no findings remain.
+- `SPEC_REVIEW: FINDINGS` — one or more `FLAGGED:` findings above.
+
+This verdict is the spec-convergence loop's deterministic stop token: the loop
+re-reviews after each edit until it reads `SPEC_REVIEW: CLEAN`. Emit it on every
+review, including inline ones.

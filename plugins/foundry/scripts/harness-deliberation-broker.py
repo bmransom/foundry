@@ -33,7 +33,12 @@ DEFAULT_LIVE_SMOKE_PROMPT = """Opt-in harness deliberation live smoke.
 Return one concise sentence confirming that you received the harness deliberation prompt.
 Do not edit files, run tools, or propose repository changes.
 """
+# live-smoke is a one-sentence confirmation probe — a low cap is plenty.
 DEFAULT_CLAUDE_LIVE_SMOKE_BUDGET_USD = "0.25"
+# A round is a substantive critique turn (read large files, write a full reply);
+# at the probe's $0.25 cap real turns were killed mid-write, and one even failed
+# at $1.5. Default the round higher; --budget-usd still overrides.
+DEFAULT_ROUND_BUDGET_USD = "3.0"
 
 KNOWN_EVENT_TYPES = {
     "session_started",
@@ -318,23 +323,6 @@ def _participant_pane_command(session_dir: Path, actor: str) -> str:
     )
 
 
-def _mediator_pane_command(session_dir: Path) -> str:
-    """A long-lived shell that exports the session path and prints broker help."""
-    help_lines = [
-        "Foundry harness deliberation — broker commands:",
-        '  round   --session-dir "$FOUNDRY_HD_SESSION"',
-        '  decide  --session-dir "$FOUNDRY_HD_SESSION" --file <decisions.md>',
-        '  rebuild --session-dir "$FOUNDRY_HD_SESSION"',
-        '  spec    --session-dir "$FOUNDRY_HD_SESSION" --out roadmap/specs/<feature>',
-    ]
-    quoted = " ".join("'" + line + "'" for line in help_lines)
-    return (
-        f'export FOUNDRY_HD_SESSION="{session_dir}"; '
-        f"printf '%s\\n' {quoted}; "
-        'exec "${SHELL:-/bin/sh}"'
-    )
-
-
 def build_tmux_commands(
     *,
     repo_root: Path,
@@ -363,16 +351,6 @@ def build_tmux_commands(
             "-c",
             str(repo_root),
             _participant_pane_command(session_dir, "claude-code"),
-        ],
-        [
-            "tmux",
-            "split-window",
-            "-t",
-            f"{tmux_session}:control",
-            "-v",
-            "-c",
-            str(repo_root),
-            _mediator_pane_command(session_dir),
         ],
         [
             "tmux",
@@ -2038,7 +2016,16 @@ def main(argv: list[str] | None = None) -> int:
     round_parser.add_argument("--timeout-s", type=int, default=300)
     round_parser.add_argument(
         "--budget-usd",
-        default=DEFAULT_CLAUDE_LIVE_SMOKE_BUDGET_USD,
+        default=DEFAULT_ROUND_BUDGET_USD,
+    )
+
+    # Prints one participant's viewer-pane command (the long-lived tail of its
+    # latest final.md). One source for both the separate-session layout and the
+    # inline-panes wrapper, so the tail loop never drifts between them.
+    pane_command_parser = subparsers.add_parser("pane-command")
+    pane_command_parser.add_argument("--session-dir", required=True)
+    pane_command_parser.add_argument(
+        "--actor", required=True, choices=["codex", "claude-code"]
     )
 
     args = parser.parse_args(argv)
@@ -2148,6 +2135,10 @@ def main(argv: list[str] | None = None) -> int:
             return 1
         print("round: PASS")
         print(f"session: {args.session_dir}")
+        return 0
+
+    if args.command == "pane-command":
+        print(_participant_pane_command(Path(args.session_dir), args.actor))
         return 0
 
     parser.error(f"unknown command {args.command}")

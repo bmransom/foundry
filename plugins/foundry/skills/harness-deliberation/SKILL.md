@@ -25,6 +25,16 @@ plugins/foundry/scripts/harness-deliberation-broker.py start \
   --prompt <prompt.md> --session <session-id> --repo <repo-root> [--attach]
 ```
 
+## Live view (optional)
+
+From inside a tmux pane (e.g. an active Claude Code session), run the round with two
+ephemeral viewer panes — codex | claude — opened ABOVE your pane and closed when the
+round finishes; mediate from the chat afterward:
+
+```bash
+plugins/foundry/skills/harness-deliberation/scripts/round-inline.sh --session-dir <dir>
+```
+
 ## V1 Commands
 
 - `start --prompt <file> --session <id> [--attach]`
@@ -33,6 +43,7 @@ plugins/foundry/scripts/harness-deliberation-broker.py start \
 - `rebuild`
 - `spec --out roadmap/specs/<feature>`
 - `live-smoke --session <id> [--prompt <file>]`
+- `pane-command --session-dir <dir> --actor codex|claude-code` (viewer-pane tail of that turn's latest final.md)
 
 ## Rules
 
@@ -40,4 +51,4 @@ plugins/foundry/scripts/harness-deliberation-broker.py start \
 - `live-smoke` is opt-in because it spends real harness turns.
 - The mediator records questions and decisions.
 - Raw CLI output is debug evidence only.
-- Generated specs still need downstream `spec-review`.
+- Generated specs still need downstream `spec-review` — run the bounded spec-convergence loop (re-review to `SPEC_REVIEW: CLEAN`, cap 10) once after `spec --out`, not per turn.

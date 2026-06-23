@@ -29,7 +29,7 @@ main() {
   # session's worktree cannot delete the report (the harness cwd is the
   # worktree after isolation).
   local report="$dir/$review_dir/$(date +%Y%m%d%H%M%S)-spec-review.md"
-  local prompt="Use the spec-review skill to review $target in fresh context. Read knowledge/glossary.md and the AGENTS.md Writing style section first. Return findings only: location, problem, concrete fix, clean-file notes, and the highest-priority fix. Write the complete report to the absolute path $report."
+  local prompt="Use the spec-review skill to review $target in fresh context. Read knowledge/glossary.md and the AGENTS.md Writing style section first. Return findings only: location, problem, concrete fix, and a 'FLAGGED: <signature>' line per finding; clean-file notes; the highest-priority fix; and as the final last line exactly 'SPEC_REVIEW: CLEAN' (no findings) or 'SPEC_REVIEW: FINDINGS'. Write the complete report to the absolute path $report."
   [ "$dry_run" -eq 1 ] || mkdir -p "$dir/$review_dir"
 
   printf '%s\n' "$prompt" |
