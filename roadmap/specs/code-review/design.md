@@ -182,6 +182,7 @@ none trusts a self-claim.
 | **Simplicity** | no needless abstraction, speculative config, pattern cosplay, or rewrite outside spec scope | Judgment, grounded in `plugins/foundry/skills/design-patterns/SKILL.md`. |
 | **Clean interfaces** | small public surfaces; IO/vendor/filesystem at edges; callers do not depend on internals | Judgment, grounded in `design-patterns` and `plugins/foundry/skills/modular-structure/SKILL.md`. |
 | **Modular structure** | layout respected; no dumping grounds; no new top-level dir for one file; oversized files/functions | Mechanical LOC/function pre-scan on the diff plus judgment. |
+| **Performance / efficiency** | hot-path algorithmic cost; redundant IO, model, or tool calls; unbounded allocation; per-item work that could be hoisted | Judgment, grounded in `plugins/foundry/skills/performance/SKILL.md`. A clear hot-path regression is blocking; a cold-path tuning opportunity is advisory. |
 | **Sensible defaults** | defaultable params have sensible documented defaults; no footgun defaults or unexplained magic values | Read changed signatures and config; flag a default that surprises or a magic value with no rationale. |
 | **Robust tests** | tests discriminate — a seeded defect makes them fail; they exercise the real path, not just fakes or the happy path; they cover failure and edge cases | Read the tests against the code they claim to cover. Flag a test that passes against a fake while the real path is untested, or that omits timeouts, errors, and empty inputs. |
 
