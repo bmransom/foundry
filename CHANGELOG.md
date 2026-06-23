@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.5](https://github.com/bmransom/foundry/compare/v0.1.4...v0.1.5) (2026-06-23)
+
+
+### Features
+
+* **spec-convergence:** hook-driven spec-review loop with deterministic verdict + eval ([#17](https://github.com/bmransom/foundry/issues/17)) ([691ae96](https://github.com/bmransom/foundry/commit/691ae96c5620731360f44b004aad1dba6b813470))
+
 ## [0.1.4](https://github.com/bmransom/foundry/compare/v0.1.3...v0.1.4) (2026-06-22)
 
 
