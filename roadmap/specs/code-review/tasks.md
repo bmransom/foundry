@@ -1,10 +1,18 @@
-> **Status:** Ready (2026-06-20) — tracked on the [board](../../ROADMAP.md).
+> **Status:** Revising (2026-06-24) — convergence cycle. Tracked on the [board](../../ROADMAP.md).
 > Companion: [requirements.md](requirements.md), [design.md](design.md).
 
 # Tasks — code review
 
 Waves run top to bottom. Tasks within a wave are parallel unless they name a
 dependency. Every task names the gate that proves it and the AC it satisfies.
+
+**Waves 1–8 (T1–T17) are the shipped v1 baseline** — the single-pass reviewer,
+refuter spawn, lifecycle Review stage, seeded fixture, and A/B eval already merged
+to `main`. **Waves 9–14 (T18+) are the convergence-cycle revision**, which
+supersedes: v1's three-round outer cap (→ T22, 20 rounds), its fire-and-forget
+refuter wiring (→ T19, synchronous), and its `git merge-base main HEAD` diff-base
+default (→ T23, the shared resolver). Where a Wave 1–8 task names the old behavior,
+the cited revision task is authoritative.
 
 ## Wave 1 — Spec and board
 
@@ -67,7 +75,7 @@ dependency. Every task names the gate that proves it and the AC it satisfies.
   `tests/code_review_skill_test.sh` PASS; the SKILL names each evidence source.
   [AC-3.1, AC-3.2, AC-3.3, AC-3.4, AC-3.5, AC-4.1, AC-4.2]
 - [ ] T7: Encode logging consistency, simplicity, clean interfaces, modular
-  structure, sensible defaults, and robust tests in `SKILL.md` — production code
+  structure, performance/efficiency, sensible defaults, and robust tests in `SKILL.md` — production code
   must not mix raw `print`/`console.log`/`echo` with the Wide event for one unit
   of work (`print --help` is legitimate); size tripwires advisory (new >400,
   touched >800, +250 growth, function >80; exclude generated/vendor/tests);
@@ -75,7 +83,7 @@ dependency. Every task names the gate that proves it and the AC it satisfies.
   exercise the real path, and cover failure/edge cases (dep T6). Gate:
   `tests/code_review_skill_test.sh` PASS; the SKILL marks size tripwires advisory
   and names the robust-tests checks. [AC-4.3, AC-4.4, AC-5.1, AC-5.2, AC-5.3,
-  AC-5.4, AC-6.1, AC-6.2, AC-6.3]
+  AC-5.4, AC-5.5, AC-6.1, AC-6.2, AC-6.3]
 
 ## Wave 5 — Lifecycle placement
 
@@ -93,7 +101,8 @@ dependency. Every task names the gate that proves it and the AC it satisfies.
   `tests/code_review_skill_test.sh` PASS (the delegation assertion); `code/SKILL.md`
   shows `- [ ] 6 Review` before `- [ ] 7 Finish`, a `## 6 · Review` section before
   `## 7 · Finish`, the Review gate prohibition, and the three-round escalation
-  backstop. [AC-7.1, AC-7.2, AC-7.3, AC-7.4, AC-7.5]
+  backstop (v1 — superseded by T22's 20-round ceiling; verify T8 against the v1
+  commit, not the post-T22 state). [AC-7.1, AC-7.2, AC-7.3, AC-7.4, AC-7.5]
 
 ## Wave 6 — Discrimination fixture and eval
 
@@ -163,3 +172,84 @@ dependency. Every task names the gate that proves it and the AC it satisfies.
 - [ ] T17: Run the canonical gate. Gate: `scripts/check-fast.sh` prints
   `check-fast: PASS`. Then move the card Validating → Done with the recorded
   PASS. [AC-10.2]
+
+## Wave 9 — Synchronous runner foundation (revision; fixes CR-1, CR-2, CR-17)
+
+- [ ] T18: Add `tests/code_review_cycle_test.sh` (red) — deterministic loop-control
+  test mirroring `tests/spec_convergence_hook_test.sh`: stub the reviewer via the
+  test-only reviewer-command seam and feed scripted `CODE_REVIEW:`/`FLAGGED:`
+  sequences. Assert `code-review-convergence-hook.sh` returns continue-on-FAIL (exit
+  2), converged-on-PASS (exit 0), escalate at the 20-round ceiling (exit 4), rejects
+  a missing verdict line, and that the runner unions findings and recomputes the
+  verdict after a refuter DROP. Gate: the test exists, is executable, and FAILS now
+  (no hook / synchronous runner yet). [AC-7.5, AC-7.6, AC-11.1, AC-11.2, AC-11.3, AC-11.4]
+- [ ] T19: Make `spawn-code-reviewer.sh` synchronous — block until the reviewer's
+  report is written, extract the `FLAGGED:` footer, and compute the verdict from
+  the surviving blocking findings (never a scraped free-text line); after the
+  refuter, rewrite the footer to candidates-minus-DROPs and recompute; pass the
+  refuter ONLY the extracted footer + diff (dep T18). Gate: the cycle-control
+  test's synchronous/verdict/refuter-recompute arms PASS. [AC-11.1, AC-11.2,
+  AC-11.3, AC-11.4]
+
+## Wave 10 — Inner review-convergence loop (revision)
+
+- [ ] T20: Add `plugins/foundry/skills/code-review/references/convergence.md` — the
+  inner/outer loop mechanics (union, 2-consecutive-no-new, 20-pass and 20-round
+  caps, refuter-once-on-union) — point `SKILL.md` to it, and add it to the static
+  test's skill-text concat (dep T5). Gate: `tests/code_review_skill_test.sh` PASS;
+  `SKILL.md` links `references/convergence.md`. [AC-12.1, AC-12.2, AC-12.3]
+- [ ] T21: Implement the inner loop in the runner — re-review in fresh context,
+  union findings by a normalized signature key (so `AC-2.1` ≠ `AC-2.10`), stop at
+  two consecutive no-new passes or a 20-pass ceiling, run the refuter once over the
+  union; add `--converge` (default OFF, so standalone is one converged review,
+  inner only) (dep T19). Gate: the cycle-control test's inner-loop + union arms
+  PASS. [AC-12.1, AC-12.2, AC-12.3, AC-12.4]
+
+## Wave 11 — Outer fix-convergence loop (revision; supersedes T8's cap)
+
+- [ ] T22: Add `plugins/foundry/scripts/code-review-convergence-hook.sh` (the OUTER
+  fix loop, mirroring `spec-convergence-hook.sh`: run one converged review via the
+  wrapper, return continue/converged/escalate, count rounds, 20-round ceiling) and
+  wire `code/SKILL.md` Stage 6 to it — fix via the SDLC between rounds, stop on PASS;
+  hold Stage 6 within the 120-line budget by deferring detail to
+  `references/convergence.md` (deps T19, T20). Gate: `tests/code_review_cycle_test.sh`
+  outer-loop arms PASS; `tests/code_review_skill_test.sh` PASS;
+  `scripts/check-context-budget.sh` PASS; `code/SKILL.md` shows the 20-round ceiling
+  and the SDLC fix path. [AC-7.4, AC-7.5, AC-7.6]
+
+## Wave 12 — Configuration A (revision; CR-5/6/7/19)
+
+- [ ] T23: Config-A in the runner — derive refuter families from the manifest
+  `harnesses` (normalize `claude-code`→`claude`); add `--harness` (replacing the
+  `AGENT_HARNESS` production pin); single-sourced named-constant cap defaults with
+  `--review-cap`/`--fix-cap`/`--consecutive-clean` overrides; `--base` via the
+  shared `resolve_base`; stop forwarding `--skip-permissions` to the read-only
+  reviewer/refuter (dep T19). Gate: `tests/code_review_skill_test.sh` PASS; a
+  `--dry-run` shows a manifest-derived refuter family selected via `--harness` and
+  the resolved diff base. [AC-1.2, AC-1.6, AC-1.7, AC-13.1, AC-13.2, AC-13.3, AC-13.4]
+
+## Wave 13 — Hardening, eval, traceability
+
+- [ ] T24: Gitignore the runtime dirs — the bootstrap-generated `.gitignore` (and a
+  verbatim seed if needed) MUST ignore `.foundry/reports/` and `.foundry/tmp/`, and
+  the report path gains a `-<pid>` suffix to avoid same-second collision (CR-4).
+  Gate: a bootstrap-eval assertion confirms a generated repo ignores both dirs.
+- [ ] T25: Add `tests/code_review_eval_test.sh` (hermetic) — drive
+  `code-review-eval.sh --score-ab` on two canned findings files: an Arm B holding
+  recall ≥ 4/5 with zero decoys prints refuter ENABLED (exit 0); an Arm B dropping
+  two real violations prints DISABLED (exit nonzero). Never spawns `claude` (CR-10).
+  Gate: the test runs in `scripts/check-fast.sh` and passes. [AC-9.8]
+- [ ] T26: Traceability — T7 now encodes the performance/efficiency dimension and
+  traces AC-5.5; `design.md` carries a `## Metrics` section (CR-8). Gate: every AC
+  in `requirements.md` maps to a task; `design.md` has a `## Metrics` section.
+
+## Wave 14 — Verify the revision
+
+- [ ] T27: Re-run `spec-review` to convergence on the revised
+  `requirements`/`design`/`tasks`; apply findings. Gate: `SPEC_REVIEW: CLEAN`, or
+  every finding has a recorded disposition. [Spec README]
+- [ ] T28: `python3 scripts/knowledge.py check` clean; regenerate `index.md`; log
+  the change in `knowledge/log.md`. Gate: knowledge check clean and index current.
+- [ ] T29: Run the canonical gate and the cycle-control test; the L3 review eval
+  green for the version bump. Gate: `scripts/check-fast.sh` prints `check-fast:
+  PASS`; then move the card Validating → Done. [AC-10.2]

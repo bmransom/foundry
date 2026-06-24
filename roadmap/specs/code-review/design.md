@@ -1,4 +1,4 @@
-> **Status:** Ready (2026-06-20) — tracked on the [board](../../ROADMAP.md).
+> **Status:** Revising (2026-06-24) — convergence cycle (synchronous runner + inner/outer loops + config-A). Tracked on the [board](../../ROADMAP.md).
 > Companion: [requirements.md](requirements.md), [tasks.md](tasks.md).
 
 # Design — code review
@@ -7,8 +7,20 @@
 
 `code-review` is a Foundry skill, sibling to `spec-review`. It runs a read-only
 review of a change in fresh context, returns findings, and never edits the
-consumer repo. A thin runner wrapper delegates to Foundry's shared fresh-session
-runner; the review writes its report under `.foundry/reports/code-review/`.
+consumer repo. A runner wrapper orchestrates the review **synchronously**: it
+spawns the reviewer, blocks until the report is written, reads it, and computes
+the verdict from the extracted `FLAGGED:` footer (never a scraped free-text line),
+delegating each spawn to Foundry's shared fresh-session runner. The review writes
+its report under `.foundry/reports/code-review/`.
+
+A review **converges** on two levels. The **inner loop** re-reviews and unions
+findings until two consecutive passes add nothing new (or a 20-pass ceiling), then
+runs the cross-model refuter once over the union — making one review both complete
+(recall) and correct (precision). The **outer loop** is the code lifecycle's
+Review stage: it fixes each blocking finding through the normal SDLC and
+re-reviews until `CODE_REVIEW: PASS` or a 20-round ceiling, then escalates.
+Standalone (`/foundry:code-review`) runs the inner loop only — one converged,
+read-only review.
 
 The skill is bound to the repo contract — spec coverage, board, glossary,
 validation, and lifecycle evidence — and grades each dimension from artifacts it
@@ -47,13 +59,16 @@ mirrors the sibling's surfaces, arg shape, and fresh-context discipline.
 
 | Component | Location | Purpose |
 |---|---|---|
-| Skill entrypoint | `plugins/foundry/skills/code-review/SKILL.md` | Explains when to use the review, the dimensions, the output contract, and delegates to the runner. |
-| Runner wrapper | `plugins/foundry/skills/code-review/scripts/spawn-code-reviewer.sh` | Builds the prompt, sets the diff range, runs the optional cross-model refuter pass, and delegates to the shared fresh-session runner. |
-| Refuter pass | `plugins/foundry/skills/code-review/SKILL.md` (refuter prompt; the wrapper owns the cross-model spawn) | A second fresh-context, read-only pass on a different harness family that drops the reviewer's false positives — DROP-only, never additive. |
-| Shared runner | `plugins/foundry/scripts/spawn-fresh-session.sh` | Spawns a chosen harness in fresh context. Reused unchanged; the wrapper pins the refuter's family via `AGENT_HARNESS`. |
-| Lifecycle dispatcher | `plugins/foundry/skills/code/SKILL.md` | Gains a numbered Review stage between Knowledge and Finish. |
-| Eval fixture | `evals/fixtures/code-review/` | A seeded tree plus `answer-key.json` in the reviewer fixture's shape. |
-| Eval driver | `evals/harness/code-review-eval.sh` | Runs a headless review and scores findings via `score_review.py` (unchanged). |
+| Skill entrypoint | `plugins/foundry/skills/code-review/SKILL.md` | When to use the review, the dimensions, the output contract; delegates to the runner and the convergence reference. |
+| Convergence reference | `plugins/foundry/skills/code-review/references/convergence.md` | The inner/outer loop mechanics (union, 2-consecutive-no-new, 20-pass/20-round caps, refuter-on-union) — kept out of `SKILL.md` to hold its line budget. |
+| Runner wrapper | `plugins/foundry/skills/code-review/scripts/spawn-code-reviewer.sh` | Builds prompts + diff range; orchestrates the **synchronous inner** review-convergence loop (spawn → wait → read report → extract `FLAGGED:` → compute verdict; re-review/union to convergence); runs the refuter once on the union; delegates each spawn to the shared runner. Read-only — never fixes. |
+| Convergence hook | `plugins/foundry/scripts/code-review-convergence-hook.sh` | Drives the OUTER fix loop, mirroring `spec-convergence-hook.sh`: runs one converged review via the wrapper, returns continue/converged/escalate (exit 2/0/4), and counts rounds; the lifecycle agent fixes between rounds. |
+| Refuter pass | refuter prompt in `spawn-code-reviewer.sh`; contract in `SKILL.md` | A second fresh-context, read-only pass on a different harness family that DROPs false positives — DROP-only, never additive. The wrapper feeds it ONLY the extracted footer + diff, then recomputes the final footer. |
+| Shared runner | `plugins/foundry/scripts/spawn-fresh-session.sh` | Spawns a chosen harness in fresh context with worktree isolation. Reused; the wrapper selects the refuter family via `--harness`, not the `AGENT_HARNESS` test seam. |
+| Lifecycle dispatcher | `plugins/foundry/skills/code/SKILL.md` | Hosts the numbered Review stage (shipped) and its outer fix-convergence loop (20-round ceiling). |
+| Eval fixture | `evals/fixtures/code-review/` | The seeded `order-sync` fixture tree plus `answer-key.json` in the reviewer fixture's shape. |
+| Eval driver | `evals/harness/code-review-eval.sh` | Runs a headless review and scores findings via `score_review.py` (unchanged); includes the reviewer-alone vs reviewer+refuter A/B. |
+| Cycle-control test | `tests/code_review_cycle_test.sh` | Deterministic loop-control test: stubs the reviewer via the test seam and asserts continue/stop/escalate, union, and verdict-recompute (mirrors `spec_convergence_hook_test.sh`). |
 | Static test | `tests/code_review_skill_test.sh` | Static and dry-run checks mirroring `tests/spec_review_skill_test.sh`. |
 
 The wrapper stays as thin as `spawn-spec-reviewer.sh`: it builds a prompt and
@@ -61,35 +76,47 @@ pipes it to the shared runner. The shared runner owns harness detection, tmux,
 and the fresh-session prompt file. The skill owns the dimensions and the output
 contract.
 
-The wrapper mirrors the sibling's exact flag handling, reusing rather than
-re-coining: `--print-harness` execs `spawn-fresh-session.sh --print-harness`, and
-`--skip-permissions` reuses the sibling's `--skip-permissions|--yolo` alias set —
-no new permission flag vocabulary.
+The wrapper mirrors the sibling's flag handling where it applies: `--print-harness`
+execs `spawn-fresh-session.sh --print-harness`. It does NOT forward a permission
+bypass to the read-only reviewer or refuter (neither writes); `--skip-permissions`
+reaches only write-capable spawns.
 
 ## Runner interface
 
 ```bash
 spawn-code-reviewer.sh [--dry-run] [--print-harness] [--skip-permissions] \
-                       [--base <ref>] <spec-dir> [project-dir]
+                       [--single-pass] [--harness <family>] [--base <ref>] \
+                       <spec-dir> [project-dir]
 ```
 
 - `<spec-dir>` (positional, required): the feature spec directory, e.g.
   `roadmap/specs/code-review`. Matches the sibling's positional `<target>`.
 - `[project-dir]` (positional, optional): the consumer repo root; defaults to
   `$PWD`. Matches the sibling.
-- `--base <ref>`: the diff base. Default `git merge-base main HEAD`. The only
-  diff-range flag — no `--head`. This keeps the sibling's positional shape rather
-  than introducing a new flag vocabulary.
-- `--dry-run`, `--print-harness`, `--skip-permissions`: identical to the sibling,
-  including the `--skip-permissions|--yolo` alias — reuse the sibling's handling,
-  do not re-coin a permission flag.
+- `--base <ref>`: the diff base. Default resolves via the shared runner's policy
+  (`origin/HEAD`, then `main`, then `HEAD`), not a hardcoded `main`.
+- `--single-pass`: skip the inner review-convergence loop and run exactly one review
+  pass (cheap mode). The default is the converged inner loop — a bare invocation is
+  one converged, read-only review. The runner never fixes; the OUTER fix-convergence
+  loop is driven by `code-review-convergence-hook.sh`, not the runner.
+- `--harness <family>`: pin the refuter's harness family explicitly, replacing the
+  `AGENT_HARNESS` test seam for production dispatch.
+- `--dry-run`, `--print-harness`, `--skip-permissions` (`|--yolo`): as the sibling,
+  except `--skip-permissions` reaches only write-capable spawns — never the
+  read-only reviewer or refuter.
+
+Defaults are single-sourced named constants (review/fix convergence caps = 20,
+consecutive-clean-passes = 2), each overridable by its CLI flag; v1 needs no config
+file. Refuter families derive from the manifest `harnesses` set; a test-only env
+var supplies the reviewer-command seam for the deterministic cycle test.
 
 The wrapper computes the report path
-`.foundry/reports/code-review/<timestamp>-code-review.md`, builds a prompt that
-names the spec dir, the diff range, the report path, and the SKILL, and pipes it
-to `spawn-fresh-session.sh --name code-review`. `--print-harness` execs the
-shared runner's `--print-harness` so harness detection has one source. Read-only:
-the prompt forbids edits; the reviewer returns findings.
+`.foundry/reports/code-review/<timestamp>-<pid>-code-review.md`, builds the prompt,
+and orchestrates **synchronously**: spawn the reviewer via
+`spawn-fresh-session.sh --name code-review`, block until the report is written,
+read it, extract the `FLAGGED:` footer, and compute the verdict from the surviving
+blocking findings — never a scraped free-text line. `--print-harness` execs the
+shared runner's `--print-harness` so harness detection has one source.
 
 ## Output contract
 
@@ -116,7 +143,7 @@ do not fail.
 ## Cross-model refuter
 
 The reviewer is a single agent, so its false positives correlate with its own
-model. Asymmetric refutation is the only form that can only raise precision.
+model. Only asymmetric refutation can raise precision without risking recall.
 Agreement mechanisms — panels, debates — can lower recall: a panel adds coverage
 but also conformity risk, and a debate collapses to sycophantic consensus that can
 argue a real finding away. So the *refuter* — the refutation/critique role from
@@ -158,10 +185,11 @@ footer is the reviewer's footer minus the refuter's DROPs.
 **Cross-model.** The refuter runs on a different harness family than the reviewer
 (e.g. Codex when the reviewer is Claude), read-only, to attack correlated
 same-model false positives. The wrapper detects the reviewer's family via the
-shared runner, then pins the complementary family for the refuter through
-`AGENT_HARNESS` and spawns it read-only. If the manifest exposes only one harness
-family, the wrapper skips the refuter pass and the reviewer runs single-agent —
-graceful fallback, never a hard error.
+shared runner and selects a refuter family from the manifest `harnesses` set — any
+installed family other than the reviewer's (data-driven, not a hardcoded pair) —
+passing it via `--harness`. If the manifest exposes only one harness family, the
+wrapper skips the refuter pass and the reviewer runs single-agent — graceful
+fallback, never a hard error.
 
 **Not debate.** The refuter is a single asymmetric refute pass, explicitly not a
 symmetric debate or multi-round argument. One pass, one direction: drop or keep.
@@ -210,8 +238,9 @@ Knowledge and Finish:
 Verify → Knowledge → Review → Finish
 ```
 
-The Review stage expands into the reviewer, the cross-model refuter, and the gate
-that loops on a blocking finding (cap three rounds, then escalate):
+The Review stage expands into the inner review-convergence loop, the cross-model
+refuter over the union, and the outer fix-convergence gate that loops on a blocking
+finding (fix via the SDLC, re-review; stop on PASS or a 20-round ceiling):
 
 ```mermaid
 flowchart TD
@@ -221,49 +250,55 @@ flowchart TD
 
     subgraph Review[Review stage]
         direction TB
-        Spawn["spawn-code-reviewer.sh"] --> Reviewer["Fresh-context reviewer (read-only)"]
-        Reviewer --> Candidate["Candidate FLAGGED footer"]
-        Candidate --> Refuter["Cross-model refuter (complementary harness family, DROP-only)"]
-        Refuter --> Final["Final footer (candidates minus DROPs)"]
-        Final --> Verdict["Recomputed CODE_REVIEW verdict"]
+        Spawn["code-review-convergence-hook.sh → spawn-code-reviewer.sh"] --> Inner
+        subgraph Inner["Inner loop — review convergence"]
+            direction TB
+            Rev["Fresh-context reviewer (read-only)"] --> Union["Union FLAGGED findings (normalized key)"]
+            Union --> Stable{"2 passes no-new<br/>or 20-pass cap?"}
+            Stable -->|"No"| Rev
+        end
+        Inner -->|"converged"| Refuter["Cross-model refuter — DROP-only, once over the union"]
+        Refuter --> Verdict["Recompute CODE_REVIEW from surviving blocking findings"]
         Verdict --> Gate{"Blocking finding?"}
     end
 
-    Gate -->|"No"| Finish
-    Gate -->|"Yes, rounds < 3"| Knowledge
-    Gate -->|"Yes, rounds = 3"| Escalate["Escalate to maintainer"]
+    Gate -->|"No (PASS)"| Finish
+    Gate -->|"Yes, rounds < 20"| SDLC["Fix via SDLC: spec → spec-review → build → verify → knowledge"]
+    SDLC --> Spawn
+    Gate -->|"Yes, rounds = 20"| Escalate["Escalate to maintainer"]
 ```
 
 Review runs after Knowledge so docs, glossary, and `index.md` already reflect the
-code; a docs or knowledge finding loops back to Knowledge before re-review. The
-stage spawns the review in fresh context, reads the report, fixes blocking
-findings, and re-runs until none remain. The loop converges because only blocking
-findings gate it — advisory nits are surfaced once and permit Finish, so a
-nondeterministic reviewer cannot spin it forever. As a backstop, blocking findings
-that persist after three rounds stop the loop and escalate to the maintainer
-rather than re-reviewing indefinitely (the systematic-debugging stop-and-question
-rule: persistent blocking findings signal a design problem, not a wording fix).
+code; a docs or knowledge finding re-enters at Knowledge. Each round runs one
+converged review (the inner loop above); on a blocking finding the lifecycle fixes
+it through the normal SDLC — update `requirements`/`design`/`tasks`, `spec-review`
+to convergence, TDD build, verify, knowledge — then re-reviews. The loop stops on
+the first `CODE_REVIEW: PASS`; only blocking findings gate it (advisory nits
+surface once and permit Finish). As a backstop, the outer loop escalates to the
+maintainer at a 20-round ceiling rather than re-reviewing indefinitely (the
+systematic-debugging stop-and-question rule). The cap is a ceiling, not the
+target — 20 (vs `spec-convergence`'s 10) because each fix round re-enters the full
+SDLC rather than a wording edit, so it needs more headroom.
 
 The gate: **no commit or PR with an unresolved blocking finding.** Size tripwires
-are advisory and do not block Finish. `code/SKILL.md` gains the numbered Review
-stage and its gate prohibition; Finish keeps its "branch first, ask before push"
-rule after Review clears.
+are advisory and do not block Finish.
 
-Concrete renumbering. `code/SKILL.md` numbers its stages 0–6 today, with
-`- [ ] 6 Finish` last and matching body section headers (`## 5 · Knowledge`,
-`## 6 · Finish`). Inserting Review pushes Finish to 7: the existing
-`- [ ] 6 Finish` checklist line renumbers to `- [ ] 7 Finish`, a new
-`- [ ] 6 Review` line lands before it, and the body headers stay consistent — add
-a `## 6 · Review` section after `## 5 · Knowledge` and renumber `## 6 · Finish`
-to `## 7 · Finish`. The Frame path "All stages 1 → 6" becomes "1 → 7".
+The numbered Review stage is already shipped in `code/SKILL.md` (stages renumbered
+so `6 Review` precedes `7 Finish`). This revision drives its outer loop through
+`code-review-convergence-hook.sh` (round-counting + continue/converged/escalate,
+mirroring `spec-convergence-hook.sh`), changes the cap from three rounds to the
+20-round ceiling, and routes fixes through the SDLC.
 
 ## Data flow
 
-**Spawn.** The Review stage runs `spawn-code-reviewer.sh <spec-dir>`. The wrapper
-computes the diff range (`git merge-base main HEAD` unless `--base`), the report
-path, and the prompt, then pipes the prompt to `spawn-fresh-session.sh`. The
+**Spawn.** The Review stage runs `code-review-convergence-hook.sh <spec-dir>`, which
+invokes `spawn-code-reviewer.sh` once per round. The wrapper resolves the diff range
+(`origin/HEAD → main → HEAD` unless `--base`),
+the report path, and the prompt, then drives `spawn-fresh-session.sh`
+**synchronously** — blocking until the report is written before reading it. The
 fresh session detects the harness, writes the prompt to a fresh-session prompt
-file, and launches the same harness read-only.
+file, and launches the same harness; read-only is enforced by the prompt in v1 (a
+write-deny permission profile is the hardening follow-on).
 
 **Review.** The reviewer reads the spec files, the diff, the board,
 `knowledge/validation.md`, and `knowledge/glossary.md`; runs
@@ -272,18 +307,20 @@ matrix; runs the size pre-scan over the diff; and grades every dimension. It
 writes the report to the report path: findings grouped by dimension, then the
 candidate `FLAGGED:` footer, then the verdict line last.
 
-**Refute.** When the refuter is enabled and a second harness family is available,
-the wrapper spawns a fresh-context refuter on the complementary family, read-only,
-with ONLY the candidate `FLAGGED:` findings and the diff or artifact — not the
-report prose. The refuter KEEPs each finding it can back with concrete evidence
-and DROPs the rest; it can only remove, never add. The wrapper rewrites the
-footer to the candidate set minus the DROPs and recomputes the verdict from the
-surviving blocking findings. With one harness family the wrapper skips this pass
-and the candidate footer stands.
+**Refute.** When a second harness family is available, the wrapper spawns a
+fresh-context refuter on a manifest family other than the reviewer's (via
+`--harness`), read-only, ONCE over the inner loop's unioned `FLAGGED:` footer plus
+the diff — never the report prose. The refuter KEEPs each finding it can back with
+concrete evidence and DROPs the rest; it can only remove, never add. The wrapper
+rewrites the footer to the candidate set minus the DROPs and recomputes the
+verdict from the surviving blocking findings. With one harness family the wrapper
+skips this pass and the candidate footer stands.
 
-**Gate.** The Review stage reads the report. Any blocking finding loops: fix,
-return to Knowledge if the finding is docs/knowledge, re-spawn. When no blocking
-finding remains, Review clears and Finish may proceed.
+**Gate.** The hook reads the recomputed verdict and returns continue/converged/
+escalate. On `continue`, the lifecycle agent fixes via the SDLC (re-entering at
+Knowledge for a docs/knowledge finding) and the hook runs the next round — up to the
+20-round ceiling, then `escalate`. On `converged` (`CODE_REVIEW: PASS`), Review
+clears and Finish may proceed.
 
 ## Discrimination and evals
 
@@ -371,7 +408,8 @@ grades discrimination, not green-ness.
 | Only one harness family available | The wrapper skips the refuter pass and runs the reviewer single-agent — graceful fallback, never a hard error. |
 | `tmux` absent | The shared runner prints the command to run manually. |
 | Missing `knowledge/glossary.md` or `AGENTS.md` | Note the missing contract and review against the contract that exists, mirroring `spec-review`. |
-| `git merge-base main HEAD` empty | The reviewer reports the empty range and reviews the working diff, not nothing. |
+| Diff base unresolved (`origin/HEAD`/`main`/`HEAD` all absent) | The reviewer reports the empty range and reviews the working diff, not nothing. |
+| Report not written before the wrapper times out | The wrapper reports that the reviewer produced no report and exits nonzero rather than computing a verdict from an empty file. |
 | Blocking finding present | The verdict is `CODE_REVIEW: FAIL`; Finish is prohibited until resolved. |
 | `scripts/knowledge.py check` fails | The reviewer reports the failure as a docs-sync finding rather than trusting a green claim. |
 
@@ -388,19 +426,27 @@ directly, not the nondeterministic review.
    - the SKILL names `.foundry/reports/code-review/`;
    - the SKILL exposes `scripts/spawn-code-reviewer.sh`;
    - the wrapper is executable and `--print-harness` honors `AGENT_HARNESS=codex`;
-   - a `--dry-run --skip-permissions` (and its `--yolo` alias) launch passes the
-     permission bypass through to the shared runner (AC-1.6);
+   - a `--dry-run --skip-permissions` (and its `--yolo` alias) does NOT pass the
+     bypass to the read-only reviewer or refuter spawn (AC-1.6);
    - a `--dry-run` launch carries the harness, the spec dir, the diff range, the
      fresh-session prompt path, and the report path;
-   - a `--dry-run` without `--base` shows the `git merge-base main HEAD` default
-     diff range, and `--dry-run --base <ref>` shows the overridden range (AC-1.2);
+   - a `--dry-run` without `--base` shows the resolved `origin/HEAD → main → HEAD`
+     default diff range, and `--dry-run --base <ref>` shows the overridden range (AC-1.2);
    - `code/SKILL.md` delegates to `code-review` as the numbered Review stage.
 
    Seeded defect: deleting the Review delegation from `code/SKILL.md`, dropping
    the report path, omitting the `--base` default/override, or renaming the
    frontmatter fails the static test.
 
-2. **Review eval** (`evals/harness/code-review-eval.sh`, L3, manual): a headless
+2. **Cycle-control test** (`tests/code_review_cycle_test.sh`, in the fast gate),
+   mirroring `tests/spec_convergence_hook_test.sh`: a stub reviewer driven by a
+   scripted verdict sequence through the test-only reviewer-command seam exercises
+   the loop CONTROL deterministically — continue on FAIL, stop on PASS, escalate at
+   the 20-round ceiling, reject a missing verdict line, union findings, and
+   recompute the verdict after a refuter DROP — with no LLM. Reviewer judgment is
+   the review eval's job.
+
+3. **Review eval** (`evals/harness/code-review-eval.sh`, L3, manual): a headless
    review over `evals/fixtures/code-review/` scored by `score_review.py`. The five
    seeded defects above must surface at mean recall ≥ 4/5; the decoys must score
    zero hits. The driver also runs the reviewer-alone vs reviewer+refuter A/B and
@@ -415,11 +461,44 @@ The review eval stays out of `scripts/check-fast.sh`; it is L3, manual, required
 green for a version bump, registered in `knowledge/validation.md` beside the
 reviewer and lifecycle evals.
 
+## Configuration
+
+Config follows direction A (minimal): manifest-derived, defaults, and flags — no
+config file in v1. Precedence, highest first: **CLI flag > test-only env > config
+file (future) > manifest-derived > named-constant default**.
+
+| Knob | Source |
+|---|---|
+| refuter families | manifest `harnesses`, normalized to family tokens (not a hardcoded list or env var) |
+| refuter-family pin | `--harness <family>` flag (replaces the `AGENT_HARNESS` test seam) |
+| convergence caps (20), consecutive-clean-passes (2) | single-sourced named-constant defaults, each overridable by a CLI flag |
+| diff base | `--base`, else the shared `origin/HEAD → main → HEAD` resolver |
+| reviewer-command seam | test-only env var (deterministic cycle test) |
+
+The repo-wide config system is a separate initiative; code-review is its
+reference adopter.
+
+## Metrics
+
+The metrics that tell whether code-review works, graded by the eval — never by
+green-ness:
+
+- **Recall** over the five seeded defects ≥ 4/5 across N runs (`score_review.py`).
+- **Decoy hits** = 0 (precision).
+- **Refuter A/B**: reviewer+refuter holds recall ≥ 4/5 AND decoy hits = 0, else the
+  refuter ships disabled.
+- **Cycle-control test** green in the fast gate (continue/stop/escalate/union/
+  recompute).
+- Convergence smoke (advisory): inner passes-to-stable and outer rounds-to-PASS
+  stay well below their 20 ceilings; hitting a ceiling is an escalation signal, not
+  a steady state.
+
 ## Exclusions
 
 Deferred: per-task incremental review (unbounded nondeterministic cost for
 marginal gain at v1); language-agnostic AST complexity metrics; CI PR-comment
-posting; `--fix` auto-application. No glossary entry and no second scorer — the
+posting; autonomous reviewer-applied `--fix` (distinct from the supervised SDLC
+fixer the outer loop already uses). No glossary entry and no second scorer — the
 refuter A/B reuses `score_review.py` unchanged. Excluded by design, not deferred:
 a symmetric debate or multi-round argument (collapses to sycophantic consensus)
 and an additive refuter (the pass is DROP-only). `code-review` does not depend on
