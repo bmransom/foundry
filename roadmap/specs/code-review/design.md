@@ -64,6 +64,7 @@ mirrors the sibling's surfaces, arg shape, and fresh-context discipline.
 | Runner wrapper | `plugins/foundry/skills/code-review/scripts/spawn-code-reviewer.sh` | Builds prompts + diff range; orchestrates the **synchronous inner** review-convergence loop (spawn → wait → read report → extract `FLAGGED:` → compute verdict; re-review/union to convergence); runs the refuter once on the union; delegates each spawn to the shared runner. Read-only — never fixes. |
 | Convergence hook | `plugins/foundry/scripts/code-review-convergence-hook.sh` | Drives the OUTER fix loop, mirroring `spec-convergence-hook.sh`: runs one converged review via the wrapper, returns continue/converged/escalate (exit 2/0/4), and counts rounds; the lifecycle agent fixes between rounds. |
 | Refuter pass | refuter prompt in `spawn-code-reviewer.sh`; contract in `SKILL.md` | A second fresh-context, read-only pass on a different harness family that DROPs false positives — DROP-only, never additive. The wrapper feeds it ONLY the extracted footer + diff, then recomputes the final footer. |
+| Footer recompute | `plugins/foundry/skills/code-review/scripts/recompute-footer.sh` | Rebuilds the final FLAGGED footer (candidates minus the refuter's DROPs) and recomputes the verdict (FAIL iff a blocking FLAGGED line survives). DROP-only — the step the wrapper previously faked with a hardcoded echo (CR-1). |
 | Shared runner | `plugins/foundry/scripts/spawn-fresh-session.sh` | Spawns a chosen harness in fresh context with worktree isolation. Reused; the wrapper selects the refuter family via `--harness`, not the `AGENT_HARNESS` test seam. |
 | Lifecycle dispatcher | `plugins/foundry/skills/code/SKILL.md` | Hosts the numbered Review stage (shipped) and its outer fix-convergence loop (20-round ceiling). |
 | Eval fixture | `evals/fixtures/code-review/` | The seeded `order-sync` fixture tree plus `answer-key.json` in the reviewer fixture's shape. |
@@ -125,16 +126,19 @@ tail carries three parts in order:
 
 1. The findings body — each finding carries severity, dimension, `file:line`,
    evidence, problem, and a concrete fix.
-2. A `FLAGGED:` footer — one line per flagged finding, `FLAGGED: <flagged signature>`.
-   A complete-implementation finding's signature is the unimplemented AC id (e.g.
+2. A `FLAGGED:` footer — one line per **blocking** finding, `FLAGGED: <flagged
+   signature>` (advisory findings stay in the body, never the footer). A
+   complete-implementation finding's signature is the unimplemented AC id (e.g.
    `AC-<n>.<m>`), so the eval's expected `AC-…` signature is contractually produced,
    not assumed.
 3. A single verdict line as the last line: `CODE_REVIEW: PASS` or
    `CODE_REVIEW: FAIL`.
 
-`CODE_REVIEW: FAIL` whenever an unresolved blocking finding exists; `PASS` when
-every finding is advisory or resolved. The footer matches the `score_review.py`
-protocol exactly, so the eval scores it unchanged.
+Because the footer lists blocking findings only, the verdict is mechanical:
+`recompute-footer.sh` emits `CODE_REVIEW: FAIL` iff a FLAGGED line survives the
+refuter's DROPs, else `PASS` — computed from the footer, never trusted from a
+free-text line the reviewed diff could forge (CR-2). The footer matches the
+`score_review.py` protocol exactly, so the eval scores it unchanged.
 
 Severity is the gate, not finding count. **Blocking** findings fail the verdict
 and prohibit Finish. **Advisory** findings (size tripwires above all) inform but
