@@ -64,7 +64,7 @@ mirrors the sibling's surfaces, arg shape, and fresh-context discipline.
 | Runner wrapper | `plugins/foundry/skills/code-review/scripts/spawn-code-reviewer.sh` | Builds prompts + diff range; orchestrates the **synchronous inner** review-convergence loop (spawn → wait → read report → extract `FLAGGED:` → compute verdict; re-review/union to convergence); runs the refuter once on the union; delegates each spawn to the shared runner. Read-only — never fixes. |
 | Convergence hook | `plugins/foundry/scripts/code-review-convergence-hook.sh` | Drives the OUTER fix loop, mirroring `spec-convergence-hook.sh`: runs one converged review via the wrapper, returns continue/converged/escalate (exit 2/0/4), and counts rounds; the lifecycle agent fixes between rounds. |
 | Refuter pass | refuter prompt in `spawn-code-reviewer.sh`; contract in `SKILL.md` | A second fresh-context, read-only pass on a different harness family that DROPs false positives — DROP-only, never additive. The wrapper feeds it ONLY the extracted footer + diff, then recomputes the final footer. |
-| Footer recompute | `plugins/foundry/skills/code-review/scripts/recompute-footer.sh` | Rebuilds the final FLAGGED footer (candidates minus the refuter's DROPs) and recomputes the verdict (FAIL iff a blocking FLAGGED line survives). DROP-only — the step the wrapper previously faked with a hardcoded echo (CR-1). |
+| Footer algebra | `plugins/foundry/skills/code-review/scripts/recompute-footer.sh` (generalized) | The finding-set operations on the FLAGGED footer — **union** (across inner-loop passes) and **difference** (candidates minus the refuter's DROPs), keyed on one normalized signature — and the verdict recompute (FAIL iff a blocking line survives). The difference half exists today (the step the wrapper previously faked with a hardcoded echo, CR-1); T21 folds in union. |
 | Shared runner | `plugins/foundry/scripts/spawn-fresh-session.sh` | Spawns a chosen harness in fresh context with worktree isolation. Reused; the wrapper selects the refuter family via `--harness`, not the `AGENT_HARNESS` test seam. |
 | Lifecycle dispatcher | `plugins/foundry/skills/code/SKILL.md` | Hosts the numbered Review stage (shipped) and its outer fix-convergence loop (20-round ceiling). |
 | Eval fixture | `evals/fixtures/code-review/` | The seeded `order-sync` fixture tree plus `answer-key.json` in the reviewer fixture's shape. |
@@ -81,6 +81,65 @@ The wrapper mirrors the sibling's flag handling where it applies: `--print-harne
 execs `spawn-fresh-session.sh --print-harness`. It does NOT forward a permission
 bypass to the read-only reviewer or refuter (neither writes); `--skip-permissions`
 reaches only write-capable spawns.
+
+## Bounded contexts
+
+The review/convergence engine decomposes into contexts joined by **one** clean
+interface — the **Report**: a findings body, a `FLAGGED:` footer (blocking findings
+only), and a verdict line. Every context speaks that contract, so each can change
+internally without breaking the others. The **solver routine** is Review → Inner
+convergence → Refutation → Footer algebra; the footer algebra is its shared data
+structure.
+
+| Context | Owns | Algorithm | Interface (in → out) |
+|---|---|---|---|
+| **Review** (reviewer, read-only) | dimension grading | AC→Scenario→test→code matrix, size LOC pre-scan, `knowledge.py` docs-sync, judgment | spec + diff → Report |
+| **Footer algebra** (shared core) | the footer as a finding-set | union · dedup by normalized signature key · difference · verdict (FAIL iff non-empty) | footers → footer + verdict |
+| **Inner convergence** | review completeness | loop-until-dry: re-review → union → stop at 2-no-new or 20-pass | spec + diff → converged Report |
+| **Refutation** (cross-family, DROP-only) | precision | per-finding KEEP/DROP on a different harness family | footer + diff → DROP set |
+| **Orchestration** (runner) | wiring + config | resolve config once; synchronous spawn→wait→read; recompute | CLI(spec-dir, config) → final Report |
+| **Outer fix-convergence** (hook) | the fix loop | continue/converged/escalate + round counter (20 ceiling) | spec-dir → exit 0/2/4 |
+| **Harness/spawn** (shared runner) | fresh isolated sessions | family detection, worktree isolation | prompt + name + family → session |
+| **Lifecycle** (code stage 6) | dispatch | delegates the outer loop to the hook; agent fixes via SDLC | — |
+| **Scoring/eval** (`score_review.py`, eval path only) | grading a run | FLAGGED substring match vs answer-key; recall/decoy | answer-key + findings → verdict |
+
+```mermaid
+flowchart TB
+    Lifecycle["Lifecycle — code/SKILL.md stage 6"] -->|"spec-dir"| Hook
+    subgraph Hook["Outer fix-convergence — code-review-convergence-hook.sh"]
+        H["continue / converged / escalate · round counter (20)"]
+    end
+    Hook -->|"one converged review / round"| Orch
+    subgraph Orch["Orchestration — spawn-code-reviewer.sh (resolves config once)"]
+        O["synchronous spawn → wait → read → recompute"]
+    end
+    Orch -->|"spawn read-only"| Spawn["Harness/spawn — spawn-fresh-session.sh"]
+    Spawn --> Review["Review context — read-only reviewer (dimension grading)"]
+    Review -->|"Report"| Inner
+    subgraph Inner["Inner convergence (loop-until-dry, immutable inputs hoisted)"]
+        I["re-review → union → stop 2-no-new / 20-pass"]
+    end
+    Inner -->|"union"| Algebra["Footer algebra — union · dedup(norm key) · difference · verdict"]
+    Inner -->|"converged footer"| Refuter["Refutation — DROP-only, complementary family"]
+    Refuter -->|"DROP set"| Algebra
+    Algebra -->|"final footer + verdict"| Orch
+    Orch -->|"final Report"| Hook
+    Scoring["Scoring/eval — score_review.py"] -.->|"grades a run (eval path)"| Review
+```
+
+**The abstraction to extract.** Union (inner loop) and difference (recompute) are the
+same finding-set algebra over the FLAGGED footer. They MUST share **one** module with
+**one** normalized-signature key (so `AC-2.1` ≠ `AC-2.10` everywhere), not two copies
+that can dedup differently. `recompute-footer.sh` is the difference half; the inner
+loop's union is the other half — fold both into one footer-algebra module. This is the
+clean interface that hides the complex, perf-sensitive set logic from the orchestrator.
+
+**Performance within boundaries.** Inside the inner-convergence boundary the diff and
+spec are immutable across passes — only the finding-set grows. So the per-pass
+docs-sync (`knowledge.py check`), glossary read, and size pre-scan are hoisted **once**
+per inner loop; only the model's review judgment re-runs each pass. The footer algebra
+uses a normalized-key set (O(n) union/difference), never repeated substring scans —
+substring matching belongs only to the eval scorer. The refuter runs once on the union.
 
 ## Runner interface
 
@@ -482,6 +541,13 @@ file (future) > manifest-derived > named-constant default**.
 The repo-wide config system is a separate initiative; code-review is its
 reference adopter.
 
+**Defaults at the highest level, threaded as a config object.** The runner resolves
+the config ONCE at the CLI — the only surface where the user can pass an explicit
+value — into a single config object, then threads it inward as explicit arguments.
+The inner contexts (convergence, refuter, recompute, footer algebra) never re-default
+and never read the environment; they receive resolved values. Env vars stay test-only
+seams, not configuration.
+
 ## Metrics
 
 The metrics that tell whether code-review works, graded by the eval — never by
@@ -496,6 +562,27 @@ green-ness:
 - Convergence smoke (advisory): inner passes-to-stable and outer rounds-to-PASS
   stay well below their 20 ceilings; hitting a ceiling is an escalation signal, not
   a steady state.
+
+## Tracer bullets
+
+Three aspects carry enough uncertainty to validate with a small experiment before the
+full build:
+
+1. **Synchronous spawn → wait → read** (the riskiest). The shared runner launches
+   detached (`tmux … -d`), so the orchestrator must block until the report is written.
+   Bullet: a minimal probe spawns a trivial fresh session that writes a sentinel
+   report; the runner blocks until the report and its verdict line appear, reads them,
+   and times out cleanly if they never do — validating the blocking mechanism
+   (poll-for-report vs a tmux wait) before wiring the real reviewer. Resolves the
+   CR-1/CR-17 integration risk.
+2. **Footer-set algebra.** Bullet: exercise union + dedup + difference on realistic
+   signatures — `AC-2.1` vs `AC-2.10`, `file:line`, multi-word debt terms — to confirm
+   the normalized key separates near-duplicates and the set ops are stable. Extends the
+   `recompute-footer` test to union.
+3. **Cross-harness refuter handoff.** Bullet: a dry-run that selects the refuter family
+   from the manifest (`claude-code` → `claude` normalized) and shows the FLAGGED-only
+   payload crossing to the complementary family — confidence the cross-model path works
+   before the full A/B.
 
 ## Exclusions
 

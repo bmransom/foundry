@@ -278,6 +278,10 @@ Acceptance criteria:
 - AC-12.4 WHEN invoked standalone (`/foundry:code-review`), THE SYSTEM SHALL
   perform exactly one converged review (the inner loop only) and SHALL NOT enter
   the outer fix loop.
+- AC-12.5 WHEN the inner loop unions findings and the recompute applies DROPs, THE
+  SYSTEM SHALL use ONE footer-algebra module (union + difference) keyed on a single
+  normalized signature, and SHALL hoist immutable inputs (the docs-sync check,
+  glossary read, size pre-scan) once per inner loop rather than per pass.
 
 ### US-13: Configure by manifest, defaults, and flags
 
@@ -298,6 +302,9 @@ Acceptance criteria:
 - AC-13.4 WHEN resolving a knob from multiple sources, THE SYSTEM SHALL apply the
   precedence: flag > test-env > config file (future) > manifest-derived > named
   default.
+- AC-13.5 WHEN the runner starts, THE SYSTEM SHALL resolve all configuration once at
+  the CLI into a single config object and thread it inward as explicit values; the
+  inner contexts SHALL NOT re-default or read the environment.
 
 ## Out of scope
 

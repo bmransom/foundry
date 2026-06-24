@@ -173,6 +173,23 @@ the cited revision task is authoritative.
   `check-fast: PASS`. Then move the card Validating → Done with the recorded
   PASS. [AC-10.2]
 
+## Wave 8b — Tracer bullets (validate the risky integrations before building)
+
+- [ ] T30: Tracer bullet — synchronous spawn→wait→read. A throwaway probe spawns a
+  trivial fresh session that writes a sentinel report; the runner blocks until the
+  report + its verdict line appear, reads them, and times out cleanly otherwise.
+  Validates the blocking mechanism (poll vs tmux-wait) before T19 wires the real
+  reviewer. Gate: the probe blocks-then-reads on success and times out on no-report.
+  [de-risks AC-11.1]
+- [ ] T31: Tracer bullet — footer-set algebra. Exercise union + dedup + difference on
+  realistic signatures (`AC-2.1` vs `AC-2.10`, `file:line`, multi-word debt terms);
+  confirm the normalized key separates near-duplicates and the ops are stable. Gate:
+  correct union/difference with no `AC-2.1`/`AC-2.10` collision. [de-risks AC-12.2, AC-12.5]
+- [ ] T32: Tracer bullet — cross-harness refuter handoff. A dry-run selects the refuter
+  family from the manifest (`claude-code`→`claude` normalized) and shows the
+  FLAGGED-only payload crossing to the complementary family. Gate: the dry-run names a
+  family ≠ the reviewer's and a footer-only (no prose) payload. [de-risks AC-9.5, AC-13.1]
+
 ## Wave 9 — Synchronous runner foundation (revision; fixes CR-1, CR-2, CR-17)
 
 - [ ] T18: Add `tests/code_review_cycle_test.sh` (red) — deterministic loop-control
@@ -199,11 +216,13 @@ the cited revision task is authoritative.
   test's skill-text concat (dep T5). Gate: `tests/code_review_skill_test.sh` PASS;
   `SKILL.md` links `references/convergence.md`. [AC-12.1, AC-12.2, AC-12.3]
 - [ ] T21: Implement the inner loop in the runner — re-review in fresh context,
-  union findings by a normalized signature key (so `AC-2.1` ≠ `AC-2.10`), stop at
-  two consecutive no-new passes or a 20-pass ceiling, run the refuter once over the
-  union; add `--converge` (default OFF, so standalone is one converged review,
-  inner only) (dep T19). Gate: the cycle-control test's inner-loop + union arms
-  PASS. [AC-12.1, AC-12.2, AC-12.3, AC-12.4]
+  union findings via the **footer-algebra module** (union + difference, one
+  normalized signature key so `AC-2.1` ≠ `AC-2.10`; generalize `recompute-footer.sh`
+  into it), stop at two consecutive no-new passes or a 20-pass ceiling, run the
+  refuter once over the union; hoist immutable inputs (docs-sync, glossary, size
+  pre-scan) once per loop; the inner loop is the default, `--single-pass` skips it
+  (dep T19). Gate: the cycle-control test's inner-loop + union arms PASS; a unit test
+  exercises union/difference on `AC-2.1` vs `AC-2.10`. [AC-12.1, AC-12.2, AC-12.3, AC-12.4, AC-12.5]
 
 ## Wave 11 — Outer fix-convergence loop (revision; supersedes T8's cap)
 
@@ -226,7 +245,9 @@ the cited revision task is authoritative.
   shared `resolve_base`; stop forwarding `--skip-permissions` to the read-only
   reviewer/refuter (dep T19). Gate: `tests/code_review_skill_test.sh` PASS; a
   `--dry-run` shows a manifest-derived refuter family selected via `--harness` and
-  the resolved diff base. [AC-1.2, AC-1.6, AC-1.7, AC-13.1, AC-13.2, AC-13.3, AC-13.4]
+  the resolved diff base; resolve all config once at the CLI into a config object
+  threaded inward (no re-defaulting/env-reads in inner contexts).
+  [AC-1.2, AC-1.6, AC-1.7, AC-13.1, AC-13.2, AC-13.3, AC-13.4, AC-13.5]
 
 ## Wave 13 — Hardening, eval, traceability
 
