@@ -10,9 +10,10 @@ dependency. Every task names the gate that proves it and the AC it satisfies.
 refuter spawn, lifecycle Review stage, seeded fixture, and A/B eval already merged
 to `main`. **Waves 9–14 (T18+) are the convergence-cycle revision**, which
 supersedes: v1's three-round outer cap (→ T22, 20 rounds), its fire-and-forget
-refuter wiring (→ T19, synchronous), and its `git merge-base main HEAD` diff-base
-default (→ T23, the shared resolver). Where a Wave 1–8 task names the old behavior,
-the cited revision task is authoritative.
+refuter wiring (→ T19, synchronous), its `git merge-base main HEAD` diff-base
+default (→ T23, the shared resolver), and its `--skip-permissions` forwarding to the
+read-only reviewer/refuter (→ T23, the bypass reaches write-capable spawns only).
+Where a Wave 1–8 task names the old behavior, the cited revision task is authoritative.
 
 ## Wave 1 — Spec and board
 
@@ -173,22 +174,29 @@ the cited revision task is authoritative.
   `check-fast: PASS`. Then move the card Validating → Done with the recorded
   PASS. [AC-10.2]
 
-## Wave 8b — Tracer bullets (validate the risky integrations before building)
+## Wave 8b — Tracer bullets (build + validate the risky primitives before composing them)
 
-- [ ] T30: Tracer bullet — synchronous spawn→wait→read. A throwaway probe spawns a
-  trivial fresh session that writes a sentinel report; the runner blocks until the
-  report + its verdict line appear, reads them, and times out cleanly otherwise.
-  Validates the blocking mechanism (poll vs tmux-wait) before T19 wires the real
-  reviewer. Gate: the probe blocks-then-reads on success and times out on no-report.
-  [de-risks AC-11.1]
-- [ ] T31: Tracer bullet — footer-set algebra. Exercise union + dedup + difference on
-  realistic signatures (`AC-2.1` vs `AC-2.10`, `file:line`, multi-word debt terms);
-  confirm the normalized key separates near-duplicates and the ops are stable. Gate:
-  correct union/difference with no `AC-2.1`/`AC-2.10` collision. [de-risks AC-12.2, AC-12.5]
-- [ ] T32: Tracer bullet — cross-harness refuter handoff. A dry-run selects the refuter
-  family from the manifest (`claude-code`→`claude` normalized) and shows the
-  FLAGGED-only payload crossing to the complementary family. Gate: the dry-run names a
-  family ≠ the reviewer's and a footer-only (no prose) payload. [de-risks AC-9.5, AC-13.1]
+Each bullet builds a KEPT, tested primitive (not a throwaway) that a build-wave task
+then composes — the Pragmatic-Programmer sense of a tracer bullet.
+
+- [ ] T30: Build `wait-for-report.sh` — the synchronous-wait primitive: block until the
+  report file ends with a `CODE_REVIEW:` verdict line (the runner spawns detached, so
+  wait on the artifact, not the process), timing out nonzero so a hung or never-spawned
+  reviewer fails (never a false PASS). Add `tests/wait_for_report_test.sh`; T19 composes
+  it. Gate: a ready report succeeds, a late report blocks-then-reads, a verdict-less or
+  absent report times out. [de-risks + builds for AC-11.1, AC-11.5]
+- [ ] T31: Build `footer-algebra.sh` — the footer finding-set module: union + dedup +
+  difference, keyed on ONE normalized signature; `recompute-footer.sh` delegates to its
+  difference; T21 wires its union into the inner loop. Add
+  `tests/code_review_footer_algebra_test.sh`. Gate: union dedups case/whitespace
+  variants, keeps `AC-2.1` ≠ `AC-2.10`, difference drops by normalized key.
+  [de-risks + builds for AC-12.2, AC-12.5]
+- [ ] T32: Build `refuter-family.sh` — the cross-model family selector: pick a manifest
+  family ≠ the reviewer's (`claude-code`→`claude`), else `none` for a single-family
+  repo; T23 wires it into the runner (replacing the `AGENT_HARNESS` pin). Add
+  `tests/code_review_refuter_family_test.sh`, which also asserts the refuter payload is
+  the footer-algebra union (FLAGGED-only, no prose/verdict). Gate: claude↔codex
+  selection, single-family→none, footer-only payload. [de-risks + builds for AC-9.5, AC-13.1]
 
 ## Wave 9 — Synchronous runner foundation (revision; fixes CR-1, CR-2, CR-17)
 
@@ -202,7 +210,7 @@ the cited revision task is authoritative.
   Gate: the test exists, is executable, and FAILS now (no hook / synchronous runner
   yet). [AC-7.5, AC-7.6, AC-11.1, AC-11.2, AC-11.3, AC-11.4, AC-11.5]
 - [ ] T19: Make `spawn-code-reviewer.sh` synchronous — block until the reviewer's
-  report is written via `wait-for-report.sh` (T30), exiting nonzero with no verdict
+  report is written via `wait-for-report.sh` (built in T30), exiting nonzero with no verdict
   if it times out (never PASS); extract the `FLAGGED:` footer, and compute the
   verdict from the surviving blocking findings (never a scraped free-text line);
   after the refuter, rewrite the footer to candidates-minus-DROPs and recompute;
@@ -217,14 +225,14 @@ the cited revision task is authoritative.
   caps, refuter-once-on-union) — point `SKILL.md` to it, and add it to the static
   test's skill-text concat (dep T5). Gate: `tests/code_review_skill_test.sh` PASS;
   `SKILL.md` links `references/convergence.md`. [AC-12.1, AC-12.2, AC-12.3]
-- [ ] T21: Implement the inner loop in the runner — re-review in fresh context,
-  union findings via the **footer-algebra module** (union + difference, one
-  normalized signature key so `AC-2.1` ≠ `AC-2.10`; generalize `recompute-footer.sh`
-  into it), stop at two consecutive no-new passes or a 20-pass ceiling, run the
-  refuter once over the union; hoist immutable inputs (docs-sync, glossary, size
-  pre-scan) once per loop; the inner loop is the default, `--single-pass` skips it
-  (dep T19). Gate: the cycle-control test's inner-loop + union arms PASS; a unit test
-  exercises union/difference on `AC-2.1` vs `AC-2.10`. [AC-12.1, AC-12.2, AC-12.3, AC-12.4, AC-12.5]
+- [ ] T21: Implement the inner loop in the runner — re-review in fresh context, union
+  findings via the **footer-algebra** `union` (`footer-algebra.sh`, built in T31; one
+  normalized key so `AC-2.1` ≠ `AC-2.10`), stop at two consecutive no-new passes or a
+  20-pass ceiling, run the refuter once over the union; hoist immutable inputs
+  (docs-sync, glossary, size pre-scan) once per loop; the inner loop is the default,
+  `--single-pass` skips it (deps T19, T31). Gate: the cycle-control test's inner-loop +
+  union arms PASS; the footer-algebra unit test exercises union/difference on `AC-2.1`
+  vs `AC-2.10`. [AC-12.1, AC-12.2, AC-12.3, AC-12.4, AC-12.5]
 
 ## Wave 11 — Outer fix-convergence loop (revision; supersedes T8's cap)
 
@@ -241,15 +249,18 @@ the cited revision task is authoritative.
 ## Wave 12 — Configuration A (revision; CR-5/6/7/19)
 
 - [ ] T23: Config-A in the runner — derive refuter families from the manifest
-  `harnesses` (normalize `claude-code`→`claude`); add `--harness` (replacing the
+  `harnesses` via `refuter-family.sh` (built in T32); add `--harness` (replacing the
   `AGENT_HARNESS` production pin); single-sourced named-constant cap defaults with
   `--review-cap`/`--fix-cap`/`--consecutive-clean` overrides; `--base` via the
   shared `resolve_base`; stop forwarding `--skip-permissions` to the read-only
-  reviewer/refuter (dep T19). Gate: `tests/code_review_skill_test.sh` PASS; a
-  `--dry-run` shows a manifest-derived refuter family selected via `--harness` and
-  the resolved diff base; resolve all config once at the CLI into a config object
-  threaded inward (no re-defaulting/env-reads in inner contexts).
-  [AC-1.2, AC-1.6, AC-1.7, AC-13.1, AC-13.2, AC-13.3, AC-13.4, AC-13.5]
+  reviewer/refuter (deps T19, T32). Gate: `tests/code_review_skill_test.sh` PASS (with
+  its diff-base assertion updated from `git merge-base main HEAD` to the
+  `origin/HEAD → main → HEAD` resolver, and its `--skip-permissions` assertion flipped
+  from 'bypass forwarded to the shared runner' to 'bypass NOT forwarded to the
+  read-only reviewer/refuter', per AC-1.6); a `--dry-run` shows a manifest-derived refuter
+  family selected via `--harness` and the resolved diff base; resolve all config once
+  at the CLI into a config object threaded inward (no re-defaulting/env-reads in inner
+  contexts). [AC-1.2, AC-1.6, AC-1.7, AC-9.5, AC-13.1, AC-13.2, AC-13.3, AC-13.4, AC-13.5]
 
 ## Wave 13 — Hardening, eval, traceability
 

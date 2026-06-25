@@ -134,7 +134,7 @@ same finding-set algebra over the FLAGGED footer. They MUST share **one** module
 **one** normalized-signature key (so `AC-2.1` ≠ `AC-2.10` everywhere), not two copies
 that can dedup differently. `recompute-footer.sh` is the difference half; the inner
 loop's union is the other half — fold both into one footer-algebra module. This is the
-clean interface that hides the complex, perf-sensitive set logic from the orchestrator.
+clean interface that hides the complex, perf-sensitive set logic from the runner.
 
 **Performance within boundaries.** Inside the inner-convergence boundary the diff and
 spec are immutable across passes — only the finding-set grows. So the per-pass
@@ -571,7 +571,7 @@ Three aspects carry enough uncertainty to validate with a small experiment befor
 full build:
 
 1. **Synchronous spawn → wait → read** (the riskiest). The shared runner launches
-   detached (`tmux … -d`), so the orchestrator must block until the report is written.
+   detached (`tmux … -d`), so the runner must block until the report is written.
    Bullet: a minimal probe spawns a trivial fresh session that writes a sentinel
    report; the runner blocks until the report and its verdict line appear, reads them,
    and times out cleanly if they never do — validating the blocking mechanism
