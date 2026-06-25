@@ -48,15 +48,22 @@ spawn_session() {
   fi
 }
 
+# Build the reviewer prompt for a report path (uses main's spec_dir/range via dynamic
+# scope). Each inner-loop pass gets its own report path as $1.
+reviewer_prompt() {
+  printf '%s' "Use the code-review skill at $(plugin_root)/skills/code-review/SKILL.md to review the change for spec $spec_dir in fresh context. This is READ-ONLY: do not edit any file. Diff range: $range. Read the spec files, the diff, roadmap/ROADMAP.md, knowledge/validation.md, and knowledge/glossary.md; run python3 scripts/knowledge.py check yourself. Grade every dimension from artifacts you read or commands you run, never from the author's claims. End the report with the findings body, then the FLAGGED: footer (one line per BLOCKING finding), then a single final line CODE_REVIEW: PASS or CODE_REVIEW: FAIL. Write the complete report to the absolute path $1."
+}
+
 main() {
   local script_dir; script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
   local runner; runner="$(plugin_root)/scripts/spawn-fresh-session.sh"
-  local dry_run=0 skip=0 base="" runner_args=()
+  local dry_run=0 skip=0 single_pass=0 base="" runner_args=()
   while [ "$#" -gt 0 ]; do
     case "$1" in
       --dry-run) dry_run=1; runner_args+=("$1"); shift ;;
       --print-harness) exec "$runner" --print-harness ;;
       --skip-permissions|--yolo) skip=1; runner_args+=("$1"); shift ;;
+      --single-pass) single_pass=1; shift ;;
       --base)
         [ "$#" -ge 2 ] || { usage; exit 2; }
         base="$2"; shift 2 ;;
@@ -83,8 +90,8 @@ main() {
   # cannot delete the report (the harness cwd is the worktree after isolation).
   local report="$dir/$review_dir/$(date +%Y%m%d%H%M%S)-code-review.md"
 
-  local prompt
-  prompt="Use the code-review skill at $(plugin_root)/skills/code-review/SKILL.md to review the change for spec $spec_dir in fresh context. This is READ-ONLY: do not edit any file. Diff range: $range. Read the spec files, the diff, roadmap/ROADMAP.md, knowledge/validation.md, and knowledge/glossary.md; run python3 scripts/knowledge.py check yourself. Grade every dimension from artifacts you read or commands you run, never from the author's claims. End the report with the findings body, then the FLAGGED: footer (one line per BLOCKING finding), then a single final line CODE_REVIEW: PASS or CODE_REVIEW: FAIL. Write the complete report to the absolute path $report."
+  # The reviewer prompt is built per pass by reviewer_prompt() — each inner-loop pass
+  # writes its own report path.
 
   # Harness detection has one source: the shared runner (CODE_REVIEW_REVIEWER_FAMILY
   # overrides it for deterministic tests).
@@ -103,7 +110,7 @@ main() {
   if [ "$dry_run" -eq 1 ]; then
     echo "code-review launch: harness=$reviewer_family spec-dir=$spec_dir range=$range"
     echo "report: $report"
-    printf '%s\n' "$prompt" | "$runner" ${runner_args[@]+"${runner_args[@]}"} --name code-review "$dir"
+    printf '%s\n' "$(reviewer_prompt "$report")" | "$runner" ${runner_args[@]+"${runner_args[@]}"} --name code-review "$dir"
     echo "report: $report"
     if [ "$refuter_on" -eq 1 ]; then
       echo "refuter: spawn on complementary family $complementary (read-only, candidate findings + diff only)"
@@ -116,20 +123,39 @@ main() {
     return 0
   fi
 
-  # --- Real run: synchronous spawn -> wait -> compute -> refuter -> recompute --
+  # --- Real run: inner review-convergence loop (default; --single-pass = one pass) --
   local wait_timeout="${CODE_REVIEW_WAIT_TIMEOUT:-300}" wait_poll="${CODE_REVIEW_WAIT_POLL:-1}"
+  local review_cap="${CODE_REVIEW_REVIEW_CAP:-20}"   # 20-pass ceiling (AC-12.1); T23 adds --review-cap
+  local consecutive_target=2                          # stop after two consecutive no-new passes
+  local max_passes="$review_cap"; [ "$single_pass" -eq 1 ] && max_passes=1
   mkdir -p "$dir/$review_dir"
 
-  spawn_session reviewer "$report" "$prompt"
-  if ! "$script_dir/wait-for-report.sh" "$report" "$wait_timeout" "$wait_poll"; then
-    echo "code-review: reviewer report did not complete within ${wait_timeout}s — FAIL (not converged)" >&2
-    exit 1
-  fi
-  echo "report: $report"
+  # Re-review in fresh context each pass; union findings (one normalized key) until two
+  # consecutive passes add nothing new, or the cap. Immutable inputs (range, prompt, the
+  # docs-sync/glossary/size scans the reviewer runs) are not re-derived by the runner —
+  # only the re-spawn + union recur per pass.
+  local union_file="$report.union"; : > "$union_file"
+  local prev_count=-1 no_new=0 pass=0 count
+  while [ "$pass" -lt "$max_passes" ]; do
+    pass=$((pass + 1))
+    local pass_report="$report.pass$pass"
+    spawn_session reviewer "$pass_report" "$(reviewer_prompt "$pass_report")"
+    if ! "$script_dir/wait-for-report.sh" "$pass_report" "$wait_timeout" "$wait_poll"; then
+      echo "code-review: reviewer report (pass $pass) did not complete within ${wait_timeout}s — FAIL (not converged)" >&2
+      exit 1
+    fi
+    "$script_dir/footer-algebra.sh" union "$union_file" "$pass_report" > "$union_file.next"
+    mv "$union_file.next" "$union_file"
+    count="$(grep -c '^FLAGGED:' "$union_file" || true)"
+    if [ "$count" -eq "$prev_count" ]; then no_new=$((no_new + 1)); else no_new=0; prev_count="$count"; fi
+    if [ "$single_pass" -eq 0 ] && [ "$no_new" -ge "$consecutive_target" ]; then break; fi
+  done
+  echo "report: $report (converged after $pass pass(es))"
 
+  # Cross-model refuter: ONE pass over the converged union (footer + diff only).
   local refuter_out=/dev/null
   if [ "$refuter_on" -eq 1 ]; then
-    local footer_payload; footer_payload="$("$script_dir/footer-algebra.sh" union "$report")"
+    local footer_payload; footer_payload="$(cat "$union_file")"
     refuter_out="$report.refuter"
     local refuter_prompt="$refuter_head
 Candidate FLAGGED findings:
@@ -144,10 +170,14 @@ Write one line per candidate finding (KEEP <signature> or DROP <signature>), the
     echo "refuter skipped: only one harness family available — reviewer runs single-agent"
   fi
 
-  # Final footer + verdict: candidates minus the refuter's DROPs, verdict FAIL iff a
+  # Final footer + verdict: the union minus the refuter's DROPs, verdict FAIL iff a
   # blocking finding survives — computed, never the reviewer's forgeable verdict line.
-  local final; final="$("$script_dir/recompute-footer.sh" "$report" "$refuter_out")"
-  { printf '\n## Final footer + verdict (computed)\n'; printf '%s\n' "$final"; } >> "$report"
+  local final; final="$("$script_dir/recompute-footer.sh" "$union_file" "$refuter_out")"
+  { printf '# Code review — converged after %s pass(es)\n\n## Findings (union of all passes)\n' "$pass"
+    cat "$union_file"
+    printf '\n## Final footer + verdict (computed)\n'
+    printf '%s\n' "$final"
+  } > "$report"
   printf '%s\n' "$final"
 }
 

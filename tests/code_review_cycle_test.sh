@@ -77,20 +77,29 @@ cat > "$work/stub-spawn" <<'STUB'
 # args: <role> <output-path> — write the canned artifact for that role (or nothing).
 role="$1"; out="$2"
 case "$role" in
-  reviewer) [ "${STUB_REVIEWER:-none}" = "none" ] || cp "$STUB_REVIEWER" "$out" ;;
+  reviewer)
+    spec="${STUB_REVIEWER:-none}"
+    case "$spec" in
+      SEQ:*) seq="${spec#SEQ:}"; f="$(head -1 "$seq" 2>/dev/null || true)"
+             tail -n +2 "$seq" > "$seq.t" 2>/dev/null || true; mv "$seq.t" "$seq" 2>/dev/null || true
+             [ "${f:-none}" = "none" ] || cp "$f" "$out" ;;
+      none) ;;
+      *) cp "$spec" "$out" ;;
+    esac ;;
   refuter)  [ "${STUB_REFUTER:-none}"  = "none" ] || cp "$STUB_REFUTER"  "$out" ;;
 esac
 STUB
 chmod +x "$work/stub-spawn"
 
-run_runner() {  # $1=rev-family $2=refuter-families $3=reviewer-file|none $4=refuter-file|none $5=timeout(s)
+run_runner() {  # $1 fam $2 fams $3 reviewer(file|none|SEQ:path) $4 refuter $5 timeout $6 extra-flag $7 review-cap
   rm -rf "$repo/.foundry/reports"   # no leftover report from a same-second prior arm
+  local extra=(); [ -n "${6:-}" ] && extra=("$6")
   set +e
   RUN_OUT="$(CODE_REVIEW_SPAWN_CMD="$work/stub-spawn" \
     CODE_REVIEW_REVIEWER_FAMILY="$1" FOUNDRY_REFUTER_FAMILIES="$2" \
     STUB_REVIEWER="$3" STUB_REFUTER="$4" \
-    CODE_REVIEW_WAIT_TIMEOUT="$5" CODE_REVIEW_WAIT_POLL=0.1 \
-    bash "$RUNNER" --base BASEREF roadmap/specs/demo "$repo" 2>&1)"
+    CODE_REVIEW_WAIT_TIMEOUT="$5" CODE_REVIEW_WAIT_POLL=0.1 CODE_REVIEW_REVIEW_CAP="${7:-20}" \
+    bash "$RUNNER" ${extra[@]+"${extra[@]}"} --base BASEREF roadmap/specs/demo "$repo" 2>&1)"
   RUN_RC=$?
   set -e
 }
@@ -125,5 +134,33 @@ run_runner claude "claude codex" "$work/rep-H" "$work/ref-H2" 3
 run_runner claude "claude" none none 1
 [ "$RUN_RC" -ne 0 ] || fail "I timeout must fail (nonzero), rc=0: $RUN_OUT"
 grep -q 'CODE_REVIEW: PASS' <<<"$RUN_OUT" && fail "I timeout must never emit PASS: $RUN_OUT"
+
+# Arm J — inner loop UNIONS findings across passes and converges (2 consecutive no-new).
+# seq: {A}, {A,B}(new), {A,B}, {A,B} -> converges at pass 4. A 5th pass would exhaust the
+# seq (none -> timeout), so success proves bounded convergence by the union, not the cap.
+printf 'FLAGGED: A\nCODE_REVIEW: FAIL\n' > "$work/p1"
+printf 'FLAGGED: A\nFLAGGED: B\nCODE_REVIEW: FAIL\n' > "$work/p2"; cp "$work/p2" "$work/p3"; cp "$work/p2" "$work/p4"
+printf '%s\n' "$work/p1" "$work/p2" "$work/p3" "$work/p4" > "$work/seqJ"
+run_runner claude "claude" "SEQ:$work/seqJ" none 3
+[ "$RUN_RC" -eq 0 ] || fail "J inner loop should converge, rc=$RUN_RC: $RUN_OUT"
+grep -q '^FLAGGED: A' <<<"$RUN_OUT" || fail "J union must keep A: $RUN_OUT"
+grep -q '^FLAGGED: B' <<<"$RUN_OUT" || fail "J union must add B from a later pass: $RUN_OUT"
+[ "$(verdict_of "$RUN_OUT")" = "CODE_REVIEW: FAIL" ] || fail "J survivors -> FAIL"
+
+# Arm K — --single-pass does EXACTLY ONE pass (seq has one entry; a 2nd pass would time out).
+printf 'FLAGGED: A\nCODE_REVIEW: FAIL\n' > "$work/k1"; printf '%s\n' "$work/k1" > "$work/seqK"
+run_runner claude "claude" "SEQ:$work/seqK" none 2 --single-pass
+[ "$RUN_RC" -eq 0 ] || fail "K --single-pass should do one pass and succeed, rc=$RUN_RC: $RUN_OUT"
+[ "$(verdict_of "$RUN_OUT")" = "CODE_REVIEW: FAIL" ] || fail "K single pass -> FAIL from {A}: $RUN_OUT"
+
+# Arm L — the inner loop stops at the CAP when findings never stop growing.
+# cap=3 with a 3-entry growing seq; a 4th pass would exhaust the seq, so success proves the ceiling.
+printf 'FLAGGED: A\nCODE_REVIEW: FAIL\n' > "$work/l1"
+printf 'FLAGGED: A\nFLAGGED: B\nCODE_REVIEW: FAIL\n' > "$work/l2"
+printf 'FLAGGED: A\nFLAGGED: B\nFLAGGED: C\nCODE_REVIEW: FAIL\n' > "$work/l3"
+printf '%s\n' "$work/l1" "$work/l2" "$work/l3" > "$work/seqL"
+run_runner claude "claude" "SEQ:$work/seqL" none 3 "" 3
+[ "$RUN_RC" -eq 0 ] || fail "L should stop at the cap, rc=$RUN_RC: $RUN_OUT"
+grep -q '^FLAGGED: C' <<<"$RUN_OUT" || fail "L must union through the capped passes (C present): $RUN_OUT"
 
 echo "code_review_cycle_test: PASS"
