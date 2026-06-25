@@ -4,6 +4,15 @@
 
 Changes to the knowledge base, newest first. A reserved OKF file — no frontmatter.
 
+## 2026-06-25
+
+- **New** Glossary terms **Autonomy level** and **Stop-point** for the `code` lifecycle's
+  autonomy dial (`roadmap/specs/lifecycle-autonomy/`). The level (Supervised / Guided /
+  Autonomous) decides who resolves a soft fork; the stop-point bounds an autonomous run.
+  Set once at Frame, harness-aware (`/loop`, Codex `/goal`); the operational detail lives
+  in `plugins/foundry/skills/code/references/autonomy.md`. Prior art: Codex approval modes
+  + role-based agent-autonomy levels (autonomy level); the debugger breakpoint (stop-point).
+
 ## 2026-06-20
 
 - **Update** Registered the **Code-review eval (L3)** in **Validation**
