@@ -88,7 +88,8 @@ main() {
   local review_dir=".foundry/reports/code-review"
   # Absolute report path under the PRIMARY tree, so retiring a spawned worktree
   # cannot delete the report (the harness cwd is the worktree after isolation).
-  local report="$dir/$review_dir/$(date +%Y%m%d%H%M%S)-code-review.md"
+  # The -$$ (pid) suffix avoids a same-second collision when parallel agents review (CR-4).
+  local report="$dir/$review_dir/$(date +%Y%m%d%H%M%S)-$$-code-review.md"
 
   # The reviewer prompt is built per pass by reviewer_prompt() — each inner-loop pass
   # writes its own report path.
