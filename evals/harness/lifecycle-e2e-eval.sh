@@ -128,7 +128,10 @@ drive_stage() {           # $1 repo  $2 prompt  $3 log  -> headless agent exit c
   # here — where the gate runs green — and prepend its dir to the PATH claude -p inherits,
   # so the agent's shells find the toolchain from the first call.
   local toolbin=""; command -v node >/dev/null 2>&1 && toolbin="$(dirname "$(command -v node)")"
-  ( cd "$repo" && PATH="${toolbin:+$toolbin:}$PATH" timeout "${LIFECYCLE_E2E_STAGE_TIMEOUT:-1800}" \
+  # 60-min default: a complex feature (e.g. the betting state machine) drives spec ->
+  # spec-review -> TDD build -> verify -> review past the old 30-min cap and got cut off
+  # mid-lifecycle. Raise LIFECYCLE_E2E_STAGE_TIMEOUT further for the largest features.
+  ( cd "$repo" && PATH="${toolbin:+$toolbin:}$PATH" timeout "${LIFECYCLE_E2E_STAGE_TIMEOUT:-3600}" \
       claude -p "$prompt" --dangerously-skip-permissions --verbose --output-format stream-json ) >"$log" 2>&1
 }
 
