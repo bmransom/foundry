@@ -8,6 +8,7 @@ REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SKILL_DIR="$REPO/plugins/foundry/skills/code-review"
 SKILL_MD="$SKILL_DIR/SKILL.md"
 DIMENSIONS="$SKILL_DIR/references/dimensions.md"
+CONVERGENCE="$SKILL_DIR/references/convergence.md"
 SCRIPT="$SKILL_DIR/scripts/spawn-code-reviewer.sh"
 CODE_SKILL="$REPO/plugins/foundry/skills/code/SKILL.md"
 GITIGNORE="$REPO/.gitignore"
@@ -36,7 +37,7 @@ frontmatter_value() {
 # (pipefail would then misread the match as a failure).
 SKILL_TEXT=""
 skill_grep() {
-  [ -n "$SKILL_TEXT" ] || SKILL_TEXT="$(cat "$SKILL_MD" "$DIMENSIONS" 2>/dev/null)"
+  [ -n "$SKILL_TEXT" ] || SKILL_TEXT="$(cat "$SKILL_MD" "$DIMENSIONS" "$CONVERGENCE" 2>/dev/null)"
   grep -q "$1" <<<"$SKILL_TEXT"
 }
 
@@ -66,6 +67,8 @@ skill_grep ".foundry/reports/code-review/" \
   || fail "code-review must name its repo-local report output"
 skill_grep "scripts/spawn-code-reviewer.sh" \
   || fail "code-review must expose its fresh-context runner"
+grep -q "references/convergence.md" "$SKILL_MD" \
+  || fail "code-review SKILL must link the convergence reference"
 
 # --- Output contract -------------------------------------------------------
 skill_grep "CODE_REVIEW: PASS" \

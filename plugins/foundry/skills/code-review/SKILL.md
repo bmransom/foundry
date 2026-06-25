@@ -28,6 +28,12 @@ context-resident prose; `code-review` reviews the implementation diff against it
 
 If fresh context is unavailable, review inline and say so before findings.
 
+The runner converges automatically — re-review → union → refuter once — and the
+lifecycle drives fix → re-review. See
+[`references/convergence.md`](references/convergence.md) for the inner/outer loop
+mechanics: union by normalized signature, two consecutive no-new passes, the 20-pass
+and 20-round caps, and escalation.
+
 ## Contract
 
 Read these before reviewing; grade every dimension from what you read or run:
