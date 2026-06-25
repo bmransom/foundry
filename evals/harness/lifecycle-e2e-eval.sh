@@ -23,6 +23,7 @@ FEATURE=""
 AUTON_LEVEL="guided"   # --autonomous: supervised | guided | autonomous
 AUTON_STOP="roadmap"   # --autonomous stop-point: feature | card:<id> | epic | roadmap
 harnesses="claude-code codex"
+DRIVE_HARNESS="${DRIVE_HARNESS:-claude-code}"   # which agent drive_stage invokes (claude-code | codex)
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --plan) mode=plan; shift ;;
@@ -42,7 +43,7 @@ while [ "$#" -gt 0 ]; do
     --dry-run) dry=1; shift ;;             # with --bootstrap/--feature/--autonomous: print the plan/prompt, run nothing
     --harness)
       [ "$#" -ge 2 ] || { echo "lifecycle-e2e: --harness needs a value" >&2; exit 2; }
-      case "$2" in both) harnesses="claude-code codex" ;; claude-code|codex) harnesses="$2" ;; *) echo "lifecycle-e2e: unknown harness '$2'" >&2; exit 2 ;; esac
+      case "$2" in both) harnesses="claude-code codex"; DRIVE_HARNESS="claude-code" ;; claude-code|codex) harnesses="$2"; DRIVE_HARNESS="$2" ;; *) echo "lifecycle-e2e: unknown harness '$2'" >&2; exit 2 ;; esac
       shift 2 ;;
     -h|--help) sed -n '2,12p' "${BASH_SOURCE[0]}"; exit 0 ;;
     *) echo "lifecycle-e2e: unknown argument '$1'" >&2; exit 2 ;;
@@ -129,19 +130,23 @@ Complete all five phases (Inspect, Interview, Copy, Generate, Verify). In Verify
 PROMPT
 }
 
-drive_stage() {           # $1 repo  $2 prompt  $3 log  -> headless agent exit code
+drive_stage() {           # $1 repo  $2 prompt  $3 log  -> headless agent (DRIVE_HARNESS) exit code
   local repo="$1" prompt="$2" log="$3"
   # The headless agent's non-interactive tool shells don't source the login profile, so a
   # version-manager `node` runtime is off PATH; the agent then hits "command not found" on
   # node and every node-shebang tool (tsc/vitest/cucumber) until it recovers. Resolve node
-  # here — where the gate runs green — and prepend its dir to the PATH claude -p inherits,
-  # so the agent's shells find the toolchain from the first call.
+  # here — where the gate runs green — and prepend its dir to the PATH the agent inherits.
   local toolbin=""; command -v node >/dev/null 2>&1 && toolbin="$(dirname "$(command -v node)")"
-  # 60-min default: a complex feature (e.g. the betting state machine) drives spec ->
-  # spec-review -> TDD build -> verify -> review past the old 30-min cap and got cut off
-  # mid-lifecycle. Raise LIFECYCLE_E2E_STAGE_TIMEOUT further for the largest features.
-  ( cd "$repo" && PATH="${toolbin:+$toolbin:}$PATH" timeout "${LIFECYCLE_E2E_STAGE_TIMEOUT:-3600}" \
-      claude -p "$prompt" --dangerously-skip-permissions --verbose --output-format stream-json ) >"$log" 2>&1
+  # 60-min default; raise LIFECYCLE_E2E_STAGE_TIMEOUT for the largest features.
+  local t="${LIFECYCLE_E2E_STAGE_TIMEOUT:-3600}"
+  case "${DRIVE_HARNESS:-claude-code}" in
+    codex)  # codex exec is the non-interactive form; bypass approvals+sandbox like --dangerously-skip-permissions
+      ( cd "$repo" && PATH="${toolbin:+$toolbin:}$PATH" timeout "$t" \
+          codex exec "$prompt" --dangerously-bypass-approvals-and-sandbox --skip-git-repo-check ) >"$log" 2>&1 ;;
+    *)
+      ( cd "$repo" && PATH="${toolbin:+$toolbin:}$PATH" timeout "$t" \
+          claude -p "$prompt" --dangerously-skip-permissions --verbose --output-format stream-json ) >"$log" 2>&1 ;;
+  esac
 }
 
 feat_desc() {             # $1 = roadmap feature -> one-line description for the prompt
@@ -184,7 +189,7 @@ autonomy_continue_prompt() {   # per iteration: do the next uncompleted feature 
   for f in $features; do descs="$descs  - $f: $(feat_desc "$f")
 "; done
   cat <<PROMPT
-Read \`.foundry/tmp/lifecycle-run.json\` — the autonomy directive (level, stopPoint, completed). Follow the foundry code skill at $plugin_root/skills/code/SKILL.md and its references/autonomy.md.
+Read \`.foundry/tmp/lifecycle-run.json\` — the autonomy directive (level, stopPoint, completed). Follow the foundry code skill at $plugin_root/skills/code/SKILL.md and its references/autonomy.md. The sub-skills it invokes live at $plugin_root/skills/<name>/SKILL.md — read and follow them by path when the lifecycle calls for them: spec-review, code-review, naming-standards, design-patterns, modular-structure, performance.
 
 The roadmap, in order: $features
 
