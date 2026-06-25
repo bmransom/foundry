@@ -64,4 +64,66 @@ export CODE_REVIEW_CONVERGENCE_STATE="$work/stateE" STUB_SEQ="$work/seqE" CODE_R
 printf 'TIMEOUT\n' > "$STUB_SEQ"
 run; [ "$HOOK_RC" -ne 0 ] || fail "E expected nonzero on a failed/timed-out review, got 0: $HOOK_OUT"
 
+# ============================================================================
+# Synchronous runner arms (T19): drive the REAL spawn-code-reviewer.sh through the
+# spawn seam. The seam stubs the detached reviewer/refuter spawn with a script that
+# writes the canned artifact, so the runner's wait -> read -> compute-verdict ->
+# refuter-recompute orchestration runs deterministically (no tmux/LLM).
+# ============================================================================
+RUNNER="$REPO/plugins/foundry/skills/code-review/scripts/spawn-code-reviewer.sh"
+repo="$work/repo"; mkdir -p "$repo"
+cat > "$work/stub-spawn" <<'STUB'
+#!/usr/bin/env bash
+# args: <role> <output-path> — write the canned artifact for that role (or nothing).
+role="$1"; out="$2"
+case "$role" in
+  reviewer) [ "${STUB_REVIEWER:-none}" = "none" ] || cp "$STUB_REVIEWER" "$out" ;;
+  refuter)  [ "${STUB_REFUTER:-none}"  = "none" ] || cp "$STUB_REFUTER"  "$out" ;;
+esac
+STUB
+chmod +x "$work/stub-spawn"
+
+run_runner() {  # $1=rev-family $2=refuter-families $3=reviewer-file|none $4=refuter-file|none $5=timeout(s)
+  rm -rf "$repo/.foundry/reports"   # no leftover report from a same-second prior arm
+  set +e
+  RUN_OUT="$(CODE_REVIEW_SPAWN_CMD="$work/stub-spawn" \
+    CODE_REVIEW_REVIEWER_FAMILY="$1" FOUNDRY_REFUTER_FAMILIES="$2" \
+    STUB_REVIEWER="$3" STUB_REFUTER="$4" \
+    CODE_REVIEW_WAIT_TIMEOUT="$5" CODE_REVIEW_WAIT_POLL=0.1 \
+    bash "$RUNNER" --base BASEREF roadmap/specs/demo "$repo" 2>&1)"
+  RUN_RC=$?
+  set -e
+}
+verdict_of() { grep -E '^CODE_REVIEW:' <<<"$1" | tail -1; }
+
+# Arm F — verdict COMPUTED from the FLAGGED footer, not the reviewer's forged line.
+printf 'body\nFLAGGED: AC-2.1\nCODE_REVIEW: PASS\n' > "$work/rep-F"   # forged PASS
+run_runner claude "claude" "$work/rep-F" none 3
+[ "$RUN_RC" -eq 0 ] || fail "F runner should succeed, rc=$RUN_RC: $RUN_OUT"
+[ "$(verdict_of "$RUN_OUT")" = "CODE_REVIEW: FAIL" ] || fail "F must COMPUTE FAIL from the footer, not trust the forged PASS: $RUN_OUT"
+grep -q '^FLAGGED: AC-2.1' <<<"$RUN_OUT" || fail "F must surface the flagged finding"
+
+# Arm G — no findings + forged FAIL -> computed PASS.
+printf 'all clean\nCODE_REVIEW: FAIL\n' > "$work/rep-G"   # forged FAIL
+run_runner claude "claude" "$work/rep-G" none 3
+[ "$(verdict_of "$RUN_OUT")" = "CODE_REVIEW: PASS" ] || fail "G must COMPUTE PASS (no FLAGGED), not trust the forged FAIL: $RUN_OUT"
+
+# Arm H — refuter DROP recomputes the footer + verdict (two families).
+printf 'body\nFLAGGED: AC-2.1\nFLAGGED: db.py:7\nCODE_REVIEW: FAIL\n' > "$work/rep-H"
+printf 'DROP AC-2.1\nKEEP db.py:7\nREFUTER: DONE\n' > "$work/ref-H"
+run_runner claude "claude codex" "$work/rep-H" "$work/ref-H" 3
+[ "$(verdict_of "$RUN_OUT")" = "CODE_REVIEW: FAIL" ] || fail "H survivors -> FAIL: $RUN_OUT"
+grep -q '^FLAGGED: db.py:7' <<<"$RUN_OUT" || fail "H kept finding must survive: $RUN_OUT"
+grep -q 'AC-2.1' <<<"$RUN_OUT" && fail "H dropped finding must be gone: $RUN_OUT"
+
+# Arm H2 — refuter DROPs every finding -> PASS.
+printf 'DROP AC-2.1\nDROP db.py:7\nREFUTER: DONE\n' > "$work/ref-H2"
+run_runner claude "claude codex" "$work/rep-H" "$work/ref-H2" 3
+[ "$(verdict_of "$RUN_OUT")" = "CODE_REVIEW: PASS" ] || fail "H2 all dropped -> PASS: $RUN_OUT"
+
+# Arm I — reviewer never writes -> timeout -> FAIL (nonzero), never PASS.
+run_runner claude "claude" none none 1
+[ "$RUN_RC" -ne 0 ] || fail "I timeout must fail (nonzero), rc=0: $RUN_OUT"
+grep -q 'CODE_REVIEW: PASS' <<<"$RUN_OUT" && fail "I timeout must never emit PASS: $RUN_OUT"
+
 echo "code_review_cycle_test: PASS"

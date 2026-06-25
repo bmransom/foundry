@@ -8,17 +8,21 @@
 # so a hung or never-spawned reviewer can't block forever. This is the synchronous
 # foundation the runner needs (CR-1/CR-17) — proven by the T30 tracer bullet.
 #
-# Usage: wait-for-report.sh <report-path> [timeout-seconds] [poll-seconds]
-# Exit: 0 when the report is complete; 1 on timeout (caller decides how to escalate).
+# Usage: wait-for-report.sh <report-path> [timeout-seconds] [poll-seconds] [done-regex]
+#   done-regex defaults to the reviewer verdict line; another caller (e.g. the refuter)
+#   passes its own completion sentinel, such as '^REFUTER: DONE$'.
+# Exit: 0 when the artifact is complete; 1 on timeout (caller decides how to escalate).
 set -euo pipefail
 
-report="${1:?usage: wait-for-report.sh <report-path> [timeout-seconds] [poll-seconds]}"
+report="${1:?usage: wait-for-report.sh <report-path> [timeout-seconds] [poll-seconds] [done-regex]}"
 timeout="${2:-300}"
 poll="${3:-1}"
+done_re="${4:-}"
+[ -n "$done_re" ] || done_re='^CODE_REVIEW: (PASS|FAIL)$'
 
 elapsed=0
 while :; do
-  if [ -f "$report" ] && grep -qE '^CODE_REVIEW: (PASS|FAIL)$' "$report"; then
+  if [ -f "$report" ] && grep -qE "$done_re" "$report"; then
     exit 0
   fi
   if awk "BEGIN{exit !($elapsed >= $timeout)}"; then
