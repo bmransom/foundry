@@ -122,7 +122,13 @@ PROMPT
 
 drive_stage() {           # $1 repo  $2 prompt  $3 log  -> headless agent exit code
   local repo="$1" prompt="$2" log="$3"
-  ( cd "$repo" && timeout "${LIFECYCLE_E2E_STAGE_TIMEOUT:-1800}" \
+  # The headless agent's non-interactive tool shells don't source the login profile, so a
+  # version-manager `node` runtime is off PATH; the agent then hits "command not found" on
+  # node and every node-shebang tool (tsc/vitest/cucumber) until it recovers. Resolve node
+  # here — where the gate runs green — and prepend its dir to the PATH claude -p inherits,
+  # so the agent's shells find the toolchain from the first call.
+  local toolbin=""; command -v node >/dev/null 2>&1 && toolbin="$(dirname "$(command -v node)")"
+  ( cd "$repo" && PATH="${toolbin:+$toolbin:}$PATH" timeout "${LIFECYCLE_E2E_STAGE_TIMEOUT:-1800}" \
       claude -p "$prompt" --dangerously-skip-permissions --verbose --output-format stream-json ) >"$log" 2>&1
 }
 
