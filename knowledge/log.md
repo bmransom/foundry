@@ -4,6 +4,17 @@
 
 Changes to the knowledge base, newest first. A reserved OKF file — no frontmatter.
 
+## 2026-06-25
+
+- **Update** The **code-review** skill reached feature-complete (spec
+  `roadmap/specs/code-review/` `SPEC_REVIEW: CLEAN`): a synchronous runner with inner
+  review-convergence + outer fix-convergence loops, a cross-model DROP-only refuter with
+  footer-algebra recompute, agent-calibration guardrails (evidence-or-drop,
+  silence-beats-noise, no-invented-requirements, leave-style-to-the-linter) + spec
+  grounding, manifest-derived refuter families via `--harness`, and the shared
+  `resolve_base` diff range. No new glossary concepts — generic prior art; provenance in
+  the SKILL header. The L3 eval + the hermetic A/B gate decide refuter enablement.
+
 ## 2026-06-24
 
 - **Convention** Wiring a PostToolUse convergence trigger (`spec-convergence-posttooluse.sh`,
