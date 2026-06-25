@@ -309,6 +309,51 @@ Acceptance criteria:
   the CLI into a single config object and thread it inward as explicit values; the
   inner contexts SHALL NOT re-default or read the environment.
 
+### US-14: Calibrate the agent reviewer for precision
+
+As a maintainer, I want the agent reviewer to suppress false positives and
+hallucinations so a finding is trustworthy and a PASS verdict means something —
+false positives, not missed nits, are the failure mode that makes an AI reviewer
+get ignored.
+
+Acceptance criteria:
+
+- AC-14.1 WHEN flagging a finding, THE SYSTEM SHALL cite a `file:line` it has read or
+  grepped for every symbol, path, and line range it references, and SHALL drop a
+  finding whose location it cannot verify.
+- AC-14.2 WHEN it is not confident a candidate is a real defect, THE SYSTEM SHALL drop
+  it rather than flag it — silence over noise.
+- AC-14.3 WHEN no candidate meets the bar, THE SYSTEM SHALL emit zero findings and
+  PASS, and SHALL NOT manufacture low-value findings to appear thorough.
+- AC-14.4 WHEN several findings share one root cause or repeated pattern, THE SYSTEM
+  SHALL report them as a single clustered finding.
+- AC-14.5 WHEN a candidate is contradicted by adjacent code (its definition, callers,
+  or callees), THE SYSTEM SHALL read that context and drop the diff-local false
+  positive.
+- AC-14.6 WHEN reviewing, THE SYSTEM SHALL NOT flag style, formatting, import order, or
+  other lint-domain issues; deterministic tools own those.
+- AC-14.7 WHEN a finding rests on design judgment or an inferred root cause, THE SYSTEM
+  SHALL mark it advisory unless it is backed by verifiable evidence; a mechanically
+  verified correctness or security defect SHALL be blocking.
+
+### US-15: Ground findings in the consumer's spec, never invented requirements
+
+As a maintainer, I want the review graded against the spec that the consumer's
+foundry install guarantees is present, so the reviewer separates intentional design
+from defects and never invents a requirement.
+
+Acceptance criteria:
+
+- AC-15.1 WHEN grading the diff, THE SYSTEM SHALL treat the spec's acceptance criteria
+  as the statement of intent and SHALL NOT flag behavior that conforms to the spec.
+- AC-15.2 WHEN the diff omits a behavior, THE SYSTEM SHALL flag the omission only if a
+  spec AC requires it, and SHALL NOT invent an unstated requirement or constraint.
+- AC-15.3 WHEN the reviewer believes code is wrong, THE SYSTEM SHALL treat its own
+  proposed fix as a hypothesis to verify against the spec and code, not as evidence
+  the original is wrong.
+- AC-15.4 WHEN the spec and the code disagree, THE SYSTEM SHALL flag the discrepancy
+  rather than assume the code is correct, and SHALL NOT edit the spec to resolve it.
+
 ## Out of scope
 
 - A glossary entry for code review (generic prior art; provenance lives in the

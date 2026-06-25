@@ -259,6 +259,38 @@ fallback, never a hard error.
 **Not debate.** The refuter is a single asymmetric refute pass, explicitly not a
 symmetric debate or multi-round argument. One pass, one direction: drop or keep.
 
+## Calibration (agent precision + spec grounding)
+
+The reviewer is an LLM, so its dominant failure is the **false positive** — untuned AI
+reviewers run 40–80% false-positive rates, and a reviewer past ~30% gets ignored. These
+instruction-level guardrails (in `SKILL.md` / `references/dimensions.md`) hold each pass
+precise before the refuter and the convergence union run:
+
+- **Evidence or drop** — every finding cites a read/grepped `file:line` for each symbol,
+  path, and range; an unverifiable location is dropped (anti-hallucination). [AC-14.1]
+- **High-confidence-or-drop; silence beats noise** — drop a candidate the reviewer is not
+  confident is a real defect; **zero findings is a valid, good outcome**, never a reason
+  to manufacture nits. [AC-14.2, AC-14.3]
+- **Cluster** repeated patterns into one finding. [AC-14.4]
+- **Read context, not the hunk** — a diff-local claim contradicted by the definition,
+  callers, or callees is a false positive; drop it. [AC-14.5]
+- **Never flag style/format/lint** — deterministic tools own those; the agent is worse at
+  them and it is pure noise. [AC-14.6]
+- **Severity by verifiability** — a mechanically verified correctness or security defect
+  blocks; a design-judgment or inferred-root-cause finding (where LLM accuracy is weak) is
+  advisory unless backed by evidence. [AC-14.7]
+
+**Spec grounding.** Because the consumer ran bootstrap, the spec is always present —
+code-review's structural advantage over generic AI reviewers, which lack intent context.
+The reviewer grades the diff against the spec's ACs as the statement of intent:
+spec-conforming behavior is not a defect; an omission is a finding only if an AC requires
+it; the reviewer never invents a requirement, and treats its own proposed fix as a
+hypothesis to verify, not proof the code is wrong (anti-overcorrection). A spec/code
+disagreement is flagged, never resolved by editing the spec. [AC-15.1–15.4]
+
+The refuter (cross-model) and the convergence union are the mechanisms; calibration is
+what keeps every pass precise before they run.
+
 ## Dimensions
 
 The review grades each dimension mechanically where the repo contract allows,

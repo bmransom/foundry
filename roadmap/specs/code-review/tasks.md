@@ -287,3 +287,26 @@ then composes — the Pragmatic-Programmer sense of a tracer bullet.
 - [ ] T29: Run the canonical gate and the cycle-control test; the L3 review eval
   green for the version bump. Gate: `scripts/check-fast.sh` prints `check-fast:
   PASS`; then move the card Validating → Done. [AC-10.2]
+
+## Wave 15 — Agent calibration + spec grounding (precision: low false positives)
+
+- [ ] T33: Extend `tests/code_review_skill_test.sh` (red) — assert the SKILL/dimensions
+  text carries the calibration guardrails (cite `file:line` / evidence-or-drop; drop when
+  unsure / zero-findings-is-fine; cluster; read context not the hunk; do-NOT-flag
+  style/lint; severity by verifiability) and the spec-grounding rules (grade against the
+  spec's ACs; never invent a requirement; a proposed fix is a hypothesis). Gate: the test
+  exists, is executable, and FAILS now. [AC-14.1, AC-14.2, AC-14.3, AC-14.4, AC-14.5, AC-14.6, AC-14.7, AC-15.1, AC-15.2, AC-15.3, AC-15.4]
+- [ ] T34: Encode the guardrails + spec-grounding in `SKILL.md` and
+  `references/dimensions.md` — a Calibration block (evidence-or-drop, silence-beats-noise,
+  cluster, read-context, no-style, severity-by-verifiability) and a Spec-grounding block;
+  hold `SKILL.md` within the 120-line budget by keeping detail in `dimensions.md`
+  (dep T33). Gate: `tests/code_review_skill_test.sh` PASS; `scripts/check-context-budget.sh`
+  PASS. [AC-14.1, AC-14.2, AC-14.3, AC-14.4, AC-14.5, AC-14.6, AC-14.7, AC-15.1, AC-15.2, AC-15.3, AC-15.4]
+- [ ] T35: Add **decoy** eval cases that punish false positives — seed in the fixture a
+  style-only change, a spec-conforming behavior, an "omission" the spec does not require,
+  and a plausible-but-unverifiable claim; the answer key marks each a decoy (dep T34).
+  Gate: `score_review.py` fails a run that flags ANY decoy (MAX_DECOY_HITS = 0); a run
+  that flags none passes. [AC-14.1, AC-14.3, AC-14.6, AC-15.1, AC-15.2]
+- [ ] T36: Trace every new AC to a task; re-run `spec-review` to `SPEC_REVIEW: CLEAN`;
+  `check-fast` green; move the card (deps T34, T35). Gate: all AC-14/AC-15 traced;
+  spec-review CLEAN; `scripts/check-fast.sh` PASS. [AC-14.7, AC-15.3, AC-15.4]
