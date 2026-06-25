@@ -300,7 +300,7 @@ case "$mode" in
     state="$repo/.foundry/tmp/lifecycle-run.json"
     git -C "$repo" checkout -q main 2>/dev/null || true
     # Run-state init: completed = features whose spec dir already exists on main.
-    completed_json="$(ls "$repo/roadmap/specs" 2>/dev/null | python3 -c 'import sys,json; print(json.dumps([l.strip() for l in sys.stdin if l.strip()]))')"
+    completed_json="$(find "$repo/roadmap/specs" -maxdepth 1 -mindepth 1 -type d -exec basename {} \; 2>/dev/null | python3 -c 'import sys,json; print(json.dumps(sorted(l.strip() for l in sys.stdin if l.strip())))')"
     mkdir -p "$repo/.foundry/tmp"
     LRS_L="$AUTON_LEVEL" LRS_K="$stopkind" LRS_I="$stopid" LRS_C="$completed_json" python3 - "$state" <<'PY'
 import json, os, sys, datetime
