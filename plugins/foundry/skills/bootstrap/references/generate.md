@@ -169,10 +169,16 @@ Gitignore the docs build artifacts (`knowledge/node_modules/`,
 ## vocab-lint — glossary debt column has entries
 
 `scripts/vocab-lint.sh`: read the terms from the "Replaces (now debt)" column
-of `knowledge/glossary.md` at run time (the glossary stays the single source); grep
-the surfaces the polarity answer names (`knowledge/` and `roadmap/specs/` — plus code identifiers
-for an excluding engine), excluding the glossary itself — its debt column
-contains every term; fail on any hit:
+of `knowledge/glossary.md` at run time (the glossary stays the single source). Lint
+**prose surfaces only** — markdown (`*.md`) under the directories the polarity answer
+names (`knowledge/` and `roadmap/specs/`; plus code identifiers for an excluding
+engine) — and EXCLUDE generated and dependency trees: `node_modules/`, `dist/`,
+lockfiles, and the VitePress build output (`.vitepress/cache`, `sidebar.generated.json`).
+This matters: a recursive grep over `knowledge/` also reads `package-lock.json` and the
+docs-site build, where a debt term hides inside a dependency name (case-insensitive `AI`
+matches `sponsors/ai`) and yields a false failure — scoping to `*.md` prose and
+excluding generated trees prevents it. Exclude the glossary itself — its debt column
+lists every term. Match whole words, case-insensitively; fail on any hit:
 
 Keep the script portable to Bash 3.2, which `/usr/bin/env bash` resolves to on
 macOS. Do not use Bash 4-only helpers such as `mapfile` or `readarray`; stream

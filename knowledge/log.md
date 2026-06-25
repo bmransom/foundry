@@ -4,6 +4,17 @@
 
 Changes to the knowledge base, newest first. A reserved OKF file — no frontmatter.
 
+## 2026-06-25
+
+- **Fix** Bootstrap's `generate.md` vocab-lint guidance now scopes the generated
+  `scripts/vocab-lint.sh` to **markdown prose** and excludes generated/dependency trees
+  (`node_modules/`, `dist/`, lockfiles, the VitePress build). The lifecycle-e2e dogfood
+  surfaced the gap: a fresh agent generated a recursive grep over `knowledge/` that
+  false-matched the debt term `AI` inside `knowledge/package-lock.json`
+  (`sponsors/ai`). The agent recovered, but the guidance now bakes the fix in so the
+  next bootstrap gets it right unaided. The e2e harness gained a regression signal that
+  flags a generated lint which fails to scope to prose.
+
 ## 2026-06-20
 
 - **Update** Registered the **Code-review eval (L3)** in **Validation**

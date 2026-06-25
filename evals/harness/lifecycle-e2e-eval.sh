@@ -168,6 +168,15 @@ case "$mode" in
     else
       echo "generated check-fast: FAIL — see $out/check-fast.log (workflow friction)"
     fi
+    # Regression signal for the generate.md vocab-lint fix: a generated lint must scope
+    # to markdown prose, else it false-matches a debt term in a lockfile/generated tree.
+    if [ -f "$repo/scripts/vocab-lint.sh" ]; then
+      if grep -q '\.md' "$repo/scripts/vocab-lint.sh"; then
+        echo "vocab-lint scoping: PASS (restricts to markdown prose)"
+      else
+        echo "vocab-lint scoping: FRICTION — generated lint may scan non-prose; see bootstrap generate.md"
+      fi
+    fi
     cp -R "$repo" "$out/repo" 2>/dev/null || true
     echo "collected: $out/repo"
     exit 0 ;;
