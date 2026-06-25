@@ -1,6 +1,6 @@
 {
   "name": "foundry",
-  "version": "0.1.0",
+  "version": "0.1.6",
   "description": "Bootstrap an AI-assisted engineering setup into any repo: specs, gherkin features, vitepress docs, kanban board, glossary contract, gates, COE-driven evals.",
   "author": {
     "name": "Brandon Ransom"
