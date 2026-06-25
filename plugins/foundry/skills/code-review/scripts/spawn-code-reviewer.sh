@@ -83,13 +83,14 @@ main() {
   local spec_dir="$1"
   local dir="${2:-$PWD}"
 
-  # Diff base: --base overrides; default is the merge-base of main and HEAD (T23
-  # swaps this for the shared resolver). Review the working diff if there is none.
+  # Diff base: --base overrides; the default is the shared resolver
+  # (origin/HEAD -> main -> HEAD), so the code-review range matches the rest of
+  # foundry. Review the working diff if none resolves.
   if [ -z "$base" ]; then
-    base="$(git -C "$dir" merge-base main HEAD 2>/dev/null || true)"
+    base="$("$runner" --resolve-base "$dir" 2>/dev/null || true)"
   fi
   local range
-  if [ -n "$base" ]; then range="$base..HEAD"; else range="(no merge-base — review the working diff)"; fi
+  if [ -n "$base" ]; then range="$base..HEAD"; else range="(no base resolved — review the working diff)"; fi
 
   local review_dir=".foundry/reports/code-review"
   # Absolute report path under the PRIMARY tree, so retiring a spawned worktree

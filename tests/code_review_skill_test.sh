@@ -180,12 +180,12 @@ case "$dry_run" in
   *) fail "dry-run must name the report path" ;;
 esac
 
-# --dry-run without --base shows the git merge-base main HEAD default range.
-default_base="$(git -C "$REPO" merge-base main HEAD 2>/dev/null || true)"
+# --dry-run without --base shows the shared resolve_base (origin/HEAD -> main -> HEAD) range.
+default_base="$("$REPO/plugins/foundry/scripts/spawn-fresh-session.sh" --resolve-base "$REPO" 2>/dev/null || true)"
 if [ -n "$default_base" ]; then
   case "$dry_run" in
-    *"$default_base"*"..HEAD"*|*"$default_base..HEAD"*) ;;
-    *) fail "dry-run without --base must show the git merge-base main HEAD default range" ;;
+    *"$default_base..HEAD"*) ;;
+    *) fail "dry-run without --base must show the resolve_base (origin/HEAD->main->HEAD) range" ;;
   esac
 fi
 
