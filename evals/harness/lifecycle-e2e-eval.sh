@@ -17,13 +17,16 @@ REPO="$(cd "$HARNESS_DIR/../.." && pwd)"
 FIXTURE="$REPO/evals/fixtures/lifecycle-e2e"
 RESULTS="$REPO/evals/results"
 
-mode=run   # run | plan | setup | verify
+mode=run   # run | plan | setup | verify | bootstrap
+dry=0
 harnesses="claude-code codex"
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --plan) mode=plan; shift ;;
     --setup-only) mode=setup; shift ;;     # deterministic: fresh repo + verbatim install + verify
     --verify-only) mode=verify; shift ;;   # deterministic: verify an existing install (LIFECYCLE_E2E_SETUP_DIR)
+    --bootstrap) mode=bootstrap; shift ;;  # headless slice: fresh repo + drive the bootstrap skill, then verify
+    --dry-run) dry=1; shift ;;             # with --bootstrap: print the headless command + prompt, run nothing
     --harness)
       [ "$#" -ge 2 ] || { echo "lifecycle-e2e: --harness needs a value" >&2; exit 2; }
       case "$2" in both) harnesses="claude-code codex" ;; claude-code|codex) harnesses="$2" ;; *) echo "lifecycle-e2e: unknown harness '$2'" >&2; exit 2 ;; esac
@@ -89,6 +92,36 @@ verify_install() {        # $1 = target repo — each verbatim template byte-ide
   return "$bad"
 }
 
+# --- Headless drive (the heavy part) -------------------------------------------
+# The canned bootstrap prompt points the agent at THIS repo's local bootstrap skill
+# (not the cached release), so the dogfood tests the local foundry. Mirrors how
+# code-review-eval.sh references the skill by path.
+bootstrap_prompt() {
+  local plugin_root="$REPO/plugins/foundry"
+  cat <<PROMPT
+Read and follow the foundry bootstrap skill at $plugin_root/skills/bootstrap/SKILL.md, plus its references/generate.md and references/verify.md. The plugin root is $plugin_root; its templates live at $plugin_root/templates/ (verbatim/ and seeds/). Bootstrap the foundry setup into the CURRENT directory, a fresh empty git repo.
+
+This is a headless run with CANNED interview answers — do NOT ask questions, use these verbatim:
+- Target harness(es): both (claude-code and codex).
+- Project: a Texas Hold'em poker engine with a backend HTTP API, computer players, and a minimal browser UI for a human to play turn-based hands.
+- Domain terms: hand, hole cards, community cards, board, pot, side pot, blind, betting round (preflop/flop/turn/river), action (fold/check/call/bet/raise), showdown. Debt terms: "card value" -> rank; "AI" -> CPU player.
+- Vocabulary polarity: embrace the domain (a product).
+- API surface: yes — an HTTP API the future browser UI will use.
+- Gate commands: the stack's test + lint + build. Pick ONE sensible stack for a poker engine + HTTP API + browser UI (e.g. Python or TypeScript) and wire scripts/check-fast.sh to that stack's real test/lint/build.
+- Parallel agents: yes.
+- Unit of work for logging: a hand.
+- First epic: "Playable Texas Hold'em vs computer players."
+
+Complete all five phases (Inspect, Interview, Copy, Generate, Verify). In Verify, run scripts/check-fast.sh and paste its output, and seed-then-remove a failing check to prove the gate discriminates. Do NOT commit — leave the working tree in place for collection (skip the final commit/ask step).
+PROMPT
+}
+
+drive_stage() {           # $1 repo  $2 prompt  $3 log  -> headless agent exit code
+  local repo="$1" prompt="$2" log="$3"
+  ( cd "$repo" && timeout "${LIFECYCLE_E2E_STAGE_TIMEOUT:-1800}" \
+      claude -p "$prompt" --dangerously-skip-permissions --verbose --output-format stream-json ) >"$log" 2>&1
+}
+
 case "$mode" in
   setup)
     repo="${LIFECYCLE_E2E_SETUP_DIR:-$(mktemp -d)}"
@@ -105,6 +138,39 @@ case "$mode" in
       echo "lifecycle-e2e verify: BYTE-IDENTITY PASS; repo=$repo"; exit 0
     fi
     echo "lifecycle-e2e verify: BYTE-IDENTITY FAIL; repo=$repo" >&2; exit 1 ;;
+  bootstrap)
+    repo="${LIFECYCLE_E2E_SETUP_DIR:-$(mktemp -d)}"
+    out="$RESULTS/lifecycle-e2e-bootstrap-$$"
+    mkdir -p "$out"
+    log="$out/bootstrap.log"
+    prompt="$(bootstrap_prompt)"
+    if [ "$dry" -eq 1 ]; then
+      echo "lifecycle-e2e bootstrap — DRY RUN (nothing run)"
+      echo "fresh repo: $repo"
+      echo "results:    $out"
+      echo "command:    (cd \$repo && claude -p <prompt> --dangerously-skip-permissions --verbose --output-format stream-json) > $log"
+      echo "--- canned bootstrap prompt (local plugin, not the cached release) ---"
+      printf '%s\n' "$prompt"
+      exit 0
+    fi
+    fresh_repo "$repo"
+    echo "lifecycle-e2e bootstrap: headless claude bootstrapping foundry in $repo"
+    echo "  log: $log"
+    drive_stage "$repo" "$prompt" "$log" || echo "bootstrap: headless agent exited nonzero (see $log)" >&2
+    echo "=== bootstrap artifacts ==="
+    for f in AGENTS.md CLAUDE.md .foundry/manifest.json roadmap/ROADMAP.md knowledge/glossary.md scripts/check-fast.sh features; do
+      [ -e "$repo/$f" ] && echo "PRESENT $f" || echo "MISSING $f"
+    done
+    if verify_install "$repo"; then echo "verbatim byte-identity: PASS"; else echo "verbatim byte-identity: FAIL (friction)"; fi
+    echo "=== generated check-fast ==="
+    if ( cd "$repo" && bash scripts/check-fast.sh ) >"$out/check-fast.log" 2>&1; then
+      echo "generated check-fast: PASS"
+    else
+      echo "generated check-fast: FAIL — see $out/check-fast.log (workflow friction)"
+    fi
+    cp -R "$repo" "$out/repo" 2>/dev/null || true
+    echo "collected: $out/repo"
+    exit 0 ;;
 esac
 
 # --- Full run: the headless lifecycle drive (built next; heavy, on-demand) ------

@@ -39,4 +39,12 @@ if LIFECYCLE_E2E_SETUP_DIR="$work/repo" "$DRIVER" --verify-only >/dev/null 2>&1;
   fail "byte-identity must catch a missing verbatim file"
 fi
 
+# --bootstrap --dry-run is hermetic (spawns no agent): it previews the headless command
+# and the canned prompt, pointing at THIS repo's local bootstrap skill (not the cached release).
+bdry="$("$DRIVER" --bootstrap --dry-run)" || fail "--bootstrap --dry-run should exit 0"
+grep -q "DRY RUN" <<<"$bdry" || fail "--bootstrap --dry-run must announce DRY RUN"
+grep -q "plugins/foundry/skills/bootstrap/SKILL.md" <<<"$bdry" \
+  || fail "--bootstrap prompt must point at the local bootstrap skill, not the cached release"
+grep -q "Texas Hold'em" <<<"$bdry" || fail "--bootstrap prompt must carry the canned poker answers"
+
 echo "lifecycle_e2e_test: PASS"
