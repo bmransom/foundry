@@ -197,16 +197,18 @@ the cited revision task is authoritative.
   test-only reviewer-command seam and feed scripted `CODE_REVIEW:`/`FLAGGED:`
   sequences. Assert `code-review-convergence-hook.sh` returns continue-on-FAIL (exit
   2), converged-on-PASS (exit 0), escalate at the 20-round ceiling (exit 4), rejects
-  a missing verdict line, and that the runner unions findings and recomputes the
-  verdict after a refuter DROP. Gate: the test exists, is executable, and FAILS now
-  (no hook / synchronous runner yet). [AC-7.5, AC-7.6, AC-11.1, AC-11.2, AC-11.3, AC-11.4]
+  a missing verdict line, fails (never converges) on a failed/timed-out review, and
+  that the runner unions findings and recomputes the verdict after a refuter DROP.
+  Gate: the test exists, is executable, and FAILS now (no hook / synchronous runner
+  yet). [AC-7.5, AC-7.6, AC-11.1, AC-11.2, AC-11.3, AC-11.4, AC-11.5]
 - [ ] T19: Make `spawn-code-reviewer.sh` synchronous — block until the reviewer's
-  report is written, extract the `FLAGGED:` footer, and compute the verdict from
-  the surviving blocking findings (never a scraped free-text line); after the
-  refuter, rewrite the footer to candidates-minus-DROPs and recompute; pass the
-  refuter ONLY the extracted footer + diff (dep T18). Gate: the cycle-control
-  test's synchronous/verdict/refuter-recompute arms PASS. [AC-11.1, AC-11.2,
-  AC-11.3, AC-11.4]
+  report is written via `wait-for-report.sh` (T30), exiting nonzero with no verdict
+  if it times out (never PASS); extract the `FLAGGED:` footer, and compute the
+  verdict from the surviving blocking findings (never a scraped free-text line);
+  after the refuter, rewrite the footer to candidates-minus-DROPs and recompute;
+  pass the refuter ONLY the extracted footer + diff (deps T18, T30). Gate: the
+  cycle-control test's synchronous/verdict/refuter-recompute/timeout arms PASS.
+  [AC-11.1, AC-11.2, AC-11.3, AC-11.4, AC-11.5]
 
 ## Wave 10 — Inner review-convergence loop (revision)
 

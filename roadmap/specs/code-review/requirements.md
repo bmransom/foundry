@@ -259,6 +259,9 @@ Acceptance criteria:
   verdict from the surviving blocking findings.
 - AC-11.4 WHEN handing findings to the refuter, THE SYSTEM SHALL pass ONLY the
   extracted `FLAGGED:` footer and the diff, never the reviewer's report prose.
+- AC-11.5 WHEN the report does not complete within the timeout, THE SYSTEM SHALL
+  exit nonzero with no verdict and SHALL NOT emit `CODE_REVIEW: PASS`; the
+  outer-loop hook SHALL treat it as non-converged so Finish stays blocked.
 
 ### US-12: Converge a single review — complete and correct
 

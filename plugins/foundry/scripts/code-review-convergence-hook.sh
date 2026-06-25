@@ -26,7 +26,10 @@ counter_file="$state_dir/$slug.round"
 mkdir -p "$state_dir"
 round="$(cat "$counter_file" 2>/dev/null || echo 0)"
 
-report="$("$review_cmd" "$spec_dir")"
+if ! report="$("$review_cmd" "$spec_dir")"; then
+  echo "code-review-convergence: ERROR — the review command failed or timed out; not converged" >&2
+  exit 3
+fi
 verdict="$(printf '%s\n' "$report" | grep -E '^CODE_REVIEW: (PASS|FAIL)$' | tail -1 || true)"
 [ -n "$verdict" ] || {
   echo "code-review-convergence: ERROR — no 'CODE_REVIEW: PASS|FAIL' verdict line (reviewer drift)" >&2

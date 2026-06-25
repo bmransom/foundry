@@ -19,6 +19,7 @@ v="$(head -1 "$STUB_SEQ")"
 tail -n +2 "$STUB_SEQ" > "$STUB_SEQ.tmp"; mv "$STUB_SEQ.tmp" "$STUB_SEQ"
 if [ "$v" = "PASS" ]; then echo "(no blocking findings)"; echo "CODE_REVIEW: PASS"
 elif [ "$v" = "DRIFT" ]; then echo "prose, but no verdict line"
+elif [ "$v" = "TIMEOUT" ]; then exit 1   # the review command failed / timed out
 else echo "FLAGGED: bug in foo.py:10"; echo "CODE_REVIEW: FAIL"; fi
 STUB
 chmod +x "$work/stub-review"
@@ -57,5 +58,10 @@ case "$HOOK_OUT" in *CAP*|*escalat*) ;; *) fail "C3 output: $HOOK_OUT" ;; esac
 export CODE_REVIEW_CONVERGENCE_STATE="$work/stateD" STUB_SEQ="$work/seqD" CODE_REVIEW_CONVERGENCE_CAP=20
 printf 'DRIFT\n' > "$STUB_SEQ"
 run; [ "$HOOK_RC" -ne 0 ] || fail "D expected nonzero on reviewer drift, got 0: $HOOK_OUT"
+
+# Arm E — the review command fails / times out -> hook fails, NEVER converges (no false PASS).
+export CODE_REVIEW_CONVERGENCE_STATE="$work/stateE" STUB_SEQ="$work/seqE" CODE_REVIEW_CONVERGENCE_CAP=20
+printf 'TIMEOUT\n' > "$STUB_SEQ"
+run; [ "$HOOK_RC" -ne 0 ] || fail "E expected nonzero on a failed/timed-out review, got 0: $HOOK_OUT"
 
 echo "code_review_cycle_test: PASS"
