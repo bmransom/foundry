@@ -20,7 +20,9 @@ re-asked mid-run.
   (Read-only / Auto / Full Access) and the role-based agent-autonomy levels
   (operator → observer); foundry binds the level to its lifecycle gates.
 - **Stop-point** — the boundary that ends an autonomous run: a feature, a named board
-  card, the current epic, or the roadmap.
+  card, the current epic, or the roadmap. Prior art: the debugger **breakpoint** — a
+  user-set point where automated execution halts and returns control; the stop-point is
+  its lifecycle analogue.
 
 ## US-1 — Set autonomy once, at the start
 
@@ -46,22 +48,22 @@ a blocking review finding with several reasonable fixes. A hard blocker halts ev
 (AC-3.4); the level decides who resolves a soft fork.
 
 - AC-2.1 WHEN the level is Supervised, THE SYSTEM SHALL drive exactly one feature to
-  Finish, then stop and hand back; the Design-approval and commit gates SHALL ask the
-  user as the base lifecycle does — it asks at every gate.
+  Finish, then stop and hand back; the Design-approval and commit/push gates SHALL ask
+  the user as the base lifecycle does.
 - AC-2.2 WHEN the level is Guided, THE SYSTEM SHALL self-approve an unambiguous Design and
   commit on a feature branch, BUT SHALL stop and ask the user at every soft fork,
-  auto-proceeding only when the path is unambiguous — it asks at decisions.
+  auto-proceeding only when the path is unambiguous.
 - AC-2.3 WHEN the level is Autonomous, THE SYSTEM SHALL resolve a soft fork itself —
   choosing the most defensible option and recording the rationale in the stop-point
-  summary — and SHALL surface only at the stop-point or a hard blocker — it asks at
-  nothing but hard blockers (human-on-the-loop).
+  summary — and SHALL surface only at the stop-point or a hard blocker (human-on-the-loop).
 - AC-2.4 Regardless of level, THE SYSTEM SHALL NOT push or merge to the default branch
   without an explicit user go-ahead — the "ask before push" boundary is invariant.
 
 ## US-3 — The stop-point bounds the run
 
 - AC-3.1 THE stop-point SHALL be one of: this feature, a named board card, the current
-  epic, or the whole roadmap.
+  epic, or the whole roadmap. WHEN the level is Supervised, THE SYSTEM SHALL pin the
+  stop-point to this feature and ignore any wider stop-point.
 - AC-3.2 WHEN a feature reaches Finish AND the stop-point is not reached AND the level
   is Guided or Autonomous, THE SYSTEM SHALL claim the next eligible roadmap card and
   re-enter Frame for it.
@@ -78,8 +80,9 @@ a blocking review finding with several reasonable fixes. A hard blocker halts ev
 - AC-4.1 Under Claude Code `/loop`, THE SYSTEM SHALL treat the loop as the driver: the
   stop-point decides when to stop re-arming the loop, and the directive is read from the
   loop prompt or run-state, never re-asked per iteration.
-- AC-4.2 Under Codex `/goal`, THE SYSTEM SHALL treat the goal as the scope directive and
-  the Codex approval mode as the gate behavior, and SHALL NOT re-ask either.
+- AC-4.2 Under Codex `/goal`, THE SYSTEM SHALL derive the stop-point from the goal's
+  terminal milestone and map the Codex approval mode to the autonomy level (Read-only →
+  Supervised, Auto → Guided, Full Access → Autonomous), and SHALL NOT re-ask either.
 - AC-4.3 THE run summary (AC-3.3) SHALL name "stop-point reached" in a form the driving
   command can act on — for `/loop`, the signal to stop re-arming.
 

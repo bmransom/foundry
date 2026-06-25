@@ -32,7 +32,8 @@ Waves run top to bottom. Every task names the gate that proves it and the AC it 
   after one feature; Guided continues to the stop-point; a seeded hard blocker halts; no
   push/merge to the default branch. Gate: the eval fails if any of these holds wrong.
   [Metrics]
-- [ ] T7: Glossary — "Autonomy level" + "Stop-point" with provenance; knowledge log.
+- [ ] T7: Glossary — "Autonomy level" + "Stop-point" rows with provenance and an explicit
+  em-dash in the "Replaces (now debt)" column (they replace nothing); knowledge log.
   Gate: `python3 scripts/knowledge.py check` clean. [Glossary impact]
 
 ## Wave 5 — Verify
