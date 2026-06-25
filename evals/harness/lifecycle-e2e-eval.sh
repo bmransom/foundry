@@ -17,11 +17,13 @@ REPO="$(cd "$HARNESS_DIR/../.." && pwd)"
 FIXTURE="$REPO/evals/fixtures/lifecycle-e2e"
 RESULTS="$REPO/evals/results"
 
-plan=0
+mode=run   # run | plan | setup | verify
 harnesses="claude-code codex"
 while [ "$#" -gt 0 ]; do
   case "$1" in
-    --plan) plan=1; shift ;;
+    --plan) mode=plan; shift ;;
+    --setup-only) mode=setup; shift ;;     # deterministic: fresh repo + verbatim install + verify
+    --verify-only) mode=verify; shift ;;   # deterministic: verify an existing install (LIFECYCLE_E2E_SETUP_DIR)
     --harness)
       [ "$#" -ge 2 ] || { echo "lifecycle-e2e: --harness needs a value" >&2; exit 2; }
       case "$2" in both) harnesses="claude-code codex" ;; claude-code|codex) harnesses="$2" ;; *) echo "lifecycle-e2e: unknown harness '$2'" >&2; exit 2 ;; esac
@@ -53,19 +55,63 @@ print_plan() {
   echo "  7. workflow report — per stage: unaided | retried | wrong-artifact | stuck  (the eval's signal)"
 }
 
-if [ "$plan" -eq 1 ]; then print_plan; exit 0; fi
+[ "$mode" = plan ] && { print_plan; exit 0; }
 
-# --- Run mode: built incrementally over the initial iterations -----------------
-# Each helper is the next slice of work; the heavy part is drive_stage (headless).
-# fresh_repo()        — mktemp -d; git init; empty tree.
-# install_foundry()   — make the plugin available; run bootstrap headless with the
-#                       canned answers; assert AGENTS.md + manifest + check-fast exist.
-# drive_stage()       — invoke the headless agent (claude -p / codex) for one stage
-#                       with the fixture inputs; capture the transcript.
-# verify_gate()       — run the generated repo's check-fast; require PASS.
-# assert_sim()        — run 'sim --hands N'; assert the acceptance invariants.
-# collect_artifacts() — copy the generated repo to the results dir.
-# report_friction()   — per stage: unaided | retried | wrong-artifact | stuck.
-echo "lifecycle-e2e: run mode is built incrementally — use --plan for the staged plan." >&2
-echo "Next slice: fresh_repo + install_foundry (bootstrap headless with the canned poker answers)." >&2
+# --- Deterministic install (bootstrap's byte-exact Copy phase) -----------------
+# fresh_repo + install_foundry + verify_install are the deterministic foundation of a
+# run; drive_stage (the headless lifecycle, the heavy part) builds on them next.
+
+fresh_repo() {            # $1 = target dir — a clean, empty git repo
+  local repo="$1"
+  mkdir -p "$repo"
+  git -C "$repo" init -q
+}
+
+install_foundry() {       # $1 = target repo — copy foundry's verbatim templates byte-exact
+  local repo="$1" templates="$REPO/plugins/foundry/templates/verbatim"
+  while IFS= read -r -d '' tf; do
+    local rel="${tf#"$templates/"}"
+    mkdir -p "$repo/$(dirname "$rel")"
+    cp "$tf" "$repo/$rel"
+  done < <(find "$templates" -type f -not -path '*/__pycache__/*' -print0)
+}
+
+verify_install() {        # $1 = target repo — each verbatim template byte-identical (modulo marker)
+  local repo="$1" templates="$REPO/plugins/foundry/templates/verbatim" bad=0
+  while IFS= read -r -d '' tf; do
+    local rel="${tf#"$templates/"}"
+    local copy="$repo/$rel"
+    if [ ! -f "$copy" ]; then echo "MISSING $rel" >&2; bad=1; continue; fi
+    if ! diff -q <(grep -vF 'foundry-template:' "$tf") <(grep -vF 'foundry-template:' "$copy") >/dev/null; then
+      echo "DRIFT $rel" >&2; bad=1
+    fi
+  done < <(find "$templates" -type f -not -path '*/__pycache__/*' -print0)
+  return "$bad"
+}
+
+case "$mode" in
+  setup)
+    repo="${LIFECYCLE_E2E_SETUP_DIR:-$(mktemp -d)}"
+    fresh_repo "$repo"
+    install_foundry "$repo"
+    if verify_install "$repo"; then
+      echo "lifecycle-e2e setup: BYTE-IDENTITY PASS — foundry verbatim templates installed; repo=$repo"
+      exit 0
+    fi
+    echo "lifecycle-e2e setup: BYTE-IDENTITY FAIL; repo=$repo" >&2; exit 1 ;;
+  verify)
+    repo="${LIFECYCLE_E2E_SETUP_DIR:?--verify-only needs LIFECYCLE_E2E_SETUP_DIR}"
+    if verify_install "$repo"; then
+      echo "lifecycle-e2e verify: BYTE-IDENTITY PASS; repo=$repo"; exit 0
+    fi
+    echo "lifecycle-e2e verify: BYTE-IDENTITY FAIL; repo=$repo" >&2; exit 1 ;;
+esac
+
+# --- Full run: the headless lifecycle drive (built next; heavy, on-demand) ------
+# drive_stage()  — invoke the headless agent (claude -p / codex) per stage, canned inputs.
+# verify_gate()  — run the generated repo's check-fast; require PASS.
+# assert_sim()   — run 'sim --hands N'; assert the acceptance invariants + HTTP smoke.
+# collect_artifacts() / report_friction() — gather + grade workflow friction.
+echo "lifecycle-e2e: full headless run not yet implemented — install foundation ready (--setup-only)." >&2
+echo "Next slice: drive_stage (headless bootstrap with the canned poker answers)." >&2
 exit 3
