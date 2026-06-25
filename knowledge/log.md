@@ -4,6 +4,16 @@
 
 Changes to the knowledge base, newest first. A reserved OKF file — no frontmatter.
 
+## 2026-06-24
+
+- **Convention** Wiring a PostToolUse convergence trigger (`spec-convergence-posttooluse.sh`,
+  and a future `code-review-posttooluse.sh`): scope it with BOTH layers — the Claude Code
+  hook `if` field (native path filter, e.g. `Edit(/roadmap/specs/**/*.md)|Write(…)|MultiEdit(…)`;
+  the `matcher` matches tool names only) AND the adapter's own in-script path filter. The
+  `if` field is Claude-Code-only, so the in-script filter is the harness-agnostic correctness
+  guarantee (Codex has no `if`). Verify the installed Claude Code version supports `if` before
+  relying on it. Source: code.claude.com/docs/en/hooks.md#path-based-filtering.
+
 ## 2026-06-20
 
 - **Update** Registered the **Code-review eval (L3)** in **Validation**
