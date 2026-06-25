@@ -163,4 +163,20 @@ run_runner claude "claude" "SEQ:$work/seqL" none 3 "" 3
 [ "$RUN_RC" -eq 0 ] || fail "L should stop at the cap, rc=$RUN_RC: $RUN_OUT"
 grep -q '^FLAGGED: C' <<<"$RUN_OUT" || fail "L must union through the capped passes (C present): $RUN_OUT"
 
+# Arm M — --fix-cap flag caps the OUTER loop (flag path, distinct from the env seam).
+export CODE_REVIEW_CONVERGENCE_STATE="$work/stateM" STUB_SEQ="$work/seqM"
+unset CODE_REVIEW_CONVERGENCE_CAP   # the flag, not the env, must set the cap
+printf 'FAIL\nFAIL\nFAIL\n' > "$work/seqM"
+set +e
+bash "$HOOK" --fix-cap 3 roadmap/specs/demo >/dev/null 2>&1; m1=$?
+bash "$HOOK" --fix-cap 3 roadmap/specs/demo >/dev/null 2>&1; m2=$?
+mout="$(bash "$HOOK" --fix-cap 3 roadmap/specs/demo 2>&1)"; m3=$?
+set -e
+{ [ "$m1" -eq 2 ] && [ "$m2" -eq 2 ] && [ "$m3" -eq 4 ]; } || fail "M --fix-cap 3 must escalate at round 3, got $m1/$m2/$m3: $mout"
+
+# Runner cap flags are accepted (parsed) — a dry-run with both exits 0.
+TMUX=1 CODE_REVIEW_REVIEWER_FAMILY=claude AGENT_HARNESS=claude AGENT_TMUX=/bin/echo FOUNDRY_REFUTER_FAMILIES=claude \
+  bash "$RUNNER" --dry-run --review-cap 5 --consecutive-clean 1 --base X roadmap/specs/demo "$repo" >/dev/null 2>&1 \
+  || fail "runner must accept --review-cap and --consecutive-clean"
+
 echo "code_review_cycle_test: PASS"

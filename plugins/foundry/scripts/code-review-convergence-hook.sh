@@ -15,8 +15,18 @@
 # and never fixes; the agent fixes between rounds.
 set -euo pipefail
 
-spec_dir="${1:?usage: code-review-convergence-hook.sh <spec-dir>}"
-cap="${CODE_REVIEW_CONVERGENCE_CAP:-20}"
+fix_cap_flag=""
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --fix-cap) [ "$#" -ge 2 ] || { echo "code-review-convergence-hook: --fix-cap needs a value" >&2; exit 2; }
+               fix_cap_flag="$2"; shift 2 ;;
+    --) shift; break ;;
+    -*) echo "code-review-convergence-hook: unknown argument '$1'" >&2; exit 2 ;;
+    *) break ;;
+  esac
+done
+spec_dir="${1:?usage: code-review-convergence-hook.sh [--fix-cap <n>] <spec-dir>}"
+cap="${fix_cap_flag:-${CODE_REVIEW_CONVERGENCE_CAP:-20}}"   # flag > test-env > named default (AC-13.4)
 state_dir="${CODE_REVIEW_CONVERGENCE_STATE:-.foundry/tmp/code-review-convergence}"
 plugin_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 review_cmd="${CODE_REVIEW_REVIEW_CMD:-$plugin_root/skills/code-review/scripts/spawn-code-reviewer.sh}"

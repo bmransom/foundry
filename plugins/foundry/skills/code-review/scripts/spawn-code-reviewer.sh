@@ -57,13 +57,19 @@ reviewer_prompt() {
 main() {
   local script_dir; script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
   local runner; runner="$(plugin_root)/scripts/spawn-fresh-session.sh"
-  local dry_run=0 skip=0 single_pass=0 base="" runner_args=()
+  local dry_run=0 skip=0 single_pass=0 base="" review_cap_flag="" consecutive_flag="" runner_args=()
   while [ "$#" -gt 0 ]; do
     case "$1" in
       --dry-run) dry_run=1; runner_args+=("$1"); shift ;;
       --print-harness) exec "$runner" --print-harness ;;
       --skip-permissions|--yolo) skip=1; runner_args+=("$1"); shift ;;
       --single-pass) single_pass=1; shift ;;
+      --review-cap)
+        [ "$#" -ge 2 ] || { usage; exit 2; }
+        review_cap_flag="$2"; shift 2 ;;
+      --consecutive-clean)
+        [ "$#" -ge 2 ] || { usage; exit 2; }
+        consecutive_flag="$2"; shift 2 ;;
       --base)
         [ "$#" -ge 2 ] || { usage; exit 2; }
         base="$2"; shift 2 ;;
@@ -126,8 +132,9 @@ main() {
 
   # --- Real run: inner review-convergence loop (default; --single-pass = one pass) --
   local wait_timeout="${CODE_REVIEW_WAIT_TIMEOUT:-300}" wait_poll="${CODE_REVIEW_WAIT_POLL:-1}"
-  local review_cap="${CODE_REVIEW_REVIEW_CAP:-20}"   # 20-pass ceiling (AC-12.1); T23 adds --review-cap
-  local consecutive_target=2                          # stop after two consecutive no-new passes
+  # Precedence: flag > test-env > named default (AC-13.2, AC-13.4).
+  local review_cap="${review_cap_flag:-${CODE_REVIEW_REVIEW_CAP:-20}}"   # 20-pass ceiling (AC-12.1)
+  local consecutive_target="${consecutive_flag:-2}"   # stop after two consecutive no-new passes
   local max_passes="$review_cap"; [ "$single_pass" -eq 1 ] && max_passes=1
   mkdir -p "$dir/$review_dir"
 
