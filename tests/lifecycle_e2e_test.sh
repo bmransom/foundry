@@ -47,4 +47,12 @@ grep -q "plugins/foundry/skills/bootstrap/SKILL.md" <<<"$bdry" \
   || fail "--bootstrap prompt must point at the local bootstrap skill, not the cached release"
 grep -q "Texas Hold'em" <<<"$bdry" || fail "--bootstrap prompt must carry the canned poker answers"
 
+# --feature --dry-run is hermetic too: previews the lifecycle prompt for a named feature,
+# pointing at the local code skill (needs no bootstrapped repo for the preview).
+fdry="$("$DRIVER" --feature deck-and-cards --dry-run)" || fail "--feature --dry-run should exit 0"
+grep -q "DRY RUN" <<<"$fdry" || fail "--feature --dry-run must announce DRY RUN"
+grep -q "plugins/foundry/skills/code/SKILL.md" <<<"$fdry" \
+  || fail "--feature prompt must point at the local code skill"
+grep -q "deck-and-cards" <<<"$fdry" || fail "--feature prompt must carry the feature + description"
+
 echo "lifecycle_e2e_test: PASS"

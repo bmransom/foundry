@@ -17,8 +17,9 @@ REPO="$(cd "$HARNESS_DIR/../.." && pwd)"
 FIXTURE="$REPO/evals/fixtures/lifecycle-e2e"
 RESULTS="$REPO/evals/results"
 
-mode=run   # run | plan | setup | verify | bootstrap
+mode=run   # run | plan | setup | verify | bootstrap | feature
 dry=0
+FEATURE=""
 harnesses="claude-code codex"
 while [ "$#" -gt 0 ]; do
   case "$1" in
@@ -26,7 +27,10 @@ while [ "$#" -gt 0 ]; do
     --setup-only) mode=setup; shift ;;     # deterministic: fresh repo + verbatim install + verify
     --verify-only) mode=verify; shift ;;   # deterministic: verify an existing install (LIFECYCLE_E2E_SETUP_DIR)
     --bootstrap) mode=bootstrap; shift ;;  # headless slice: fresh repo + drive the bootstrap skill, then verify
-    --dry-run) dry=1; shift ;;             # with --bootstrap: print the headless command + prompt, run nothing
+    --feature)                             # headless slice: drive ONE feature through the lifecycle in a bootstrapped repo
+      [ "$#" -ge 2 ] || { echo "lifecycle-e2e: --feature needs a name" >&2; exit 2; }
+      mode=feature; FEATURE="$2"; shift 2 ;;
+    --dry-run) dry=1; shift ;;             # with --bootstrap/--feature: print the headless command + prompt, run nothing
     --harness)
       [ "$#" -ge 2 ] || { echo "lifecycle-e2e: --harness needs a value" >&2; exit 2; }
       case "$2" in both) harnesses="claude-code codex" ;; claude-code|codex) harnesses="$2" ;; *) echo "lifecycle-e2e: unknown harness '$2'" >&2; exit 2 ;; esac
@@ -122,6 +126,41 @@ drive_stage() {           # $1 repo  $2 prompt  $3 log  -> headless agent exit c
       claude -p "$prompt" --dangerously-skip-permissions --verbose --output-format stream-json ) >"$log" 2>&1
 }
 
+feat_desc() {             # $1 = roadmap feature -> one-line description for the prompt
+  case "$1" in
+    deck-and-cards)    echo "a Deck and Card domain model — a 52-card deck (4 suits x 13 ranks), shuffle, and deal N cards; the engine foundation betting and hand-evaluation build on." ;;
+    hand-evaluation)   echo "evaluate the best five-card hand from seven cards (hole + board) and rank two hands against each other." ;;
+    betting-rounds)    echo "the betting action state machine (fold/check/call/bet/raise) across preflop, flop, turn, and river." ;;
+    pot-and-side-pots) echo "pot accounting, including correct side pots when players are all-in for different amounts." ;;
+    cpu-player)        echo "a computer player that picks a legal action from the current betting state." ;;
+    turn-based-loop)   echo "the hand loop: deal -> betting round -> advance the street -> showdown -> award the pot." ;;
+    sim-runner)        echo "a 'sim --hands N' command that plays CPU-vs-CPU hands and reports the outcome." ;;
+    http-api)          echo "an HTTP API serving game state and accepting actions (start hand, act, advance)." ;;
+    web-ui)            echo "a minimal browser client to play one hand against the CPU players over the HTTP API." ;;
+    *)                 echo "the $1 feature." ;;
+  esac
+}
+
+feature_prompt() {        # $1 = feature, $2 = description -> the headless lifecycle prompt
+  local plugin_root="$REPO/plugins/foundry"
+  cat <<PROMPT
+Read and follow the foundry code skill at $plugin_root/skills/code/SKILL.md to implement ONE feature in this already-bootstrapped foundry repo (the current directory). The sub-skills it names (spec-review, code-review, naming-standards, design-patterns, modular-structure, performance) are available — use them as the code skill directs.
+
+Feature: $1 — $2
+
+Drive every lifecycle stage in order:
+- Frame: a new feature (all stages).
+- Spec: write roadmap/specs/$1/{requirements,design,tasks}.md in the repo's spec format and the knowledge/glossary.md vocabulary; run spec-review to convergence.
+- Plan: bite-sized TDD tasks in tasks.md; claim the board card in roadmap/ROADMAP.md.
+- Build: the features/ Scenario FIRST, then TDD red->green; respect the glossary and AGENTS.md Boundaries (the engine lives in src/domain/); stage explicit paths.
+- Verify: run scripts/check-fast.sh and paste the PASS line.
+- Knowledge: python3 scripts/knowledge.py check; log touched concepts.
+- Review: run code-review in fresh context; fix every blocking finding.
+
+Commit your work on a feature branch (the code skill branches first off the default branch) so code-review has a real diff to review; do NOT push and do NOT merge to the default branch — leave the branch in place for collection. Move the board card to Validating.
+PROMPT
+}
+
 case "$mode" in
   setup)
     repo="${LIFECYCLE_E2E_SETUP_DIR:-$(mktemp -d)}"
@@ -176,6 +215,40 @@ case "$mode" in
       else
         echo "vocab-lint scoping: FRICTION — generated lint may scan non-prose; see bootstrap generate.md"
       fi
+    fi
+    cp -R "$repo" "$out/repo" 2>/dev/null || true
+    echo "collected: $out/repo"
+    exit 0 ;;
+  feature)
+    feat="${FEATURE:?--feature needs a name}"
+    out="$RESULTS/lifecycle-e2e-feature-$feat-$$"
+    prompt="$(feature_prompt "$feat" "$(feat_desc "$feat")")"
+    if [ "$dry" -eq 1 ]; then
+      echo "lifecycle-e2e feature ($feat) — DRY RUN (nothing run)"
+      echo "results: $out"
+      echo "--- canned feature prompt (local code skill) ---"
+      printf '%s\n' "$prompt"
+      exit 0
+    fi
+    repo="${LIFECYCLE_E2E_SETUP_DIR:?--feature needs LIFECYCLE_E2E_SETUP_DIR (a bootstrapped repo)}"
+    [ -d "$repo" ] || { echo "lifecycle-e2e: bootstrapped repo $repo not found" >&2; exit 2; }
+    mkdir -p "$out"
+    log="$out/$feat.log"
+    echo "lifecycle-e2e feature: headless claude building '$feat' in $repo"
+    echo "  log: $log"
+    drive_stage "$repo" "$prompt" "$log" || echo "feature: headless agent exited nonzero (see $log)" >&2
+    echo "=== feature artifacts ==="
+    [ -d "$repo/roadmap/specs/$feat" ] && echo "PRESENT roadmap/specs/$feat (spec)" || echo "MISSING roadmap/specs/$feat (no spec written)"
+    if find "$repo/features" -name '*.feature' -newer "$repo/AGENTS.md" 2>/dev/null | grep -q .; then
+      echo "PRESENT new/updated feature Scenario"
+    else
+      echo "(no new feature Scenario detected since bootstrap)"
+    fi
+    echo "=== check-fast (still green after the feature?) ==="
+    if ( cd "$repo" && bash scripts/check-fast.sh ) >"$out/check-fast.log" 2>&1; then
+      echo "check-fast: PASS"
+    else
+      echo "check-fast: FAIL — see $out/check-fast.log (workflow friction)"
     fi
     cp -R "$repo" "$out/repo" 2>/dev/null || true
     echo "collected: $out/repo"
