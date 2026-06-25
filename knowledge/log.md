@@ -14,6 +14,12 @@ Changes to the knowledge base, newest first. A reserved OKF file — no frontmat
   (`sponsors/ai`). The agent recovered, but the guidance now bakes the fix in so the
   next bootstrap gets it right unaided. The e2e harness gained a regression signal that
   flags a generated lint which fails to scope to prose.
+- **New** Glossary terms **Autonomy level** and **Stop-point** for the `code` lifecycle's
+  autonomy dial (`roadmap/specs/lifecycle-autonomy/`). The level (Supervised / Guided /
+  Autonomous) decides who resolves a soft fork; the stop-point bounds an autonomous run.
+  Set once at Frame, harness-aware (`/loop`, Codex `/goal`); the operational detail lives
+  in `plugins/foundry/skills/code/references/autonomy.md`. Prior art: Codex approval modes
+  + role-based agent-autonomy levels (autonomy level); the debugger breakpoint (stop-point).
 
 ## 2026-06-20
 
