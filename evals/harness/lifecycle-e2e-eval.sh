@@ -140,9 +140,11 @@ drive_stage() {           # $1 repo  $2 prompt  $3 log  -> headless agent (DRIVE
   # 60-min default; raise LIFECYCLE_E2E_STAGE_TIMEOUT for the largest features.
   local t="${LIFECYCLE_E2E_STAGE_TIMEOUT:-3600}"
   case "${DRIVE_HARNESS:-claude-code}" in
-    codex)  # codex exec is the non-interactive form; bypass approvals+sandbox like --dangerously-skip-permissions
+    codex)  # codex exec is the non-interactive form; bypass approvals+sandbox like --dangerously-skip-permissions.
+            # </dev/null: detached, codex exec otherwise tries to read stdin ("Reading additional input from
+            # stdin...") and stalls — the prompt is the arg, so give it no stdin.
       ( cd "$repo" && PATH="${toolbin:+$toolbin:}$PATH" timeout "$t" \
-          codex exec "$prompt" --dangerously-bypass-approvals-and-sandbox --skip-git-repo-check ) >"$log" 2>&1 ;;
+          codex exec "$prompt" --dangerously-bypass-approvals-and-sandbox --skip-git-repo-check </dev/null ) >"$log" 2>&1 ;;
     *)
       ( cd "$repo" && PATH="${toolbin:+$toolbin:}$PATH" timeout "$t" \
           claude -p "$prompt" --dangerously-skip-permissions --verbose --output-format stream-json ) >"$log" 2>&1 ;;
