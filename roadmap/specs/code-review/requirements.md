@@ -321,8 +321,9 @@ Acceptance criteria:
 - AC-14.1 WHEN flagging a finding, THE SYSTEM SHALL cite a `file:line` it has read or
   grepped for every symbol, path, and line range it references, and SHALL drop a
   finding whose location it cannot verify.
-- AC-14.2 WHEN it is not confident a candidate is a real defect, THE SYSTEM SHALL drop
-  it rather than flag it — silence over noise.
+- AC-14.2 WHEN a candidate is not backed by evidence the reviewer read or a check it
+  ran showing a real defect, THE SYSTEM SHALL drop it rather than flag it — silence
+  beats noise.
 - AC-14.3 WHEN no candidate meets the bar, THE SYSTEM SHALL emit zero findings and
   PASS, and SHALL NOT manufacture low-value findings to appear thorough.
 - AC-14.4 WHEN several findings share one root cause or repeated pattern, THE SYSTEM
@@ -334,7 +335,8 @@ Acceptance criteria:
   other lint-domain issues; deterministic tools own those.
 - AC-14.7 WHEN a finding rests on design judgment or an inferred root cause, THE SYSTEM
   SHALL mark it advisory unless it is backed by verifiable evidence; a mechanically
-  verified correctness or security defect SHALL be blocking.
+  verified correctness or security defect SHALL be blocking. Performance findings follow
+  AC-5.5's hot/cold split.
 
 ### US-15: Ground findings in the consumer's spec, never invented requirements
 
@@ -352,7 +354,7 @@ Acceptance criteria:
   proposed fix as a hypothesis to verify against the spec and code, not as evidence
   the original is wrong.
 - AC-15.4 WHEN the spec and the code disagree, THE SYSTEM SHALL flag the discrepancy
-  rather than assume the code is correct, and SHALL NOT edit the spec to resolve it.
+  rather than assume either side is correct.
 
 ## Out of scope
 

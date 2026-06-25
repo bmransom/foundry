@@ -261,16 +261,16 @@ symmetric debate or multi-round argument. One pass, one direction: drop or keep.
 
 ## Calibration (agent precision + spec grounding)
 
-The reviewer is an LLM, so its dominant failure is the **false positive** — untuned AI
-reviewers run 40–80% false-positive rates, and a reviewer past ~30% gets ignored. These
-instruction-level guardrails (in `SKILL.md` / `references/dimensions.md`) hold each pass
-precise before the refuter and the convergence union run:
+The reviewer is an LLM, so its dominant failure is the **false positive** — an
+over-flagging reviewer quickly gets ignored. These instruction-level guardrails (in
+`SKILL.md` / `references/dimensions.md`) hold each pass precise before the refuter and
+the convergence union run:
 
 - **Evidence or drop** — every finding cites a read/grepped `file:line` for each symbol,
   path, and range; an unverifiable location is dropped (anti-hallucination). [AC-14.1]
-- **High-confidence-or-drop; silence beats noise** — drop a candidate the reviewer is not
-  confident is a real defect; **zero findings is a valid, good outcome**, never a reason
-  to manufacture nits. [AC-14.2, AC-14.3]
+- **Evidence-or-drop; silence beats noise** — drop a candidate not backed by evidence the
+  reviewer read or a check it ran showing a real defect; **zero findings is a valid, good
+  outcome**, never a reason to manufacture nits. [AC-14.2, AC-14.3]
 - **Cluster** repeated patterns into one finding. [AC-14.4]
 - **Read context, not the hunk** — a diff-local claim contradicted by the definition,
   callers, or callees is a false positive; drop it. [AC-14.5]

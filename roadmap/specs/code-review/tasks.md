@@ -304,9 +304,10 @@ then composes — the Pragmatic-Programmer sense of a tracer bullet.
   PASS. [AC-14.1, AC-14.2, AC-14.3, AC-14.4, AC-14.5, AC-14.6, AC-14.7, AC-15.1, AC-15.2, AC-15.3, AC-15.4]
 - [ ] T35: Add **decoy** eval cases that punish false positives — seed in the fixture a
   style-only change, a spec-conforming behavior, an "omission" the spec does not require,
-  and a plausible-but-unverifiable claim; the answer key marks each a decoy (dep T34).
-  Gate: `score_review.py` fails a run that flags ANY decoy (MAX_DECOY_HITS = 0); a run
-  that flags none passes. [AC-14.1, AC-14.3, AC-14.6, AC-15.1, AC-15.2]
+  and a plausible-but-unverifiable claim; the answer key marks each a decoy, its
+  signature distinct from every seeded-defect signature (AC-8.4) (dep T34). Gate:
+  `score_review.py` fails a run that flags ANY decoy (MAX_DECOY_HITS = 0); a run that
+  flags none passes. [AC-14.1, AC-14.3, AC-14.6, AC-15.1, AC-15.2]
 - [ ] T36: Trace every new AC to a task; re-run `spec-review` to `SPEC_REVIEW: CLEAN`;
   `check-fast` green; move the card (deps T34, T35). Gate: all AC-14/AC-15 traced;
   spec-review CLEAN; `scripts/check-fast.sh` PASS. [AC-14.7, AC-15.3, AC-15.4]
