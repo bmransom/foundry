@@ -25,9 +25,10 @@ Acceptance criteria:
 - AC-1.5 WHEN `--dry-run` is given, THE SYSTEM SHALL print the launch command
   naming the harness, the spec dir, the diff range, the fresh-session prompt path,
   and the report path, and SHALL NOT spawn a review.
-- AC-1.6 WHEN `--skip-permissions` is given, THE SYSTEM SHALL pass the permission
-  bypass only to write-capable spawns and SHALL NOT pass it to the read-only
-  reviewer or refuter.
+- AC-1.6 WHEN `--skip-permissions` is given, THE SYSTEM SHALL forward the permission
+  bypass to the reviewer and refuter spawns — both run headless and must read files,
+  run checks, and write the report without prompts; read-only is enforced by the
+  prompt and the report path outside the consumer tree, not by withholding the bypass.
 - AC-1.7 WHEN selecting the refuter's harness family, THE SYSTEM SHALL accept an
   explicit `--harness <family>` flag and SHALL NOT depend on the `AGENT_HARNESS`
   test-override env var for production dispatch.

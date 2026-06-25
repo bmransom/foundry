@@ -10,10 +10,9 @@ dependency. Every task names the gate that proves it and the AC it satisfies.
 refuter spawn, lifecycle Review stage, seeded fixture, and A/B eval already merged
 to `main`. **Waves 9–14 (T18+) are the convergence-cycle revision**, which
 supersedes: v1's three-round outer cap (→ T22, 20 rounds), its fire-and-forget
-refuter wiring (→ T19, synchronous), its `git merge-base main HEAD` diff-base
-default (→ T23, the shared resolver), and its `--skip-permissions` forwarding to the
-read-only reviewer/refuter (→ T23, the bypass reaches write-capable spawns only).
-Where a Wave 1–8 task names the old behavior, the cited revision task is authoritative.
+refuter wiring (→ T19, synchronous), and its `git merge-base main HEAD` diff-base
+default (→ T23, the shared resolver). Where a Wave 1–8 task names the old behavior,
+the cited revision task is authoritative.
 
 ## Wave 1 — Spec and board
 
@@ -252,12 +251,11 @@ then composes — the Pragmatic-Programmer sense of a tracer bullet.
   `harnesses` via `refuter-family.sh` (built in T32); add `--harness` (replacing the
   `AGENT_HARNESS` production pin); single-sourced named-constant cap defaults with
   `--review-cap`/`--fix-cap`/`--consecutive-clean` overrides; `--base` via the
-  shared `resolve_base`; stop forwarding `--skip-permissions` to the read-only
-  reviewer/refuter (deps T19, T32). Gate: `tests/code_review_skill_test.sh` PASS (with
-  its diff-base assertion updated from `git merge-base main HEAD` to the
-  `origin/HEAD → main → HEAD` resolver, and its `--skip-permissions` assertion flipped
-  from 'bypass forwarded to the shared runner' to 'bypass NOT forwarded to the
-  read-only reviewer/refuter', per AC-1.6); a `--dry-run` shows a manifest-derived refuter
+  shared `resolve_base` (deps T19, T32); `--skip-permissions` keeps forwarding to the
+  reviewer/refuter — read-only by prompt + report path, per the revised AC-1.6. Gate:
+  `tests/code_review_skill_test.sh` PASS (with its diff-base assertion updated from
+  `git merge-base main HEAD` to the `origin/HEAD → main → HEAD` resolver); a `--dry-run`
+  shows a manifest-derived refuter
   family selected via `--harness` and the resolved diff base; resolve all config once
   at the CLI into a config object threaded inward (no re-defaulting/env-reads in inner
   contexts). [AC-1.2, AC-1.6, AC-1.7, AC-9.5, AC-13.1, AC-13.2, AC-13.3, AC-13.4, AC-13.5]

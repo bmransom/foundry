@@ -79,10 +79,11 @@ pipes it to the shared runner. The shared runner owns harness detection, tmux,
 and the fresh-session prompt file. The skill owns the dimensions and the output
 contract.
 
-The wrapper mirrors the sibling's flag handling where it applies: `--print-harness`
-execs `spawn-fresh-session.sh --print-harness`. It does NOT forward a permission
-bypass to the read-only reviewer or refuter (neither writes); `--skip-permissions`
-reaches only write-capable spawns.
+The wrapper mirrors the sibling's flag handling: `--print-harness` execs
+`spawn-fresh-session.sh --print-harness`, and `--skip-permissions` forwards to the
+reviewer and refuter spawns — both run headless and must read, run checks, and write
+the report without prompts. Read-only is enforced by the prompt ("do not edit any
+file") and the report path outside the consumer tree, not by withholding the bypass.
 
 ## Bounded contexts
 
@@ -163,9 +164,9 @@ spawn-code-reviewer.sh [--dry-run] [--print-harness] [--skip-permissions] \
   loop is driven by `code-review-convergence-hook.sh`, not the runner.
 - `--harness <family>`: pin the refuter's harness family explicitly, replacing the
   `AGENT_HARNESS` test seam for production dispatch.
-- `--dry-run`, `--print-harness`, `--skip-permissions` (`|--yolo`): as the sibling,
-  except `--skip-permissions` reaches only write-capable spawns — never the
-  read-only reviewer or refuter.
+- `--dry-run`, `--print-harness`, `--skip-permissions` (`|--yolo`): as the sibling.
+  `--skip-permissions` forwards to the reviewer and refuter (they run headless);
+  read-only is enforced by the prompt and the report path, not by withholding it.
 
 Defaults are single-sourced named constants (review/fix convergence caps = 20,
 consecutive-clean-passes = 2), each overridable by its CLI flag; v1 needs no config
@@ -523,8 +524,8 @@ directly, not the nondeterministic review.
    - the SKILL names `.foundry/reports/code-review/`;
    - the SKILL exposes `scripts/spawn-code-reviewer.sh`;
    - the wrapper is executable and `--print-harness` honors `AGENT_HARNESS=codex`;
-   - a `--dry-run --skip-permissions` (and its `--yolo` alias) does NOT pass the
-     bypass to the read-only reviewer or refuter spawn (AC-1.6);
+   - a `--dry-run --skip-permissions` (and its `--yolo` alias) forwards the bypass to
+     the shared runner for the reviewer/refuter spawn (AC-1.6);
    - a `--dry-run` launch carries the harness, the spec dir, the diff range, the
      fresh-session prompt path, and the report path;
    - a `--dry-run` without `--base` shows the resolved `origin/HEAD → main → HEAD`
