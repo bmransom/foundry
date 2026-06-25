@@ -211,27 +211,41 @@ for flag in --skip-permissions --yolo; do
   esac
 done
 
-# --- Refuter dry-run behavior ----------------------------------------------
-# With two harness families reachable, the dry-run shows the refuter on the
-# complementary family with a read-only, candidate-findings-only prompt.
+# --- Refuter selection (dry-run) -------------------------------------------
+# --harness <family> forces the cross-model refuter on that family.
 refuter_run="$(
   TMUX=1 AGENT_HARNESS=claude AGENT_TMUX=/bin/echo \
-    "$SCRIPT" --dry-run roadmap/specs/code-review "$REPO"
+    "$SCRIPT" --dry-run --harness codex roadmap/specs/code-review "$REPO"
 )"
 case "$refuter_run" in
-  *refuter*) ;;
-  *) fail "dry-run must preview the cross-model refuter spawn" ;;
+  *refuter*codex*) ;;
+  *) fail "--harness <family> must preview the cross-model refuter on that family" ;;
 esac
 
-# With only one harness family available, the refuter is skipped (single-agent).
+# A 2-harness manifest derives the complementary refuter family (refuter-family.sh; AC-13.1).
+mf_dir="$(mktemp -d)"; mkdir -p "$mf_dir/.foundry"
+printf '%s\n' '{"harnesses": ["claude-code", "codex"], "files": {}}' > "$mf_dir/.foundry/manifest.json"
+derived_run="$(
+  TMUX=1 AGENT_HARNESS=claude AGENT_TMUX=/bin/echo \
+    "$SCRIPT" --dry-run roadmap/specs/code-review "$mf_dir"
+)"
+case "$derived_run" in
+  *refuter*) ;;
+  *) fail "a 2-harness manifest must derive a refuter family" ;;
+esac
+
+# A single-harness manifest (and no --harness) skips the refuter (single-agent).
+sf_dir="$(mktemp -d)"; mkdir -p "$sf_dir/.foundry"
+printf '%s\n' '{"harnesses": ["claude-code"], "files": {}}' > "$sf_dir/.foundry/manifest.json"
 single_run="$(
-  TMUX=1 AGENT_HARNESS=claude AGENT_TMUX=/bin/echo FOUNDRY_REFUTER_FAMILIES=claude \
-    "$SCRIPT" --dry-run roadmap/specs/code-review "$REPO"
+  TMUX=1 AGENT_HARNESS=claude AGENT_TMUX=/bin/echo \
+    "$SCRIPT" --dry-run roadmap/specs/code-review "$sf_dir"
 )"
 case "$single_run" in
   *"refuter skipped"*|*"single-agent"*|*"single agent"*) ;;
-  *) fail "dry-run with one harness family must skip the refuter and run single-agent" ;;
+  *) fail "a single-harness manifest must skip the refuter and run single-agent" ;;
 esac
+rm -rf "$mf_dir" "$sf_dir"
 
 # --- Lifecycle delegation --------------------------------------------------
 grep -q "code-review" "$CODE_SKILL" \

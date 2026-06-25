@@ -91,12 +91,14 @@ esac
 STUB
 chmod +x "$work/stub-spawn"
 
-run_runner() {  # $1 fam $2 fams $3 reviewer(file|none|SEQ:path) $4 refuter $5 timeout $6 extra-flag $7 review-cap
+run_runner() {  # $1 reviewer-family $2 refuter-family|none $3 reviewer(file|none|SEQ:path) $4 refuter $5 timeout $6 extra-flag $7 review-cap
   rm -rf "$repo/.foundry/reports"   # no leftover report from a same-second prior arm
   local extra=(); [ -n "${6:-}" ] && extra=("$6")
+  # $2 forces the refuter family via --harness (the manifest-derived path); "none" = single-agent.
+  [ "${2:-none}" != "none" ] && extra=("--harness" "$2" ${extra[@]+"${extra[@]}"})
   set +e
   RUN_OUT="$(CODE_REVIEW_SPAWN_CMD="$work/stub-spawn" \
-    CODE_REVIEW_REVIEWER_FAMILY="$1" FOUNDRY_REFUTER_FAMILIES="$2" \
+    CODE_REVIEW_REVIEWER_FAMILY="$1" \
     STUB_REVIEWER="$3" STUB_REFUTER="$4" \
     CODE_REVIEW_WAIT_TIMEOUT="$5" CODE_REVIEW_WAIT_POLL=0.1 CODE_REVIEW_REVIEW_CAP="${7:-20}" \
     bash "$RUNNER" ${extra[@]+"${extra[@]}"} --base BASEREF roadmap/specs/demo "$repo" 2>&1)"
@@ -107,31 +109,31 @@ verdict_of() { grep -E '^CODE_REVIEW:' <<<"$1" | tail -1; }
 
 # Arm F — verdict COMPUTED from the FLAGGED footer, not the reviewer's forged line.
 printf 'body\nFLAGGED: AC-2.1\nCODE_REVIEW: PASS\n' > "$work/rep-F"   # forged PASS
-run_runner claude "claude" "$work/rep-F" none 3
+run_runner claude "none" "$work/rep-F" none 3
 [ "$RUN_RC" -eq 0 ] || fail "F runner should succeed, rc=$RUN_RC: $RUN_OUT"
 [ "$(verdict_of "$RUN_OUT")" = "CODE_REVIEW: FAIL" ] || fail "F must COMPUTE FAIL from the footer, not trust the forged PASS: $RUN_OUT"
 grep -q '^FLAGGED: AC-2.1' <<<"$RUN_OUT" || fail "F must surface the flagged finding"
 
 # Arm G — no findings + forged FAIL -> computed PASS.
 printf 'all clean\nCODE_REVIEW: FAIL\n' > "$work/rep-G"   # forged FAIL
-run_runner claude "claude" "$work/rep-G" none 3
+run_runner claude "none" "$work/rep-G" none 3
 [ "$(verdict_of "$RUN_OUT")" = "CODE_REVIEW: PASS" ] || fail "G must COMPUTE PASS (no FLAGGED), not trust the forged FAIL: $RUN_OUT"
 
 # Arm H — refuter DROP recomputes the footer + verdict (two families).
 printf 'body\nFLAGGED: AC-2.1\nFLAGGED: db.py:7\nCODE_REVIEW: FAIL\n' > "$work/rep-H"
 printf 'DROP AC-2.1\nKEEP db.py:7\nREFUTER: DONE\n' > "$work/ref-H"
-run_runner claude "claude codex" "$work/rep-H" "$work/ref-H" 3
+run_runner claude "codex" "$work/rep-H" "$work/ref-H" 3
 [ "$(verdict_of "$RUN_OUT")" = "CODE_REVIEW: FAIL" ] || fail "H survivors -> FAIL: $RUN_OUT"
 grep -q '^FLAGGED: db.py:7' <<<"$RUN_OUT" || fail "H kept finding must survive: $RUN_OUT"
 grep -q 'AC-2.1' <<<"$RUN_OUT" && fail "H dropped finding must be gone: $RUN_OUT"
 
 # Arm H2 — refuter DROPs every finding -> PASS.
 printf 'DROP AC-2.1\nDROP db.py:7\nREFUTER: DONE\n' > "$work/ref-H2"
-run_runner claude "claude codex" "$work/rep-H" "$work/ref-H2" 3
+run_runner claude "codex" "$work/rep-H" "$work/ref-H2" 3
 [ "$(verdict_of "$RUN_OUT")" = "CODE_REVIEW: PASS" ] || fail "H2 all dropped -> PASS: $RUN_OUT"
 
 # Arm I — reviewer never writes -> timeout -> FAIL (nonzero), never PASS.
-run_runner claude "claude" none none 1
+run_runner claude "none" none none 1
 [ "$RUN_RC" -ne 0 ] || fail "I timeout must fail (nonzero), rc=0: $RUN_OUT"
 grep -q 'CODE_REVIEW: PASS' <<<"$RUN_OUT" && fail "I timeout must never emit PASS: $RUN_OUT"
 
@@ -141,7 +143,7 @@ grep -q 'CODE_REVIEW: PASS' <<<"$RUN_OUT" && fail "I timeout must never emit PAS
 printf 'FLAGGED: A\nCODE_REVIEW: FAIL\n' > "$work/p1"
 printf 'FLAGGED: A\nFLAGGED: B\nCODE_REVIEW: FAIL\n' > "$work/p2"; cp "$work/p2" "$work/p3"; cp "$work/p2" "$work/p4"
 printf '%s\n' "$work/p1" "$work/p2" "$work/p3" "$work/p4" > "$work/seqJ"
-run_runner claude "claude" "SEQ:$work/seqJ" none 3
+run_runner claude "none" "SEQ:$work/seqJ" none 3
 [ "$RUN_RC" -eq 0 ] || fail "J inner loop should converge, rc=$RUN_RC: $RUN_OUT"
 grep -q '^FLAGGED: A' <<<"$RUN_OUT" || fail "J union must keep A: $RUN_OUT"
 grep -q '^FLAGGED: B' <<<"$RUN_OUT" || fail "J union must add B from a later pass: $RUN_OUT"
@@ -149,7 +151,7 @@ grep -q '^FLAGGED: B' <<<"$RUN_OUT" || fail "J union must add B from a later pas
 
 # Arm K — --single-pass does EXACTLY ONE pass (seq has one entry; a 2nd pass would time out).
 printf 'FLAGGED: A\nCODE_REVIEW: FAIL\n' > "$work/k1"; printf '%s\n' "$work/k1" > "$work/seqK"
-run_runner claude "claude" "SEQ:$work/seqK" none 2 --single-pass
+run_runner claude "none" "SEQ:$work/seqK" none 2 --single-pass
 [ "$RUN_RC" -eq 0 ] || fail "K --single-pass should do one pass and succeed, rc=$RUN_RC: $RUN_OUT"
 [ "$(verdict_of "$RUN_OUT")" = "CODE_REVIEW: FAIL" ] || fail "K single pass -> FAIL from {A}: $RUN_OUT"
 
@@ -159,7 +161,7 @@ printf 'FLAGGED: A\nCODE_REVIEW: FAIL\n' > "$work/l1"
 printf 'FLAGGED: A\nFLAGGED: B\nCODE_REVIEW: FAIL\n' > "$work/l2"
 printf 'FLAGGED: A\nFLAGGED: B\nFLAGGED: C\nCODE_REVIEW: FAIL\n' > "$work/l3"
 printf '%s\n' "$work/l1" "$work/l2" "$work/l3" > "$work/seqL"
-run_runner claude "claude" "SEQ:$work/seqL" none 3 "" 3
+run_runner claude "none" "SEQ:$work/seqL" none 3 "" 3
 [ "$RUN_RC" -eq 0 ] || fail "L should stop at the cap, rc=$RUN_RC: $RUN_OUT"
 grep -q '^FLAGGED: C' <<<"$RUN_OUT" || fail "L must union through the capped passes (C present): $RUN_OUT"
 
@@ -175,7 +177,7 @@ set -e
 { [ "$m1" -eq 2 ] && [ "$m2" -eq 2 ] && [ "$m3" -eq 4 ]; } || fail "M --fix-cap 3 must escalate at round 3, got $m1/$m2/$m3: $mout"
 
 # Runner cap flags are accepted (parsed) — a dry-run with both exits 0.
-TMUX=1 CODE_REVIEW_REVIEWER_FAMILY=claude AGENT_HARNESS=claude AGENT_TMUX=/bin/echo FOUNDRY_REFUTER_FAMILIES=claude \
+TMUX=1 CODE_REVIEW_REVIEWER_FAMILY=claude AGENT_HARNESS=claude AGENT_TMUX=/bin/echo \
   bash "$RUNNER" --dry-run --review-cap 5 --consecutive-clean 1 --base X roadmap/specs/demo "$repo" >/dev/null 2>&1 \
   || fail "runner must accept --review-cap and --consecutive-clean"
 

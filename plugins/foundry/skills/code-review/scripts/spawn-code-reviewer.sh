@@ -17,24 +17,13 @@ plugin_root() {
 }
 
 usage() {
-  echo "usage: spawn-code-reviewer.sh [--dry-run] [--print-harness] [--skip-permissions] [--base <ref>] <spec-dir> [project-dir]" >&2
-}
-
-# The harness family complementary to the reviewer's — the refuter runs on a
-# DIFFERENT family so it attacks correlated same-model false positives.
-complementary_family() {
-  case "$1" in
-    claude) echo "codex" ;;
-    codex) echo "claude" ;;
-    pi) echo "codex" ;;
-    *) echo "" ;;
-  esac
+  echo "usage: spawn-code-reviewer.sh [--dry-run] [--print-harness] [--skip-permissions] [--harness <family>] [--base <ref>] [--review-cap <n>] [--consecutive-clean <n>] <spec-dir> [project-dir]" >&2
 }
 
 # Spawn one fresh-context session (role = reviewer|refuter) that writes its artifact
 # to $out. CODE_REVIEW_SPAWN_CMD is a test-only seam: a stub that writes $out in place
 # of the real detached spawn. Production pipes the prompt to the shared runner. Relies
-# on main()'s locals (runner, runner_args, complementary, dir) via dynamic scope.
+# on main()'s locals (runner, runner_args, refuter_family, dir) via dynamic scope.
 spawn_session() {
   local role="$1" out="$2" prompt="$3"
   if [ -n "${CODE_REVIEW_SPAWN_CMD:-}" ]; then
@@ -42,7 +31,7 @@ spawn_session() {
     return
   fi
   if [ "$role" = refuter ]; then
-    printf '%s\n' "$prompt" | AGENT_HARNESS="$complementary" "$runner" ${runner_args[@]+"${runner_args[@]}"} --name code-review-refuter "$dir"
+    printf '%s\n' "$prompt" | AGENT_HARNESS="$refuter_family" "$runner" ${runner_args[@]+"${runner_args[@]}"} --name code-review-refuter "$dir"
   else
     printf '%s\n' "$prompt" | "$runner" ${runner_args[@]+"${runner_args[@]}"} --name code-review "$dir"
   fi
@@ -57,13 +46,16 @@ reviewer_prompt() {
 main() {
   local script_dir; script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
   local runner; runner="$(plugin_root)/scripts/spawn-fresh-session.sh"
-  local dry_run=0 skip=0 single_pass=0 base="" review_cap_flag="" consecutive_flag="" runner_args=()
+  local dry_run=0 skip=0 single_pass=0 base="" harness_flag="" review_cap_flag="" consecutive_flag="" runner_args=()
   while [ "$#" -gt 0 ]; do
     case "$1" in
       --dry-run) dry_run=1; runner_args+=("$1"); shift ;;
       --print-harness) exec "$runner" --print-harness ;;
       --skip-permissions|--yolo) skip=1; runner_args+=("$1"); shift ;;
       --single-pass) single_pass=1; shift ;;
+      --harness)
+        [ "$#" -ge 2 ] || { usage; exit 2; }
+        harness_flag="$2"; shift 2 ;;
       --review-cap)
         [ "$#" -ge 2 ] || { usage; exit 2; }
         review_cap_flag="$2"; shift 2 ;;
@@ -105,12 +97,18 @@ main() {
   # overrides it for deterministic tests).
   local reviewer_family
   reviewer_family="${CODE_REVIEW_REVIEWER_FAMILY:-$("$runner" --print-harness)}"
-  local complementary; complementary="$(complementary_family "$reviewer_family")"
-  # Families available for the refuter; FOUNDRY_REFUTER_FAMILIES overrides for tests
-  # and single-family repos (T23 swaps this for refuter-family.sh / the manifest).
-  local families="${FOUNDRY_REFUTER_FAMILIES:-claude codex}"
+  # The refuter's family: --harness overrides; otherwise derive it from the manifest's
+  # harnesses via refuter-family.sh — never a hardcoded list or env var (AC-13.1). An
+  # empty result (single-family repo, or no manifest) skips the refuter (single-agent).
+  local refuter_family=""
+  if [ -n "$harness_flag" ]; then
+    refuter_family="$harness_flag"
+  elif [ -f "$dir/.foundry/manifest.json" ]; then
+    refuter_family="$("$script_dir/refuter-family.sh" "$reviewer_family" "$dir/.foundry/manifest.json" 2>/dev/null || echo none)"
+    [ "$refuter_family" = none ] && refuter_family=""
+  fi
   local refuter_on=0
-  if [ -n "$complementary" ] && printf '%s\n' $families | grep -qxF "$complementary"; then refuter_on=1; fi
+  if [ -n "$refuter_family" ] && [ "$refuter_family" != "$reviewer_family" ]; then refuter_on=1; fi
 
   local refuter_head="Use the code-review skill's REFUTER contract at $(plugin_root)/skills/code-review/SKILL.md. You are a single asymmetric refute pass — NOT a debate. READ-ONLY: edit nothing. You receive ONLY the candidate FLAGGED findings and the diff for range $range; you do NOT see the reviewer's reasoning. Per candidate finding, KEEP it only with concrete evidence it is real, else mark it DROP. You may only REMOVE a finding, never ADD one."
 
@@ -121,12 +119,12 @@ main() {
     printf '%s\n' "$(reviewer_prompt "$report")" | "$runner" ${runner_args[@]+"${runner_args[@]}"} --name code-review "$dir"
     echo "report: $report"
     if [ "$refuter_on" -eq 1 ]; then
-      echo "refuter: spawn on complementary family $complementary (read-only, candidate findings + diff only)"
+      echo "refuter: spawn on harness family $refuter_family (read-only, candidate findings + diff only)"
       printf '%s\n' "$refuter_head Output one line per candidate finding (KEEP <signature> or DROP <signature>), then a final line REFUTER: DONE." \
-        | AGENT_HARNESS="$complementary" "$runner" ${runner_args[@]+"${runner_args[@]}"} --name code-review-refuter "$dir"
-      echo "refuter: previewed on complementary family $complementary; final footer = candidates minus DROPs"
+        | AGENT_HARNESS="$refuter_family" "$runner" ${runner_args[@]+"${runner_args[@]}"} --name code-review-refuter "$dir"
+      echo "refuter: previewed on harness family $refuter_family; final footer = candidates minus DROPs"
     else
-      echo "refuter skipped: only one harness family available — reviewer runs single-agent"
+      echo "refuter skipped: no complementary harness family — reviewer runs single-agent"
     fi
     return 0
   fi
