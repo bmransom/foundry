@@ -38,6 +38,10 @@ one script, two triggers. Bypass once with `git push --no-verify`.
 - Give a behavior-changing template or skill an eval case before it ships.
 - Close a COE only with a mechanical change (gate, lint, rule, or eval fixture), never
   prose.
+- Write [Conventional Commits](https://www.conventionalcommits.org/) (`<type>(<scope>):
+  <description>`, imperative mood); never claim a change is tested unless it was.
+- Make surgical changes — touch only what the task requires; remove only what your change
+  orphaned; flag unrelated issues, don't fix them silently.
 
 **Ask first**
 - Commit or push. Branch first on the default branch.
