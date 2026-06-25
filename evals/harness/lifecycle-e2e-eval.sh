@@ -17,9 +17,11 @@ REPO="$(cd "$HARNESS_DIR/../.." && pwd)"
 FIXTURE="$REPO/evals/fixtures/lifecycle-e2e"
 RESULTS="$REPO/evals/results"
 
-mode=run   # run | plan | setup | verify | bootstrap | feature
+mode=run   # run | plan | setup | verify | bootstrap | feature | autonomous
 dry=0
 FEATURE=""
+AUTON_LEVEL="guided"   # --autonomous: supervised | guided | autonomous
+AUTON_STOP="roadmap"   # --autonomous stop-point: feature | card:<id> | epic | roadmap
 harnesses="claude-code codex"
 while [ "$#" -gt 0 ]; do
   case "$1" in
@@ -30,7 +32,14 @@ while [ "$#" -gt 0 ]; do
     --feature)                             # headless slice: drive ONE feature through the lifecycle in a bootstrapped repo
       [ "$#" -ge 2 ] || { echo "lifecycle-e2e: --feature needs a name" >&2; exit 2; }
       mode=feature; FEATURE="$2"; shift 2 ;;
-    --dry-run) dry=1; shift ;;             # with --bootstrap/--feature: print the headless command + prompt, run nothing
+    --autonomous) mode=autonomous; shift ;; # the dial's loop driver: re-invoke the code skill per run-state until the stop-point
+    --level)
+      [ "$#" -ge 2 ] || { echo "lifecycle-e2e: --level needs a value" >&2; exit 2; }
+      AUTON_LEVEL="$2"; shift 2 ;;
+    --stop)
+      [ "$#" -ge 2 ] || { echo "lifecycle-e2e: --stop needs a value" >&2; exit 2; }
+      AUTON_STOP="$2"; shift 2 ;;
+    --dry-run) dry=1; shift ;;             # with --bootstrap/--feature/--autonomous: print the plan/prompt, run nothing
     --harness)
       [ "$#" -ge 2 ] || { echo "lifecycle-e2e: --harness needs a value" >&2; exit 2; }
       case "$2" in both) harnesses="claude-code codex" ;; claude-code|codex) harnesses="$2" ;; *) echo "lifecycle-e2e: unknown harness '$2'" >&2; exit 2 ;; esac
@@ -170,6 +179,22 @@ Commit your work on a feature branch (the code skill branches first off the defa
 PROMPT
 }
 
+autonomy_continue_prompt() {   # per iteration: do the next uncompleted feature per the dial, then stop
+  local plugin_root="$REPO/plugins/foundry" descs="" f
+  for f in $features; do descs="$descs  - $f: $(feat_desc "$f")
+"; done
+  cat <<PROMPT
+Read \`.foundry/tmp/lifecycle-run.json\` — the autonomy directive (level, stopPoint, completed). Follow the foundry code skill at $plugin_root/skills/code/SKILL.md and its references/autonomy.md.
+
+The roadmap, in order: $features
+
+Do the FIRST feature in that order that is NOT already in the run-state's "completed" array, through the full lifecycle (Frame -> Spec -> Plan -> Build -> Verify -> Knowledge -> Review) at the recorded level. At Guided: self-approve an unambiguous Design, run spec-review and code-review, commit on a feature branch, ask only at a genuine soft fork, and NEVER push or merge to the default branch. When the feature reaches Finish, append its name to the run-state "completed" array (rewrite the JSON file). Then STOP — do exactly ONE feature; the driver re-invokes you for the next.
+
+Feature scope:
+$descs
+PROMPT
+}
+
 case "$mode" in
   setup)
     repo="${LIFECYCLE_E2E_SETUP_DIR:-$(mktemp -d)}"
@@ -259,6 +284,61 @@ case "$mode" in
     else
       echo "check-fast: FAIL — see $out/check-fast.log (workflow friction)"
     fi
+    cp -R "$repo" "$out/repo" 2>/dev/null || true
+    echo "collected: $out/repo"
+    exit 0 ;;
+  autonomous)
+    out="$RESULTS/lifecycle-e2e-autonomous-$$"; mkdir -p "$out"
+    stopkind="${AUTON_STOP%%:*}"; stopid=""; case "$AUTON_STOP" in *:*) stopid="${AUTON_STOP#*:}";; esac
+    if [ "$dry" -eq 1 ]; then
+      echo "lifecycle-e2e autonomous — DRY RUN (nothing run): level=$AUTON_LEVEL stop=$AUTON_STOP"
+      echo "--- per-iteration prompt ---"; printf '%s\n' "$(autonomy_continue_prompt)"
+      exit 0
+    fi
+    repo="${LIFECYCLE_E2E_SETUP_DIR:?--autonomous needs LIFECYCLE_E2E_SETUP_DIR (a bootstrapped repo)}"
+    [ -d "$repo" ] || { echo "lifecycle-e2e: repo $repo not found" >&2; exit 2; }
+    state="$repo/.foundry/tmp/lifecycle-run.json"
+    git -C "$repo" checkout -q main 2>/dev/null || true
+    # Run-state init: completed = features whose spec dir already exists on main.
+    completed_json="$(ls "$repo/roadmap/specs" 2>/dev/null | python3 -c 'import sys,json; print(json.dumps([l.strip() for l in sys.stdin if l.strip()]))')"
+    mkdir -p "$repo/.foundry/tmp"
+    LRS_L="$AUTON_LEVEL" LRS_K="$stopkind" LRS_I="$stopid" LRS_C="$completed_json" python3 - "$state" <<'PY'
+import json, os, sys, datetime
+sp = {"kind": os.environ["LRS_K"]}
+if os.environ["LRS_I"]: sp["id"] = os.environ["LRS_I"]
+json.dump({"level": os.environ["LRS_L"], "stopPoint": sp, "completed": json.loads(os.environ["LRS_C"]),
+           "startedAt": datetime.datetime.now().astimezone().isoformat()}, open(sys.argv[1], "w"), indent=2)
+PY
+    echo "[autonomous] level=$AUTON_LEVEL stop=$AUTON_STOP completed=$completed_json repo=$repo"
+    cap="${AUTON_CAP:-10}"; iter=0
+    while [ "$iter" -lt "$cap" ]; do
+      iter=$((iter + 1))
+      git -C "$repo" checkout -q main 2>/dev/null || true
+      before="$(python3 -c 'import json,sys; print(len(json.load(open(sys.argv[1]))["completed"]))' "$state")"
+      log="$out/iter-$iter.log"
+      echo "[autonomous] iter $iter — next feature (log: $log)"
+      drive_stage "$repo" "$(autonomy_continue_prompt)" "$log" || echo "[autonomous] iter $iter: agent exited nonzero" >&2
+      # Merge the agent's feature branch to local main — the authorized continuation step
+      # (the agent commits on a branch per Guided; the driver advances main between features).
+      fb="$(git -C "$repo" branch --show-current 2>/dev/null || true)"
+      if [ -n "$fb" ] && [ "$fb" != main ]; then
+        git -C "$repo" checkout -q main 2>/dev/null
+        git -C "$repo" -c user.email=branransom@gmail.com -c user.name="Brandon Ransom" merge --no-edit "$fb" >/dev/null 2>&1 \
+          && echo "[autonomous] merged $fb -> main" || echo "[autonomous] merge of $fb failed" >&2
+      fi
+      after="$(python3 -c 'import json,sys; print(len(json.load(open(sys.argv[1]))["completed"]))' "$state")"
+      stopnow="$(python3 - "$state" "$stopkind" "$stopid" <<'PY'
+import json, sys
+d = json.load(open(sys.argv[1])); kind = sys.argv[2]; sid = sys.argv[3]; c = d["completed"]
+print("STOP" if (kind == "card" and sid in c) or kind == "feature" else "CONTINUE")
+PY
+)"
+      [ "$stopnow" = STOP ] && { echo "[autonomous] stop-point reached after iter $iter"; break; }
+      [ "$after" -le "$before" ] && { echo "[autonomous] no progress in iter $iter — stopping (agent added no feature)" >&2; break; }
+    done
+    echo "=== autonomous run summary (run-state) ===" && cat "$state" 2>/dev/null
+    echo "=== generated check-fast (final) ==="
+    ( cd "$repo" && bash scripts/check-fast.sh ) >"$out/check-fast.log" 2>&1 && echo "check-fast: PASS" || echo "check-fast: FAIL — see $out/check-fast.log"
     cp -R "$repo" "$out/repo" 2>/dev/null || true
     echo "collected: $out/repo"
     exit 0 ;;
