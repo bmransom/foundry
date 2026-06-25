@@ -77,6 +77,13 @@ The full grading table, evidence sources, and size tripwires live in
 - **Robust tests** — flag a test that does not **discriminate** a seeded defect,
   exercises only a fake or the happy path, or omits failure/edge cases.
 
+## Calibration
+
+Precision first — a false positive gets the reviewer ignored. Cite a `file:line` you read or
+**drop the finding**; **silence beats noise** (zero findings is fine); cluster; read callers/callees,
+not just the hunk; leave style to the linter; set severity by verifiability. Ground findings in
+the spec — grade against its ACs, never invent a requirement, treat your fix as a hypothesis. See [`references/dimensions.md`](references/dimensions.md).
+
 ## Output contract
 
 Write the full report to the report path and print it. The report tail carries

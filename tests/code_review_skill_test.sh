@@ -118,6 +118,28 @@ skill_grep "single asymmetric\|not a debate\|not a symmetric debate\|asymmetric"
 skill_grep "single-agent\|single agent\|skip" \
   || fail "refuter must skip and run single-agent when one harness family is available"
 
+# --- Calibration (agent precision) + spec grounding ------------------------
+skill_grep "drop the finding" \
+  || fail "calibration must require evidence (file:line) or drop the finding (AC-14.1)"
+skill_grep "silence beats noise" \
+  || fail "calibration must prefer silence to noise (AC-14.2)"
+skill_grep "[Zz]ero findings" \
+  || fail "calibration must allow zero findings as a valid outcome (AC-14.3)"
+skill_grep "single finding" \
+  || fail "calibration must cluster repeated patterns into a single finding (AC-14.4)"
+skill_grep "callers" \
+  || fail "calibration must read the context (callers/callees), not just the hunk (AC-14.5)"
+skill_grep "deterministic tools" \
+  || fail "calibration must leave style/lint to deterministic tools (AC-14.6)"
+skill_grep "advisory unless" \
+  || fail "calibration must set severity by verifiability (AC-14.7)"
+skill_grep "conforms to the spec" \
+  || fail "spec-grounding must not flag spec-conforming behavior (AC-15.1)"
+skill_grep "invent a requirement" \
+  || fail "spec-grounding must never invent a requirement (AC-15.2)"
+skill_grep "hypothesis" \
+  || fail "spec-grounding must treat a proposed fix as a hypothesis (AC-15.3)"
+
 # --- Runner: executable, harness detection, hermetic dry-runs --------------
 [ -x "$SCRIPT" ] || fail "spawn-code-reviewer.sh must exist and be executable"
 [ "$(AGENT_HARNESS=codex "$SCRIPT" --print-harness)" = "codex" ] \
