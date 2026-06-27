@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.1.7](https://github.com/bmransom/foundry/compare/v0.1.6...v0.1.7) (2026-06-23)
+
+
+### Features
+
+* **code-review:** add a performance/efficiency review dimension ([#21](https://github.com/bmransom/foundry/issues/21)) ([72767c4](https://github.com/bmransom/foundry/commit/72767c4e784ad376c02fc4bbc583d559f87b9ac7))
+* **code-review:** docs-sync flags a design.md missing Metrics ([#26](https://github.com/bmransom/foundry/issues/26)) ([82f81d9](https://github.com/bmransom/foundry/commit/82f81d9287a3689fb597416282dd699eb05327eb))
+* **code:** spec stage considers all five skills, N/A if not applicable ([#24](https://github.com/bmransom/foundry/issues/24)) ([74ddb45](https://github.com/bmransom/foundry/commit/74ddb45e719896a39dd496b989dad0f42c23e0d8))
+* **workflow:** spec-time metrics + branch/worktree on roadmap pickup ([#25](https://github.com/bmransom/foundry/issues/25)) ([9e1a384](https://github.com/bmransom/foundry/commit/9e1a384d49ab4e0646ea62aba5a72f8eeb2b215e))
+
 ## [0.1.6](https://github.com/bmransom/foundry/compare/v0.1.5...v0.1.6) (2026-06-23)
 
 
