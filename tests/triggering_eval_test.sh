@@ -12,6 +12,10 @@ fail() { echo "FAIL: $1" >&2; exit 1; }
 
 [ -x "$RUNNER" ] || fail "triggering-eval.sh must exist and be executable"
 
+# The gitignored results dir may not exist on a fresh checkout (e.g. CI); create it
+# so the `find` below cannot abort the test under set -e + pipefail with a swallowed error.
+mkdir -p "$RESULTS_DIR"
+
 # --- dry-run: builds the prompt from live descriptions, spawns nothing --------
 before="$(find "$RESULTS_DIR" -name 'triggering-*' 2>/dev/null | wc -l | tr -d ' ')"
 dry="$("$RUNNER" --dry-run)"
