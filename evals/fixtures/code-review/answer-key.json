@@ -10,6 +10,10 @@
   "decoys": [
     { "id": "D1", "signature": "print --help", "type": "legitimate-cli-surface" },
     { "id": "D2", "signature": "generated_catalog_fixture", "type": "large-generated-fixture" },
-    { "id": "D3", "signature": "estimate", "type": "debt-term-in-replaces-context" }
+    { "id": "D3", "signature": "estimate", "type": "debt-term-in-replaces-context" },
+    { "id": "D4", "signature": "buildPayload", "type": "style-naming-linter-owns" },
+    { "id": "D5", "signature": "handle_4xx", "type": "spec-conforming-no-retry-4xx" },
+    { "id": "D6", "signature": "confirmation", "type": "invented-requirement" },
+    { "id": "D7", "signature": "per_order_cost", "type": "guarded-read-context" }
   ]
 }
