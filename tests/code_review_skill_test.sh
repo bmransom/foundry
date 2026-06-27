@@ -105,6 +105,8 @@ skill_grep "discriminat" \
   || fail "robust-tests dimension must require tests that discriminate a seeded defect"
 skill_grep "[Pp]erformance\|efficien" \
   || fail "code-review must grade a performance/efficiency dimension"
+skill_grep "commented-out\|early return" \
+  || fail "code-review must grade a readability dimension (clean-code basics, advisory)"
 
 # --- Refuter contract ------------------------------------------------------
 skill_grep "refuter\|refute\|Refuter" \
