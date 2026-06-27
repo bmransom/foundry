@@ -1,6 +1,6 @@
 ---
 name: code-review
-description: Use when reviewing an implementation diff against its spec before Finish — the foundry lifecycle Review gate, grading every dimension from artifacts and the recorded gate, never self-claims.
+description: Use when reviewing an implementation diff against its spec before Finish — grading lifecycle evidence, complete implementation, docs sync, domain language, logging, simplicity, interfaces, structure, efficiency, defaults, and test discrimination from artifacts, never self-claims.
 ---
 
 # Code Review
