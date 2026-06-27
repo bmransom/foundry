@@ -96,11 +96,11 @@ Update `AGENTS.md` if a convention changed.
 
 ## 6 · Review
 
-Run `code-review` in fresh context, then fix every **blocking** finding; **advisory**
-findings (size tripwires) inform but permit Finish. A docs/knowledge finding loops
-back to **Knowledge** first. Re-run until none remain; if blocking findings persist
-after **three** rounds, stop and escalate — they signal a design problem, not a wording fix.
-**Gate:** no commit or PR with an unresolved blocking finding.
+Run Review as the bounded **outer fix-convergence loop** (`code-review-convergence-hook.sh`): each round
+runs one converged `code-review` in fresh context. **PASS** clears it; **FAIL** surfaces blocking findings
+*you* fix via the SDLC, then re-review (the reviewer never fixes). Advisory findings permit Finish; a
+docs/knowledge finding loops to **Knowledge** first. After the **20-round** ceiling, escalate — never
+auto-pass. Mechanics: code-review's `references/convergence.md`. **Gate:** no unresolved blocking finding ships.
 
 ## 7 · Finish
 

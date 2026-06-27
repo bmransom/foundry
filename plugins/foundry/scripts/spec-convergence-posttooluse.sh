@@ -7,6 +7,14 @@
 # the agent (exit 2). It is FAIL-SAFE: a non-spec edit, malformed payload, or any
 # infra trouble (no tmux, unavailable reviewer, verdict drift) exits 0 — it never
 # blocks an edit, it only nudges the convergence loop when a review actually ran.
+#
+# WIRING CONVENTION: in Claude Code settings, ALSO scope this with the hook `if` field
+# — the native path filter — so the harness skips non-spec edits before running this
+# script, e.g. "if": "Edit(/roadmap/specs/**/*.md)|Write(/roadmap/specs/**/*.md)|
+# MultiEdit(/roadmap/specs/**/*.md)" (matcher still matches tool names only). The
+# in-script path filter below stays regardless: it is the harness-agnostic guarantee
+# (Codex has no `if`) and keeps the adapter correct if wired without `if`. A future
+# code-review-posttooluse.sh mirrors this both-layers pattern.
 set -euo pipefail
 
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

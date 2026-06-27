@@ -20,6 +20,24 @@ Changes to the knowledge base, newest first. A reserved OKF file — no frontmat
   Set once at Frame, harness-aware (`/loop`, Codex `/goal`); the operational detail lives
   in `plugins/foundry/skills/code/references/autonomy.md`. Prior art: Codex approval modes
   + role-based agent-autonomy levels (autonomy level); the debugger breakpoint (stop-point).
+- **Update** The **code-review** skill reached feature-complete (spec
+  `roadmap/specs/code-review/` `SPEC_REVIEW: CLEAN`): a synchronous runner with inner
+  review-convergence + outer fix-convergence loops, a cross-model DROP-only refuter with
+  footer-algebra recompute, agent-calibration guardrails (evidence-or-drop,
+  silence-beats-noise, no-invented-requirements, leave-style-to-the-linter) + spec
+  grounding, manifest-derived refuter families via `--harness`, and the shared
+  `resolve_base` diff range. No new glossary concepts — generic prior art; provenance in
+  the SKILL header. The L3 eval + the hermetic A/B gate decide refuter enablement.
+
+## 2026-06-24
+
+- **Convention** Wiring a PostToolUse convergence trigger (`spec-convergence-posttooluse.sh`,
+  and a future `code-review-posttooluse.sh`): scope it with BOTH layers — the Claude Code
+  hook `if` field (native path filter, e.g. `Edit(/roadmap/specs/**/*.md)|Write(…)|MultiEdit(…)`;
+  the `matcher` matches tool names only) AND the adapter's own in-script path filter. The
+  `if` field is Claude-Code-only, so the in-script filter is the harness-agnostic correctness
+  guarantee (Codex has no `if`). Verify the installed Claude Code version supports `if` before
+  relying on it. Source: code.claude.com/docs/en/hooks.md#path-based-filtering.
 
 ## 2026-06-20
 

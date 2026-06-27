@@ -1,4 +1,4 @@
-> **Status:** Ready (2026-06-20) — tracked on the [board](../../ROADMAP.md).
+> **Status:** Revising (2026-06-24) — convergence cycle (synchronous runner + inner/outer loops + config-A). Tracked on the [board](../../ROADMAP.md).
 > Companion: [design.md](design.md), [tasks.md](tasks.md).
 
 # Requirements — code review
@@ -15,18 +15,24 @@ Acceptance criteria:
 - AC-1.1 WHEN the user runs `spawn-code-reviewer.sh <spec-dir> [project-dir]`,
   THE SYSTEM SHALL launch a fresh-context review of the diff for that spec and
   SHALL NOT edit any file in the consumer repo.
-- AC-1.2 WHEN no `--base` is given, THE SYSTEM SHALL set the diff base to
-  `git merge-base main HEAD` (range `<base>..HEAD`); `--base <ref>` SHALL override
-  the base.
+- AC-1.2 WHEN no `--base` is given, THE SYSTEM SHALL resolve the diff base via the
+  shared fresh-session policy (`origin/HEAD`, then `main`, then `HEAD`) rather than
+  a hardcoded `main` (range `<base>..HEAD`); `--base <ref>` SHALL override it.
 - AC-1.3 WHEN the review runs, THE SYSTEM SHALL write the full report to
-  `.foundry/reports/code-review/<timestamp>-code-review.md`.
+  `.foundry/reports/code-review/<timestamp>-<pid>-code-review.md` (the pid suffix
+  avoids a same-second collision between parallel reviewers).
 - AC-1.4 WHEN `--print-harness` is given, THE SYSTEM SHALL print the detected
   harness and exit without spawning a review.
 - AC-1.5 WHEN `--dry-run` is given, THE SYSTEM SHALL print the launch command
   naming the harness, the spec dir, the diff range, the fresh-session prompt path,
   and the report path, and SHALL NOT spawn a review.
-- AC-1.6 WHEN `--skip-permissions` is given, THE SYSTEM SHALL pass the permission
-  bypass to the shared fresh-session runner.
+- AC-1.6 WHEN `--skip-permissions` is given, THE SYSTEM SHALL forward the permission
+  bypass to the reviewer and refuter spawns — both run headless and must read files,
+  run checks, and write the report without prompts; read-only is enforced by the
+  prompt and the report path outside the consumer tree, not by withholding the bypass.
+- AC-1.7 WHEN selecting the refuter's harness family, THE SYSTEM SHALL accept an
+  explicit `--harness <family>` flag and SHALL NOT depend on the `AGENT_HARNESS`
+  test-override env var for production dispatch.
 
 ### US-2: Emit machine-readable findings for scoring
 
@@ -146,11 +152,18 @@ Acceptance criteria:
   SHALL prohibit Finish — no commit or PR — until it is fixed and re-reviewed.
 - AC-7.3 WHEN the Review stage finds only advisory findings such as size
   tripwires, THE SYSTEM SHALL permit Finish.
-- AC-7.4 WHEN a Review finding is a docs or knowledge gap, THE SYSTEM SHALL loop
-  back to the Knowledge stage before re-review.
-- AC-7.5 WHEN blocking findings persist after three Review rounds, THE SYSTEM
-  SHALL stop and escalate to the maintainer rather than re-review indefinitely —
-  persistent blocking findings signal a design problem, not a wording fix.
+- AC-7.4 WHEN the lifecycle addresses a Review finding, THE SYSTEM SHALL fix it
+  through the normal SDLC — update `requirements`/`design`/`tasks`, re-run
+  `spec-review` to convergence, TDD build, verify, knowledge — not an ad-hoc
+  patch, then run a fresh converged review; a docs or knowledge gap re-enters at
+  the Knowledge stage.
+- AC-7.5 WHEN the fix→re-review loop runs, THE SYSTEM SHALL stop on the first
+  `CODE_REVIEW: PASS` and SHALL escalate to the maintainer at a 20-round ceiling
+  rather than re-reviewing indefinitely — the cap is a backstop, not the target.
+- AC-7.6 WHEN the outer fix loop runs, THE SYSTEM SHALL drive it through a
+  convergence hook that counts rounds in persistent state and returns
+  continue/converged/escalate, with the lifecycle agent applying fixes between
+  rounds; the reviewer SHALL NOT fix.
 
 ### US-8: Prove discrimination with a seeded fixture
 
@@ -228,6 +241,123 @@ Acceptance criteria:
 - AC-10.4 WHEN v1 reviews, THE SYSTEM SHALL NOT depend on any non-Foundry review
   skill being installed.
 
+### US-11: Orchestrate synchronously and compute the verdict from the report
+
+As a maintainer, I want the runner to wait for the review, read its report, and
+compute the verdict from the machine-readable footer — so the gate cannot be
+fooled by a forged verdict line and the refuter's DROPs actually take effect.
+
+Acceptance criteria:
+
+- AC-11.1 WHEN the runner spawns the reviewer or the refuter, THE SYSTEM SHALL
+  block until that pass's report is written and readable before proceeding, and
+  SHALL NOT spawn fire-and-forget.
+- AC-11.2 WHEN computing the verdict, THE SYSTEM SHALL derive `CODE_REVIEW:
+  PASS|FAIL` from the extracted `FLAGGED:` footer (the surviving blocking
+  findings), and SHALL NOT trust a free-text verdict line that the reviewed diff
+  could forge.
+- AC-11.3 WHEN the refuter pass completes, THE SYSTEM SHALL rewrite the final
+  footer to the candidate findings minus the refuter's DROPs and recompute the
+  verdict from the surviving blocking findings.
+- AC-11.4 WHEN handing findings to the refuter, THE SYSTEM SHALL pass ONLY the
+  extracted `FLAGGED:` footer and the diff, never the reviewer's report prose.
+- AC-11.5 WHEN the report does not complete within the timeout, THE SYSTEM SHALL
+  exit nonzero with no verdict and SHALL NOT emit `CODE_REVIEW: PASS`; the
+  outer-loop hook SHALL treat it as non-converged so Finish stays blocked.
+
+### US-12: Converge a single review — complete and correct
+
+As a maintainer, I want each review to re-review until its findings stabilize and
+then refute once, so one review is both complete (recall) and correct (precision).
+
+Acceptance criteria:
+
+- AC-12.1 WHEN a review runs, THE SYSTEM SHALL re-review in fresh context, union
+  the findings across passes, and stop when two consecutive passes add no new
+  finding or at a 20-pass ceiling.
+- AC-12.2 WHEN unioning findings across passes, THE SYSTEM SHALL dedupe by a
+  normalized signature key and SHALL NOT collapse one signature into another by
+  raw substring (e.g. `AC-2.1` is distinct from `AC-2.10`).
+- AC-12.3 WHEN the inner review loop converges, THE SYSTEM SHALL run the
+  cross-model refuter once over the unioned footer (per US-9).
+- AC-12.4 WHEN invoked standalone (`/foundry:code-review`), THE SYSTEM SHALL
+  perform exactly one converged review (the inner loop only) and SHALL NOT enter
+  the outer fix loop.
+- AC-12.5 WHEN the inner loop unions findings and the recompute applies DROPs, THE
+  SYSTEM SHALL use ONE footer-algebra module (union + difference) keyed on a single
+  normalized signature, and SHALL hoist immutable inputs (the docs-sync check,
+  glossary read, size pre-scan) once per inner loop rather than per pass.
+
+### US-13: Configure by manifest, defaults, and flags
+
+As a maintainer, I want configuration from the manifest, named-constant defaults,
+and CLI flags — not scattered env vars — so the same review behaves predictably
+across repos and harnesses.
+
+Acceptance criteria:
+
+- AC-13.1 WHEN selecting the refuter's harness families, THE SYSTEM SHALL derive
+  them from the manifest `harnesses` set (normalized to family tokens) and SHALL
+  NOT read a hardcoded list or an env var for the available set.
+- AC-13.2 WHEN a convergence cap or the consecutive-clean-passes threshold is
+  unset, THE SYSTEM SHALL use a single-sourced named-constant default, overridable
+  by a CLI flag; v1 SHALL require no config file.
+- AC-13.3 WHEN a test drives the review loop, THE SYSTEM SHALL accept a
+  reviewer-command seam via a test-only environment variable.
+- AC-13.4 WHEN resolving a knob from multiple sources, THE SYSTEM SHALL apply the
+  precedence: flag > test-env > config file (future) > manifest-derived > named
+  default.
+- AC-13.5 WHEN the runner starts, THE SYSTEM SHALL resolve all configuration once at
+  the CLI into a single config object and thread it inward as explicit values; the
+  inner contexts SHALL NOT re-default or read the environment.
+
+### US-14: Calibrate the agent reviewer for precision
+
+As a maintainer, I want the agent reviewer to suppress false positives and
+hallucinations so a finding is trustworthy and a PASS verdict means something —
+false positives, not missed nits, are the failure mode that makes an AI reviewer
+get ignored.
+
+Acceptance criteria:
+
+- AC-14.1 WHEN flagging a finding, THE SYSTEM SHALL cite a `file:line` it has read or
+  grepped for every symbol, path, and line range it references, and SHALL drop a
+  finding whose location it cannot verify.
+- AC-14.2 WHEN a candidate is not backed by evidence the reviewer read or a check it
+  ran showing a real defect, THE SYSTEM SHALL drop it rather than flag it — silence
+  beats noise.
+- AC-14.3 WHEN no candidate meets the bar, THE SYSTEM SHALL emit zero findings and
+  PASS, and SHALL NOT manufacture low-value findings to appear thorough.
+- AC-14.4 WHEN several findings share one root cause or repeated pattern, THE SYSTEM
+  SHALL report them as a single clustered finding.
+- AC-14.5 WHEN a candidate is contradicted by adjacent code (its definition, callers,
+  or callees), THE SYSTEM SHALL read that context and drop the diff-local false
+  positive.
+- AC-14.6 WHEN reviewing, THE SYSTEM SHALL NOT flag style, formatting, import order, or
+  other lint-domain issues; deterministic tools own those.
+- AC-14.7 WHEN a finding rests on design judgment or an inferred root cause, THE SYSTEM
+  SHALL mark it advisory unless it is backed by verifiable evidence; a mechanically
+  verified correctness or security defect SHALL be blocking. Performance findings follow
+  AC-5.5's hot/cold split.
+
+### US-15: Ground findings in the consumer's spec, never invented requirements
+
+As a maintainer, I want the review graded against the spec that the consumer's
+foundry install guarantees is present, so the reviewer separates intentional design
+from defects and never invents a requirement.
+
+Acceptance criteria:
+
+- AC-15.1 WHEN grading the diff, THE SYSTEM SHALL treat the spec's acceptance criteria
+  as the statement of intent and SHALL NOT flag behavior that conforms to the spec.
+- AC-15.2 WHEN the diff omits a behavior, THE SYSTEM SHALL flag the omission only if a
+  spec AC requires it, and SHALL NOT invent an unstated requirement or constraint.
+- AC-15.3 WHEN the reviewer believes code is wrong, THE SYSTEM SHALL treat its own
+  proposed fix as a hypothesis to verify against the spec and code, not as evidence
+  the original is wrong.
+- AC-15.4 WHEN the spec and the code disagree, THE SYSTEM SHALL flag the discrepancy
+  rather than assume either side is correct.
+
 ## Out of scope
 
 - A glossary entry for code review (generic prior art; provenance lives in the
@@ -239,7 +369,9 @@ Acceptance criteria:
 - A refuter that adds findings — it can only remove a reviewer's `FLAGGED:` line.
 - Per-task incremental review.
 - Language-agnostic AST complexity metrics.
-- PR-comment posting and `--fix` auto-application.
+- PR-comment posting and `--fix` auto-application — the outer fix loop (US-7) is
+  driven by the supervised lifecycle agent through the normal SDLC, NOT an
+  autonomous reviewer-applied `--fix`.
 - Running `code-review` inside `scripts/check-fast.sh`.
 - Repointing `evals/harness/reviewer-eval.sh` off the removed
   `agents/spec-reviewer.md` — a separate card.
