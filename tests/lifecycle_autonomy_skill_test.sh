@@ -27,7 +27,12 @@ for field in level stopPoint completed; do
   grep -q "$field" "$REF" || fail "autonomy.md must document the run-state field $field"
 done
 # Directive read once, never re-asked.
-grep -qi "re-ask" "$REF" || fail "autonomy.md must state the directive is read once, never re-asked"
+# Assert the SEMANTIC (read once, never re-asked, resolved by precedence), not just the
+# substring "re-ask" — an inverted "always re-ask" would satisfy a bare grep for "re-ask".
+grep -qi "never re-ask" "$REF" || fail "autonomy.md must state the directive is NEVER re-asked"
+grep -qi "read the directive once" "$REF" || fail "autonomy.md must state the directive is read once"
+grep -qi "precedence" "$REF" || fail "autonomy.md must define the directive precedence (AC-1.3)"
+grep -qi "first that applies" "$REF" || fail "autonomy.md must resolve the directive at the first matching precedence level"
 # Harness integration + the Codex approval-mode mapping.
 ref "/loop" "cover the /loop harness"
 ref "/goal" "cover the Codex /goal harness"

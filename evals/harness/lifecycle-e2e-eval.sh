@@ -317,21 +317,25 @@ json.dump({"level": os.environ["LRS_L"], "stopPoint": sp, "completed": json.load
            "startedAt": datetime.datetime.now().astimezone().isoformat()}, open(sys.argv[1], "w"), indent=2)
 PY
     echo "[autonomous] level=$AUTON_LEVEL stop=$AUTON_STOP completed=$completed_json repo=$repo"
+    # AC-2.4 invariant: the driver NEVER touches the default branch unattended. Pin main's
+    # SHA and integrate features on a dedicated branch; assert main is unmoved after the run.
+    main_sha="$(git -C "$repo" rev-parse main 2>/dev/null || true)"
+    git -C "$repo" checkout -q -B lifecycle-e2e-integration main 2>/dev/null || true
     cap="${AUTON_CAP:-10}"; iter=0
     while [ "$iter" -lt "$cap" ]; do
       iter=$((iter + 1))
-      git -C "$repo" checkout -q main 2>/dev/null || true
+      git -C "$repo" checkout -q lifecycle-e2e-integration 2>/dev/null || true
       before="$(python3 -c 'import json,sys; print(len(json.load(open(sys.argv[1]))["completed"]))' "$state")"
       log="$out/iter-$iter.log"
       echo "[autonomous] iter $iter — next feature (log: $log)"
       drive_stage "$repo" "$(autonomy_continue_prompt)" "$log" || echo "[autonomous] iter $iter: agent exited nonzero" >&2
-      # Merge the agent's feature branch to local main — the authorized continuation step
-      # (the agent commits on a branch per Guided; the driver advances main between features).
+      # Integrate the agent's feature branch onto the integration branch — NEVER main. The
+      # dial forbids touching the default branch; main stays pinned (asserted after the loop).
       fb="$(git -C "$repo" branch --show-current 2>/dev/null || true)"
-      if [ -n "$fb" ] && [ "$fb" != main ]; then
-        git -C "$repo" checkout -q main 2>/dev/null
+      if [ -n "$fb" ] && [ "$fb" != lifecycle-e2e-integration ] && [ "$fb" != main ]; then
+        git -C "$repo" checkout -q lifecycle-e2e-integration 2>/dev/null
         git -C "$repo" -c user.email=branransom@gmail.com -c user.name="Brandon Ransom" merge --no-edit "$fb" >/dev/null 2>&1 \
-          && echo "[autonomous] merged $fb -> main" || echo "[autonomous] merge of $fb failed" >&2
+          && echo "[autonomous] integrated $fb -> lifecycle-e2e-integration" || echo "[autonomous] integrate of $fb failed" >&2
       fi
       after="$(python3 -c 'import json,sys; print(len(json.load(open(sys.argv[1]))["completed"]))' "$state")"
       stopnow="$(python3 - "$state" "$stopkind" "$stopid" <<'PY'
@@ -343,6 +347,13 @@ PY
       [ "$stopnow" = STOP ] && { echo "[autonomous] stop-point reached after iter $iter"; break; }
       [ "$after" -le "$before" ] && { echo "[autonomous] no progress in iter $iter — stopping (agent added no feature)" >&2; break; }
     done
+    # AC-2.4 mechanical proof: main MUST be exactly where it started. A moved main means the
+    # autonomous path pushed/merged to the default branch — fail the run loudly.
+    main_now="$(git -C "$repo" rev-parse main 2>/dev/null || true)"
+    if [ -n "$main_sha" ] && [ "$main_now" != "$main_sha" ]; then
+      echo "[autonomous] INVARIANT VIOLATED (AC-2.4): main moved $main_sha -> $main_now" >&2; exit 1
+    fi
+    echo "[autonomous] invariant OK (AC-2.4): main untouched at $main_sha — features integrated on lifecycle-e2e-integration"
     echo "=== autonomous run summary (run-state) ===" && cat "$state" 2>/dev/null
     echo "=== generated check-fast (final) ==="
     ( cd "$repo" && bash scripts/check-fast.sh ) >"$out/check-fast.log" 2>&1 && echo "check-fast: PASS" || echo "check-fast: FAIL — see $out/check-fast.log"
@@ -351,11 +362,10 @@ PY
     exit 0 ;;
 esac
 
-# --- Full run: the headless lifecycle drive (built next; heavy, on-demand) ------
-# drive_stage()  — invoke the headless agent (claude -p / codex) per stage, canned inputs.
-# verify_gate()  — run the generated repo's check-fast; require PASS.
-# assert_sim()   — run 'sim --hands N'; assert the acceptance invariants + HTTP smoke.
-# collect_artifacts() / report_friction() — gather + grade workflow friction.
-echo "lifecycle-e2e: full headless run not yet implemented — install foundation ready (--setup-only)." >&2
-echo "Next slice: drive_stage (headless bootstrap with the canned poker answers)." >&2
-exit 3
+# --- No mode flag given -------------------------------------------------------
+# The headless drive runs by mode: --setup-only (install foundation), --bootstrap
+# (canned interview), --feature <desc> (one full lifecycle), and --autonomous (the dial
+# loop, which mechanically asserts the AC-2.4 main-untouched invariant). Reaching here
+# means no mode was selected — not an unimplemented driver.
+echo "lifecycle-e2e: no mode given. Use --plan, --setup-only, --bootstrap, --feature <desc>, or --autonomous." >&2
+exit 2
