@@ -19,7 +19,8 @@ Acceptance criteria:
   shared fresh-session policy (`origin/HEAD`, then `main`, then `HEAD`) rather than
   a hardcoded `main` (range `<base>..HEAD`); `--base <ref>` SHALL override it.
 - AC-1.3 WHEN the review runs, THE SYSTEM SHALL write the full report to
-  `.foundry/reports/code-review/<timestamp>-code-review.md`.
+  `.foundry/reports/code-review/<timestamp>-<pid>-code-review.md` (the pid suffix
+  avoids a same-second collision between parallel reviewers).
 - AC-1.4 WHEN `--print-harness` is given, THE SYSTEM SHALL print the detected
   harness and exit without spawning a review.
 - AC-1.5 WHEN `--dry-run` is given, THE SYSTEM SHALL print the launch command

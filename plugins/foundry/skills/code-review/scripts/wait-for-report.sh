@@ -22,8 +22,14 @@ done_re="${4:-}"
 
 elapsed=0
 while :; do
-  if [ -f "$report" ] && grep -qE "$done_re" "$report"; then
-    exit 0
+  # Complete = the LAST non-empty line is the verdict/sentinel. The contract puts the
+  # verdict last, so matching it ANYWHERE would treat a half-written report whose early
+  # text happens to contain a verdict line as done — a premature, stale read.
+  if [ -f "$report" ]; then
+    last_line="$(awk 'NF{line=$0} END{print line}' "$report" 2>/dev/null || true)"
+    if [ -n "$last_line" ] && grep -qE "$done_re" <<<"$last_line"; then
+      exit 0
+    fi
   fi
   if awk "BEGIN{exit !($elapsed >= $timeout)}"; then
     echo "wait-for-report: TIMEOUT after ${timeout}s — no complete report at $report" >&2

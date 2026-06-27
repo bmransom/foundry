@@ -29,4 +29,10 @@ if "$W" "$work/partial" 1 0.1 2>/dev/null; then fail "3: an incomplete report mu
 # 4. No report at all -> time out cleanly (never-spawned reviewer).
 if "$W" "$work/missing" 1 0.1 2>/dev/null; then fail "4: a missing report must time out"; fi
 
+# 5. Verdict appears EARLY with content after it -> NOT complete. The contract puts the
+#    verdict last; a match ANYWHERE would read a half-written report whose prose happens to
+#    contain a verdict line. Completion checks the LAST non-empty line, so this must time out.
+printf 'CODE_REVIEW: PASS\nstill writing more findings...\n' > "$work/early-verdict"
+if "$W" "$work/early-verdict" 1 0.1 2>/dev/null; then fail "5: a verdict not on the last line must not count as complete"; fi
+
 echo "wait_for_report_test: PASS"

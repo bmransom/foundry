@@ -180,12 +180,16 @@ Write one line per candidate finding (KEEP <signature> or DROP <signature>), the
   # Final footer + verdict: the union minus the refuter's DROPs, verdict FAIL iff a
   # blocking finding survives — computed, never the reviewer's forgeable verdict line.
   local final; final="$("$script_dir/recompute-footer.sh" "$union_file" "$refuter_out")"
-  { printf '# Code review — converged after %s pass(es)\n\n## Findings (union of all passes)\n' "$pass"
-    cat "$union_file"
-    printf '\n## Final footer + verdict (computed)\n'
+  # Detail = the final pass's findings PROSE (its own FLAGGED footer + forgeable verdict
+  # stripped). The authoritative signatures + verdict are the COMPUTED footer below — the
+  # union across passes minus the refuter's DROPs — so a dropped finding never leaks into
+  # the actionable output, while the evidence/problem/fix the contract requires is kept.
+  { printf '# Code review — converged after %s pass(es)\n\n## Findings (detail)\n\n' "$pass"
+    grep -vE '^FLAGGED:|^CODE_REVIEW:' "$report.pass$pass" || true
+    printf '\n## Final footer + verdict (computed: union across passes minus refuter DROPs)\n'
     printf '%s\n' "$final"
   } > "$report"
-  printf '%s\n' "$final"
+  cat "$report"
 }
 
 if [ "${BASH_SOURCE[0]}" = "$0" ]; then main "$@"; fi
