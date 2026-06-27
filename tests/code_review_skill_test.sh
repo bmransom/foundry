@@ -8,6 +8,7 @@ REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SKILL_DIR="$REPO/plugins/foundry/skills/code-review"
 SKILL_MD="$SKILL_DIR/SKILL.md"
 DIMENSIONS="$SKILL_DIR/references/dimensions.md"
+CONVERGENCE="$SKILL_DIR/references/convergence.md"
 SCRIPT="$SKILL_DIR/scripts/spawn-code-reviewer.sh"
 CODE_SKILL="$REPO/plugins/foundry/skills/code/SKILL.md"
 GITIGNORE="$REPO/.gitignore"
@@ -36,7 +37,7 @@ frontmatter_value() {
 # (pipefail would then misread the match as a failure).
 SKILL_TEXT=""
 skill_grep() {
-  [ -n "$SKILL_TEXT" ] || SKILL_TEXT="$(cat "$SKILL_MD" "$DIMENSIONS" 2>/dev/null)"
+  [ -n "$SKILL_TEXT" ] || SKILL_TEXT="$(cat "$SKILL_MD" "$DIMENSIONS" "$CONVERGENCE" 2>/dev/null)"
   grep -q "$1" <<<"$SKILL_TEXT"
 }
 
@@ -66,6 +67,8 @@ skill_grep ".foundry/reports/code-review/" \
   || fail "code-review must name its repo-local report output"
 skill_grep "scripts/spawn-code-reviewer.sh" \
   || fail "code-review must expose its fresh-context runner"
+grep -q "references/convergence.md" "$SKILL_MD" \
+  || fail "code-review SKILL must link the convergence reference"
 
 # --- Output contract -------------------------------------------------------
 skill_grep "CODE_REVIEW: PASS" \
@@ -102,6 +105,8 @@ skill_grep "discriminat" \
   || fail "robust-tests dimension must require tests that discriminate a seeded defect"
 skill_grep "[Pp]erformance\|efficien" \
   || fail "code-review must grade a performance/efficiency dimension"
+skill_grep "commented-out\|early return" \
+  || fail "code-review must grade a readability dimension (clean-code basics, advisory)"
 
 # --- Refuter contract ------------------------------------------------------
 skill_grep "refuter\|refute\|Refuter" \
@@ -114,6 +119,28 @@ skill_grep "single asymmetric\|not a debate\|not a symmetric debate\|asymmetric"
   || fail "refuter must be a single asymmetric pass, not a debate"
 skill_grep "single-agent\|single agent\|skip" \
   || fail "refuter must skip and run single-agent when one harness family is available"
+
+# --- Calibration (agent precision) + spec grounding ------------------------
+skill_grep "drop the finding" \
+  || fail "calibration must require evidence (file:line) or drop the finding (AC-14.1)"
+skill_grep "silence beats noise" \
+  || fail "calibration must prefer silence to noise (AC-14.2)"
+skill_grep "[Zz]ero findings" \
+  || fail "calibration must allow zero findings as a valid outcome (AC-14.3)"
+skill_grep "single finding" \
+  || fail "calibration must cluster repeated patterns into a single finding (AC-14.4)"
+skill_grep "callers" \
+  || fail "calibration must read the context (callers/callees), not just the hunk (AC-14.5)"
+skill_grep "deterministic tools" \
+  || fail "calibration must leave style/lint to deterministic tools (AC-14.6)"
+skill_grep "advisory unless" \
+  || fail "calibration must set severity by verifiability (AC-14.7)"
+skill_grep "conforms to the spec" \
+  || fail "spec-grounding must not flag spec-conforming behavior (AC-15.1)"
+skill_grep "invent a requirement" \
+  || fail "spec-grounding must never invent a requirement (AC-15.2)"
+skill_grep "hypothesis" \
+  || fail "spec-grounding must treat a proposed fix as a hypothesis (AC-15.3)"
 
 # --- Runner: executable, harness detection, hermetic dry-runs --------------
 [ -x "$SCRIPT" ] || fail "spawn-code-reviewer.sh must exist and be executable"
@@ -155,12 +182,12 @@ case "$dry_run" in
   *) fail "dry-run must name the report path" ;;
 esac
 
-# --dry-run without --base shows the git merge-base main HEAD default range.
-default_base="$(git -C "$REPO" merge-base main HEAD 2>/dev/null || true)"
+# --dry-run without --base shows the shared resolve_base (origin/HEAD -> main -> HEAD) range.
+default_base="$("$REPO/plugins/foundry/scripts/spawn-fresh-session.sh" --resolve-base "$REPO" 2>/dev/null || true)"
 if [ -n "$default_base" ]; then
   case "$dry_run" in
-    *"$default_base"*"..HEAD"*|*"$default_base..HEAD"*) ;;
-    *) fail "dry-run without --base must show the git merge-base main HEAD default range" ;;
+    *"$default_base..HEAD"*) ;;
+    *) fail "dry-run without --base must show the resolve_base (origin/HEAD->main->HEAD) range" ;;
   esac
 fi
 
@@ -186,27 +213,41 @@ for flag in --skip-permissions --yolo; do
   esac
 done
 
-# --- Refuter dry-run behavior ----------------------------------------------
-# With two harness families reachable, the dry-run shows the refuter on the
-# complementary family with a read-only, candidate-findings-only prompt.
+# --- Refuter selection (dry-run) -------------------------------------------
+# --harness <family> forces the cross-model refuter on that family.
 refuter_run="$(
   TMUX=1 AGENT_HARNESS=claude AGENT_TMUX=/bin/echo \
-    "$SCRIPT" --dry-run roadmap/specs/code-review "$REPO"
+    "$SCRIPT" --dry-run --harness codex roadmap/specs/code-review "$REPO"
 )"
 case "$refuter_run" in
-  *refuter*) ;;
-  *) fail "dry-run must preview the cross-model refuter spawn" ;;
+  *refuter*codex*) ;;
+  *) fail "--harness <family> must preview the cross-model refuter on that family" ;;
 esac
 
-# With only one harness family available, the refuter is skipped (single-agent).
+# A 2-harness manifest derives the complementary refuter family (refuter-family.sh; AC-13.1).
+mf_dir="$(mktemp -d)"; mkdir -p "$mf_dir/.foundry"
+printf '%s\n' '{"harnesses": ["claude-code", "codex"], "files": {}}' > "$mf_dir/.foundry/manifest.json"
+derived_run="$(
+  TMUX=1 AGENT_HARNESS=claude AGENT_TMUX=/bin/echo \
+    "$SCRIPT" --dry-run roadmap/specs/code-review "$mf_dir"
+)"
+case "$derived_run" in
+  *refuter*) ;;
+  *) fail "a 2-harness manifest must derive a refuter family" ;;
+esac
+
+# A single-harness manifest (and no --harness) skips the refuter (single-agent).
+sf_dir="$(mktemp -d)"; mkdir -p "$sf_dir/.foundry"
+printf '%s\n' '{"harnesses": ["claude-code"], "files": {}}' > "$sf_dir/.foundry/manifest.json"
 single_run="$(
-  TMUX=1 AGENT_HARNESS=claude AGENT_TMUX=/bin/echo FOUNDRY_REFUTER_FAMILIES=claude \
-    "$SCRIPT" --dry-run roadmap/specs/code-review "$REPO"
+  TMUX=1 AGENT_HARNESS=claude AGENT_TMUX=/bin/echo \
+    "$SCRIPT" --dry-run roadmap/specs/code-review "$sf_dir"
 )"
 case "$single_run" in
   *"refuter skipped"*|*"single-agent"*|*"single agent"*) ;;
-  *) fail "dry-run with one harness family must skip the refuter and run single-agent" ;;
+  *) fail "a single-harness manifest must skip the refuter and run single-agent" ;;
 esac
+rm -rf "$mf_dir" "$sf_dir"
 
 # --- Lifecycle delegation --------------------------------------------------
 grep -q "code-review" "$CODE_SKILL" \

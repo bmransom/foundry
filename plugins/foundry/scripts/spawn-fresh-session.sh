@@ -95,11 +95,12 @@ usage() {
 }
 
 main() {
-  local dry_run=0 print_harness=0 skip=0 slug="fresh-session"
+  local dry_run=0 print_harness=0 resolve_base_only=0 skip=0 slug="fresh-session"
   while [ "$#" -gt 0 ]; do
     case "$1" in
       --dry-run) dry_run=1; shift ;;
       --print-harness) print_harness=1; shift ;;
+      --resolve-base) resolve_base_only=1; shift ;;
       --skip-permissions|--yolo) skip=1; shift ;;
       --name)
         [ "$#" -ge 2 ] || { usage; exit 2; }
@@ -112,6 +113,10 @@ main() {
     esac
   done
   case "${AGENT_SKIP_PERMISSIONS:-}" in 1|true|yes) skip=1 ;; esac
+
+  # --resolve-base: print the shared diff base (origin/HEAD -> main -> HEAD) and exit;
+  # additive, like --print-harness, so the code-review wrapper reuses one resolver.
+  if [ "$resolve_base_only" -eq 1 ]; then resolve_base "${1:-$PWD}"; exit 0; fi
 
   local harness
   harness="$(detect_harness)"

@@ -14,6 +14,7 @@ the author's claims. A green claim is not evidence; the gate decides.
 | **Logging consistency** | production paths do not mix a raw `print`/`console.log`/`echo` with the **Wide event** for one unit of work | Grep the diff for raw output beside the structured event. A legitimate CLI surface such as `print --help` is not a violation — do not flag it. |
 | **Simplicity** | no needless abstraction, speculative config, pattern cosplay, or rewrite outside spec scope | Judgment, grounded in the `design-patterns` skill. |
 | **Clean interfaces** | small public surfaces; IO/vendor/filesystem at the edges; callers do not depend on internals | Judgment, grounded in `design-patterns` and `modular-structure`. AC-5.4: a needless abstraction or out-of-scope rewrite may be flagged under simplicity OR clean interfaces — reviewer judgment, not scored. |
+| **Readability** | expressive names (not `calc`/`tmp`); booleans read as questions; no committed commented-out code; early returns over deep nesting; a comment that explains *what* the code does should be a rename or an extracted function instead | Read the diff for intent-obscuring style. **Advisory**, and leave formatting/whitespace to the linter — flag only readability that would make the change hard to review or maintain, never a nit. |
 | **Modular structure** | layout respected; no dumping grounds; no new top-level dir for one file; oversized files/functions | Mechanical LOC/function pre-scan over the diff plus judgment. |
 | **Performance / efficiency** | hot-path algorithmic cost; redundant IO, model, or tool calls; unbounded allocation; per-item work that could be hoisted | Judgment, grounded in the `performance` skill. A clear hot-path regression is **blocking**; a cold-path tuning opportunity is **advisory**. |
 | **Sensible defaults** | defaultable params have sensible documented defaults; no footgun defaults or unexplained magic values | Read changed signatures and config; flag a default that surprises or a magic value with no rationale. |
@@ -55,3 +56,35 @@ The refuter ships enabled by default ONLY if the A/B eval
 (`evals/harness/code-review-eval.sh`) holds **mean recall ≥ 4/5 AND decoy hits =
 0** for the reviewer+refuter arm; otherwise it is disabled and the reviewer runs
 single-agent. The eval is the gate.
+
+## Calibration — precision is the reviewer's first duty
+
+A false positive costs more than a missed nit: an over-flagging reviewer gets ignored.
+Hold every finding to these before it ships:
+
+- **Evidence or drop the finding.** Quote a `file:line` you actually read or grepped for
+  every symbol, path, and range you cite; if you cannot point to it, drop the finding —
+  never flag from memory or inference.
+- **Silence beats noise.** Flag only what evidence shows is a real defect; when unsure,
+  drop it. **Zero findings is a valid, good outcome** — never manufacture a finding to look
+  thorough.
+- **Cluster.** Report repeated instances of one pattern as a single finding, not many.
+- **Read the context, not the hunk.** Check the definition, callers, and callees first; a
+  diff-local claim the surrounding code contradicts is a false positive.
+- **Leave style to the linter.** Never flag formatting, import order, or other lint-domain
+  issues — the repo's deterministic tools own those, and an LLM is worse at them.
+- **Severity by verifiability.** A mechanically verified correctness or security defect is
+  blocking; a design-judgment or inferred-root-cause finding is advisory unless you can
+  back it with evidence.
+
+## Spec grounding — review against intent, never invent it
+
+The consumer ran bootstrap, so the spec is present; use it as the statement of intent:
+
+- Grade the diff against the spec's acceptance criteria. Behavior that conforms to the spec
+  is not a defect, however you would have built it.
+- Flag an omission only if a spec AC requires it. **Never invent a requirement** the spec
+  does not state.
+- Treat your own proposed fix as a **hypothesis** to verify against the spec and code, not
+  proof the original is wrong.
+- When the spec and the code disagree, flag the discrepancy; do not assume either side.
