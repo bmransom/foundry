@@ -37,4 +37,14 @@ json.dump(flipped, open('$TMP/wrong.json', 'w'))
 "$RUNNER" --grade-only "$TMP/perfect.json" >/dev/null || fail "perfect predictions should grade as pass"
 if "$RUNNER" --grade-only "$TMP/wrong.json" >/dev/null 2>&1; then fail "wrong predictions should fail the grade"; fi
 
+# --- classify: the reply->skill matcher resolves the LONGEST name, never a prefix ----
+# 'code' sorts before 'code-review' and \bcode\b matches inside 'code-review', so a naive
+# first-match would score a correct 'code-review' answer as 'code'. Longest-first fixes it.
+[ "$("$RUNNER" --classify-reply "code-review")" = "code-review" ] \
+  || fail "classify must map 'code-review' to code-review, not the 'code' prefix"
+[ "$("$RUNNER" --classify-reply "code")" = "code" ] \
+  || fail "classify must still map 'code' to code"
+[ "$("$RUNNER" --classify-reply "chitchat, nothing to do")" = "NONE" ] \
+  || fail "classify must map a non-skill reply to NONE"
+
 echo "triggering_eval_test: PASS"

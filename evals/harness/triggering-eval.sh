@@ -24,11 +24,13 @@ usage() { sed -n '2,15p' "${BASH_SOURCE[0]}"; exit 2; }
 
 MODE=run
 GRADE_FILE=""
+CLASSIFY_REPLY=""
 RUNS=1
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --dry-run) MODE=dry; shift ;;
     --grade-only) MODE=grade; shift; GRADE_FILE="${1:-}"; [ "$#" -gt 0 ] && shift || true ;;
+    --classify-reply) MODE=classify; shift; CLASSIFY_REPLY="${1:-}"; [ "$#" -gt 0 ] && shift || true ;;
     -h|--help) usage ;;
     *) RUNS="$1"; shift ;;
   esac
@@ -40,10 +42,11 @@ if [ "$MODE" = grade ]; then
   exit
 fi
 
-python3 - "$SKILLS_DIR" "$CASES" "$RESULTS_DIR" "$RUNS" "$MODE" "$GRADER" <<'PY'
+python3 - "$SKILLS_DIR" "$CASES" "$RESULTS_DIR" "$RUNS" "$MODE" "$GRADER" "$CLASSIFY_REPLY" <<'PY'
 import json, os, re, subprocess, sys, time
 
 skills_dir, cases_path, results_dir, runs, mode, grader = sys.argv[1:7]
+classify_reply = sys.argv[7] if len(sys.argv) > 7 else ""
 runs = int(runs)
 
 
@@ -84,6 +87,18 @@ catalog = "\n".join(f"- {name}: {desc}" for name, desc in skills)
 names = [name for name, _ in skills]
 
 
+def match_reply(first):
+    """Map a model's first reply line to a skill name, or NONE. Try the LONGEST
+    name first: a name that is a prefix of another (code vs code-review) would
+    otherwise steal a correct longer answer, because the hyphen is a word boundary
+    and `\\bcode\\b` matches inside `code-review`."""
+    first = first.strip().lower()
+    for name in sorted(names, key=len, reverse=True):
+        if re.search(r"\b" + re.escape(name.lower()) + r"\b", first):
+            return name
+    return "NONE"
+
+
 def build_prompt(query):
     return (
         "Simulate Claude Code's skill-selection. Given the foundry skill catalog, "
@@ -102,17 +117,18 @@ if mode == "dry":
     print(build_prompt(cases[0]["query"]))
     sys.exit(0)
 
+if mode == "classify":
+    # Hermetic: exercise the reply->skill matcher on a fixed reply, no model spawn.
+    print(match_reply(classify_reply))
+    sys.exit(0)
+
 
 def classify(query):
     result = subprocess.run(
         ["claude", "-p", build_prompt(query)], capture_output=True, text=True, timeout=180
     )
-    reply = (result.stdout or "").strip().lower().splitlines()
-    first = reply[0] if reply else ""
-    for name in names:
-        if re.search(r"\b" + re.escape(name.lower()) + r"\b", first):
-            return name
-    return "NONE"
+    reply = (result.stdout or "").strip().splitlines()
+    return match_reply(reply[0] if reply else "")
 
 
 os.makedirs(results_dir, exist_ok=True)
