@@ -1,13 +1,16 @@
 #!/usr/bin/env bash
 # worktree-per-card: guard the "Done = merged" lifecycle wording across the
-# contract docs. The board conventions, the seed ROADMAP, AGENTS.md, and the
-# bootstrap generator must state "Done = merged to the default branch" and must
+# contract docs AND the load-bearing lifecycle skill. The board conventions, the
+# seed ROADMAP, AGENTS.md, the bootstrap generator, the `code` skill, and its
+# worktree reference must state "Done = merged to the default branch" and must
 # NOT regress to the old model — "Commit or push" (ask before every commit) or
-# "Done requires a recorded gate PASS".
+# "Done requires a recorded gate PASS" / "Implemented and verified by a recorded
+# gate PASS" (Done = gate-recorded / shipped).
 #
-# Discriminating: a seeded regression (old wording reinserted) MUST make the
-# scan fail — a guard that cannot fail asserts nothing.
-# Hermetic: needs only grep + a tempfile.
+# Discriminating on BOTH axes: a seeded forbidden phrase must be caught, and a
+# doc stripped of the required phrase must fail — a guard that cannot fail
+# asserts nothing.
+# Hermetic: needs only grep, sed, and a tempfile.
 set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -18,31 +21,41 @@ DOCS=(
   "$REPO/roadmap/ROADMAP.md"
   "$REPO/plugins/foundry/templates/seeds/roadmap/ROADMAP.md"
   "$REPO/plugins/foundry/skills/bootstrap/references/generate.md"
+  "$REPO/plugins/foundry/skills/code/SKILL.md"
+  "$REPO/plugins/foundry/skills/code/references/worktree.md"
 )
 
-# Old-model regression markers — none may appear in a contract doc.
-FORBIDDEN='Commit or push|recorded gate PASS'
-# New-model marker — every contract doc must state Done = merged.
+# Old-model regression markers — none may appear in a contract doc. Precise on
+# the Done definition so the new "the merged PR's gate run is the recorded gate
+# PASS" explanation in worktree.md is NOT a false positive.
+FORBIDDEN='Commit or push|requires a recorded gate PASS|Implemented and verified by a recorded gate PASS'
+# New-model marker — every doc must state Done = merged.
 REQUIRED='merge[sd]? to the default branch'
 
 has_forbidden() { grep -nEq "$FORBIDDEN" "$1"; }
+has_required()  { grep -qE  "$REQUIRED"  "$1"; }
 
-# 1) No contract doc carries old-model wording.
+# 1) No doc carries old-model wording.
 for f in "${DOCS[@]}"; do
   [ -f "$f" ] || fail "missing contract doc: $f"
   ! has_forbidden "$f" || fail "$f regressed to old lifecycle wording (matched /$FORBIDDEN/)"
 done
 
-# 2) Every contract doc states Done = merged.
+# 2) Every doc states Done = merged.
 for f in "${DOCS[@]}"; do
-  grep -qE "$REQUIRED" "$f" || fail "$f does not state Done = merged (/$REQUIRED/)"
+  has_required "$f" || fail "$f does not state Done = merged (/$REQUIRED/)"
 done
 
-# 3) Discrimination: a seeded regression must be caught by the same scan.
 tmp="$(mktemp)"
 trap 'rm -f "$tmp"' EXIT
+
+# 3a) Discrimination — a seeded forbidden phrase must be caught.
 cp "$REPO/AGENTS.md" "$tmp"
 printf '\n- Commit or push. Branch first on the default branch.\n' >> "$tmp"
-! has_forbidden "$tmp" && fail "discrimination: the scan failed to catch a seeded regression"
+! has_forbidden "$tmp" && fail "discrimination: scan failed to catch a seeded forbidden phrase"
+
+# 3b) Discrimination — a doc stripped of the required phrase must fail step 2.
+sed -E "s/$REQUIRED/REMOVED/g" "$REPO/AGENTS.md" > "$tmp"
+has_required "$tmp" && fail "discrimination: scan failed to notice a missing Done=merged marker"
 
 echo "done_merged_docs_test: PASS"
