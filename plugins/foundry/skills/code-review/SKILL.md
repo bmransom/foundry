@@ -23,10 +23,11 @@ context-resident prose; `code-review` reviews the implementation diff against it
    available. The wrapper delegates to Foundry's shared fresh-session runner and,
    on a multi-family manifest, runs the cross-model refuter pass.
 3. Wait for the report in `.foundry/reports/code-review/`.
-4. Read the report. Fix every blocking finding and re-review; a docs or knowledge
-   gap loops back to the Knowledge stage first.
+4. Read the report. Fix every blocking finding and re-review **blind** — never hand the
+   reviewer a summary of what you changed; a docs or knowledge gap loops back to Knowledge first.
 
-If fresh context is unavailable, review inline and say so before findings.
+If fresh context is unavailable, say so and hold the gate — never substitute a primed inline
+re-pass for an independent review.
 
 The runner converges automatically — re-review → union → refuter once — and the
 lifecycle drives fix → re-review. See

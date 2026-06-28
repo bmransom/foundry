@@ -14,10 +14,13 @@ reviewer sees the artifact, not the author's rationale.
 2. Run `scripts/spawn-spec-reviewer.sh <target> [repo-dir]` when tmux is available.
    The wrapper delegates to Foundry's shared fresh-session runner.
 3. Wait for the report in `.foundry/reports/spec-review/`.
-4. Read the report, apply accepted fixes, and re-run if the fixes change names,
-   vocabulary, requirements, design, tasks, skills, agents, or rules.
+4. Read the report, apply accepted fixes, and re-review. The re-pass is **blind** —
+   spawn a fresh reviewer on the current artifact; never hand it a summary of what you
+   changed (a judge told what changed verifies instead of re-scrutinizing).
 
-If fresh context is unavailable, review inline and say so before findings.
+If fresh context is unavailable, review inline and say so. Never run a **primed** re-pass
+inline: if you cannot spawn a fresh reviewer for round 2+, hold the gate rather than let
+your account of the edits stand in for an independent pass.
 
 ## Contract
 
@@ -51,16 +54,24 @@ preferences not present in the repo contract.
 
 ## Output
 
-Return a findings list grouped by file. Each finding must include location, problem,
-a concrete fix, and a machine-readable `FLAGGED: <short signature>` line — one per
-finding; the convergence loop and `score_review.py` read these. Note clean files
-briefly, then the single highest-priority fix.
+Return a findings list grouped by file. Each finding includes location, problem,
+**severity** — `blocking` or `advisory` — and a concrete fix. Emit a
+`FLAGGED: <short signature>` line for **each blocking finding** (the convergence loop and
+`score_review.py` read these); list advisory findings separately, without `FLAGGED:` lines.
+Note clean files briefly, then the single highest-priority blocking fix.
+
+Classify severity: a **contract violation** — a wrong canonical name, a debt term used for
+its concept, an entity-model conflict, missing provenance, a spec-format breach, or an
+internal inconsistency — is `blocking`; a taste-level **prose** preference is `advisory`.
+Objective **banned filler phrases** are enforced by `prose-lint.py` in the gate, not flagged
+here; contextual debt-term misuse stays a judge call (the glossary scopes debt terms by
+context, so it is not lintable).
 
 End with a final verdict line — the **last line** of the report — exactly one of:
 
-- `SPEC_REVIEW: CLEAN` — no findings remain.
-- `SPEC_REVIEW: FINDINGS` — one or more `FLAGGED:` findings above.
+- `SPEC_REVIEW: CLEAN` — no unresolved `blocking` finding remains (advisory may remain).
+- `SPEC_REVIEW: FINDINGS` — one or more `blocking` findings above.
 
-This verdict is the spec-convergence loop's deterministic stop token: the loop
-re-reviews after each edit until it reads `SPEC_REVIEW: CLEAN`. Emit it on every
-review, including inline ones.
+This verdict is the loop's deterministic stop token: it re-reviews (blind) after each edit
+until no `blocking` finding remains. Advisory findings never hold the gate. Emit the verdict
+on every review.

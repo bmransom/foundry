@@ -17,8 +17,9 @@ cat > "$work/stub-review" <<'STUB'
 v="$(head -1 "$STUB_SEQ")"
 tail -n +2 "$STUB_SEQ" > "$STUB_SEQ.tmp"; mv "$STUB_SEQ.tmp" "$STUB_SEQ"
 if [ "$v" = "CLEAN" ]; then echo "(no findings)"; echo "SPEC_REVIEW: CLEAN"
+elif [ "$v" = "ADVISORY" ]; then echo "advisory: a wordier sentence than needed (taste)"; echo "SPEC_REVIEW: CLEAN"
 elif [ "$v" = "DRIFT" ]; then echo "prose, but no verdict line"
-else echo "FLAGGED: hedge-word in design.md"; echo "SPEC_REVIEW: FINDINGS"; fi
+else echo "FLAGGED: contract violation in design.md"; echo "SPEC_REVIEW: FINDINGS"; fi
 STUB
 chmod +x "$work/stub-review"
 export SPEC_CONVERGENCE_REVIEW_CMD="$work/stub-review"
@@ -52,5 +53,12 @@ export SPEC_CONVERGENCE_STATE="$work/stateC" STUB_SEQ="$work/seqC" SPEC_CONVERGE
 printf 'DRIFT\n' > "$STUB_SEQ"
 run; [ "$HOOK_RC" -eq 3 ] || fail "C expected drift-error(3), got $HOOK_RC: $HOOK_OUT"
 case "$HOOK_OUT" in *"no 'SPEC_REVIEW"*) ;; *) fail "C output: $HOOK_OUT" ;; esac
+
+# Arm D — severity gating: an advisory-only report (verdict CLEAN, no blocking FLAGGED)
+# converges; advisory prose never holds the gate (review-convergence US-1).
+export SPEC_CONVERGENCE_STATE="$work/stateD" STUB_SEQ="$work/seqD" SPEC_CONVERGENCE_CAP=10
+printf 'ADVISORY\n' > "$STUB_SEQ"
+run; [ "$HOOK_RC" -eq 0 ] || fail "D expected converged(0) on advisory-only, got $HOOK_RC: $HOOK_OUT"
+case "$HOOK_OUT" in *"no blocking findings remain"*) ;; *) fail "D output should state no blocking: $HOOK_OUT" ;; esac
 
 echo "spec_convergence_hook_test: PASS"

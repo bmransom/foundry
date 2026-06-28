@@ -4,6 +4,20 @@
 
 Changes to the knowledge base, newest first. A reserved OKF file — no frontmatter.
 
+## 2026-06-28
+
+- **Convention** `spec-review` is now **severity-gated** like `code-review`: findings carry
+  `blocking`/`advisory`, the `FLAGGED:` footer carries the blocking ones, and `SPEC_REVIEW:
+  CLEAN` means *no unresolved blocking finding* (advisory may remain). The convergence re-pass
+  of both review skills is **blind** — never handed a summary of what changed. Objective
+  filler is gated by `scripts/prose-lint.py` (a banned-phrase lint); **debt-term misuse stays
+  a blocking judge call** — a build-time finding: the glossary scopes debt terms by context
+  ("scaffold" only as a verb), so it cannot be deterministically linted. No `glossary.md` row
+  (`blocking`/`advisory` are generic terms with prior art). Spec:
+  `roadmap/specs/review-convergence/`; closes (when fully landed)
+  `knowledge/review-convergence-coe.md`. The cross-family UNION pass (US-5) lands in a later
+  wave, eval-gated.
+
 ## 2026-06-27
 
 - **Convention** Redefined the **Done** board status and adopted the **worktree-per-card**
