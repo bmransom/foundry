@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.1.8](https://github.com/bmransom/foundry/compare/v0.1.7...v0.1.8) (2026-06-28)
+
+
+### Features
+
+* **code-review:** standalone convergence-cycle code-review skill ([#27](https://github.com/bmransom/foundry/issues/27)) ([cf767cb](https://github.com/bmransom/foundry/commit/cf767cbca9d8f1829b9752a9b92f79125edbdcb7))
+* lifecycle autonomy dial + e2e dogfood + Codex compatibility ([#28](https://github.com/bmransom/foundry/issues/28)) ([4dbd17f](https://github.com/bmransom/foundry/commit/4dbd17f8ba99b24a33c875f01e5b9faa9644508c))
+* skill-triggering eval + reference-reachability lint ([#29](https://github.com/bmransom/foundry/issues/29)) ([9bc04d2](https://github.com/bmransom/foundry/commit/9bc04d2fab5efbf53d7d934b7a56c96555ed1c78))
+
 ## [0.1.7](https://github.com/bmransom/foundry/compare/v0.1.6...v0.1.7) (2026-06-23)
 
 
