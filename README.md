@@ -68,22 +68,28 @@ Installed once at user scope, these run in every repo:
 
 ## Setup
 
-**Requirements:** [Claude Code](https://docs.claude.com/en/docs/claude-code) and a git
-repository. Bootstrap wires Rust, Python, and TypeScript stacks; polyglot repos are
-fine.
+**Requirements:** [Claude Code](https://docs.claude.com/en/docs/claude-code) or
+[Codex](https://developers.openai.com/codex), and a git repository. Bootstrap wires
+Rust, Python, and TypeScript stacks; polyglot repos are fine.
 
-Once, from any Claude Code session, add the marketplace and install the plugin:
+Add the marketplace and install the plugin once, at user scope.
+
+**Claude Code** — from any session:
 
 ```
 /plugin marketplace add bmransom/foundry
 /plugin install foundry@foundry
 ```
 
-Then, in the repo you want to set up, run:
+**Codex** — from a shell:
 
 ```
-/foundry:bootstrap
+codex plugin marketplace add bmransom/foundry
+codex plugin add foundry@foundry
 ```
+
+Then, in the repo you want to set up, run the bootstrap skill — `/foundry:bootstrap` in
+Claude Code, or ask Codex to bootstrap foundry into the repo.
 
 It detects your stack, interviews you, installs the setup, and proves it works before
 it proposes a commit. It never overwrites an existing `AGENTS.md`, CI workflow, or

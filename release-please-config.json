@@ -13,6 +13,11 @@
           "type": "json",
           "path": "plugins/foundry/.claude-plugin/plugin.json",
           "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
+          "path": "plugins/foundry/.codex-plugin/plugin.json",
+          "jsonpath": "$.version"
         }
       ],
       "changelog-sections": [

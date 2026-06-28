@@ -11,7 +11,7 @@ to the Writing style it declares.
 |---|---|
 | Intro (no heading) | What the repo is, what it ships, who consumes it — ≤ 4 lines, from the interview description. |
 | `## Commands` | A code block of real commands, the canonical gate (`scripts/check-fast.sh`) first; then one line: pre-push runs the same gate (`scripts/install-hooks.sh` once per clone; bypass once with `git push --no-verify`). |
-| `## Boundaries` | **Never** — repo-specific prohibitions from the interview and inspection. **Always** — "Use the `knowledge/glossary.md` vocabulary in records, APIs, and docs — it is the contract."; "Before coining a canonical name (glossary term, public type or field, config knob), search the prior art and record provenance in the glossary."; "Stage explicit paths, never `git add -A`." **Ask first** — "Commit or push. Branch first if on the default branch." |
+| `## Boundaries` | **Never** — repo-specific prohibitions from the interview and inspection. **Always** — "Use the `knowledge/glossary.md` vocabulary in records, APIs, and docs — it is the contract."; "Before coining a canonical name (glossary term, public type or field, config knob), search the prior art and record provenance in the glossary."; "Stage explicit paths, never `git add -A`."; "Write [Conventional Commits](https://www.conventionalcommits.org/) — `<type>(<scope>): <description>`, imperative mood (so every harness commits alike, not just the one whose global config happens to say so)."; "Make surgical changes — touch only what the task requires; remove only what your change orphaned; flag unrelated issues rather than fixing them silently." **Ask first** — "Commit or push. Branch first if on the default branch." |
 | `## Writing style` | The block below, verbatim. |
 | `## Testing` | The repo's test-scoping commands; integration over mocks; the feature-file rule: "New feature → add a Scenario; enhancement → update it; refactor → leave it." |
 | `## Contracts` | Only when an API surface exists — §Contracts. |
@@ -169,10 +169,16 @@ Gitignore the docs build artifacts (`knowledge/node_modules/`,
 ## vocab-lint — glossary debt column has entries
 
 `scripts/vocab-lint.sh`: read the terms from the "Replaces (now debt)" column
-of `knowledge/glossary.md` at run time (the glossary stays the single source); grep
-the surfaces the polarity answer names (`knowledge/` and `roadmap/specs/` — plus code identifiers
-for an excluding engine), excluding the glossary itself — its debt column
-contains every term; fail on any hit:
+of `knowledge/glossary.md` at run time (the glossary stays the single source). Lint
+**prose surfaces only** — markdown (`*.md`) under the directories the polarity answer
+names (`knowledge/` and `roadmap/specs/`; plus code identifiers for an excluding
+engine) — and EXCLUDE generated and dependency trees: `node_modules/`, `dist/`,
+lockfiles, and the VitePress build output (`.vitepress/cache`, `sidebar.generated.json`).
+This matters: a recursive grep over `knowledge/` also reads `package-lock.json` and the
+docs-site build, where a debt term hides inside a dependency name (case-insensitive `AI`
+matches `sponsors/ai`) and yields a false failure — scoping to `*.md` prose and
+excluding generated trees prevents it. Exclude the glossary itself — its debt column
+lists every term. Match whole words, case-insensitively; fail on any hit:
 
 Keep the script portable to Bash 3.2, which `/usr/bin/env bash` resolves to on
 macOS. Do not use Bash 4-only helpers such as `mapfile` or `readarray`; stream

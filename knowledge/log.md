@@ -6,6 +6,20 @@ Changes to the knowledge base, newest first. A reserved OKF file — no frontmat
 
 ## 2026-06-25
 
+- **Fix** Bootstrap's `generate.md` vocab-lint guidance now scopes the generated
+  `scripts/vocab-lint.sh` to **markdown prose** and excludes generated/dependency trees
+  (`node_modules/`, `dist/`, lockfiles, the VitePress build). The lifecycle-e2e dogfood
+  surfaced the gap: a fresh agent generated a recursive grep over `knowledge/` that
+  false-matched the debt term `AI` inside `knowledge/package-lock.json`
+  (`sponsors/ai`). The agent recovered, but the guidance now bakes the fix in so the
+  next bootstrap gets it right unaided. The e2e harness gained a regression signal that
+  flags a generated lint which fails to scope to prose.
+- **New** Glossary terms **Autonomy level** and **Stop-point** for the `code` lifecycle's
+  autonomy dial (`roadmap/specs/lifecycle-autonomy/`). The level (Supervised / Guided /
+  Autonomous) decides who resolves a soft fork; the stop-point bounds an autonomous run.
+  Set once at Frame, harness-aware (`/loop`, Codex `/goal`); the operational detail lives
+  in `plugins/foundry/skills/code/references/autonomy.md`. Prior art: Codex approval modes
+  + role-based agent-autonomy levels (autonomy level); the debugger breakpoint (stop-point).
 - **Update** The **code-review** skill reached feature-complete (spec
   `roadmap/specs/code-review/` `SPEC_REVIEW: CLEAN`): a synchronous runner with inner
   review-convergence + outer fix-convergence loops, a cross-model DROP-only refuter with

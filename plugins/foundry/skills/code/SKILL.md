@@ -28,16 +28,18 @@ point the user to the bootstrap skill rather than writing foundry files.
 Copy this into your reply and check off each stage. A gate is a **prohibition**: do
 not start a later stage until the prior gate is met.
 
-- [ ] **0 Frame** — classify the work; pick the path below.
+- [ ] **0 Frame** — set the autonomy dial; classify the work; pick the path below.
 - [ ] **1 Spec** — `roadmap/specs/<feature>/{requirements,design,tasks}.md` written, reviewed, and revised. GATE: no code until Design is approved.
 - [ ] **2 Plan** — bite-sized TDD tasks in `tasks.md`; board card claimed. GATE: no code until the plan is approved.
 - [ ] **3 Build** — feature-file Scenario first, then TDD red→green. GATE: new behavior has its Scenario before its code.
 - [ ] **4 Verify** — the repo's canonical gate green. GATE: a recorded PASS, pasted — not a claim.
 - [ ] **5 Knowledge** — `python3 scripts/knowledge.py check` clean; touched concepts updated. GATE: no stale concept or `index.md`.
 - [ ] **6 Review** — `code-review` in fresh context; fix every blocking finding. GATE: no commit or PR with an unresolved blocking finding.
-- [ ] **7 Finish** — branch first, ask before push, move the card. GATE: `Done` needs the recorded gate PASS.
+- [ ] **7 Finish** — branch first, ask before push, move the card; continue or stop per the autonomy dial. GATE: `Done` needs the recorded gate PASS.
 
 ## 0 · Frame — pick the path
+
+Resolve the **autonomy** dial first — the level + stop-point bounding how far this run goes before handing back ([`references/autonomy.md`](references/autonomy.md)).
 
 | Work | Path |
 |---|---|
@@ -116,5 +118,3 @@ closed only by a mechanical change (gate, lint, rule, or eval case), never prose
 | "I manually checked it; it works." | Not evidence. Run the canonical gate; paste the PASS. |
 | "I'll add the Scenario after." | New behavior gets its Scenario first; after-the-fact tests pass vacuously. |
 | "`git add -A` is faster." | The tree may be shared; stage explicit paths only. |
-
-Violating the letter of a gate is violating its spirit.

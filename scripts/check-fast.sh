@@ -15,6 +15,9 @@ echo "== plugin validate"
 claude plugin validate "$REPO/plugins/foundry"
 claude plugin validate "$REPO"
 
+echo "== manifest parity"
+"$REPO/scripts/check-manifest-parity.sh"
+
 echo "== byte identity"
 "$REPO/scripts/check-byte-identity.sh"
 
