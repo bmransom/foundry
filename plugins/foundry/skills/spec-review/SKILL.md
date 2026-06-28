@@ -18,10 +18,6 @@ reviewer sees the artifact, not the author's rationale.
    spawn a fresh reviewer on the current artifact; never hand it a summary of what you
    changed (a judge told what changed verifies instead of re-scrutinizing).
 
-When the manifest names a complementary harness family, the runner also spawns a
-**cross-family** pass and **UNIONs** its `blocking` findings into the footer — a second
-model catches what the first missed. A single-family repo skips it (single-agent).
-
 If fresh context is unavailable, review inline and say so. Never run a **primed** re-pass
 inline: if you cannot spawn a fresh reviewer for round 2+, hold the gate rather than let
 your account of the edits stand in for an independent pass.
@@ -64,11 +60,12 @@ Return a findings list grouped by file. Each finding includes location, problem,
 `score_review.py` read these); list advisory findings separately, without `FLAGGED:` lines.
 Note clean files briefly, then the single highest-priority blocking fix.
 
-Classify severity: a **contract violation** — a wrong canonical name, an entity-model
-conflict, missing provenance, a spec-format breach, or an internal inconsistency — is
-`blocking`; a taste-level **prose** preference is `advisory`. Objective writing-style rules
-(debt terms, the needless-word set) are enforced by `prose-lint.py` in the gate, not flagged
-here.
+Classify severity: a **contract violation** — a wrong canonical name, a debt term used for
+its concept, an entity-model conflict, missing provenance, a spec-format breach, or an
+internal inconsistency — is `blocking`; a taste-level **prose** preference is `advisory`.
+Objective **banned filler phrases** are enforced by `prose-lint.py` in the gate, not flagged
+here; contextual debt-term misuse stays a judge call (the glossary scopes debt terms by
+context, so it is not lintable).
 
 End with a final verdict line — the **last line** of the report — exactly one of:
 

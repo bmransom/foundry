@@ -25,10 +25,10 @@
 
 ## Wave 3 — objective prose to a deterministic linter
 
-- T4 `scripts/prose-lint.py` (+ `test_prose_lint.py`, verbatim twins): a defined needless-word
-  set + debt terms **derived at runtime from the consumer's `knowledge/glossary.md`** (only the
-  mechanism in the twin, never a term list — AC-3.3); wire into `check-fast.sh`.
-  Discrimination: a seeded debt term / needless word fails, clean prose passes (AC-3.1).
+- T4 `scripts/prose-lint.py` (+ `test_prose_lint.py`, verbatim twins): a defined
+  banned-filler-phrase set (generic English, no repo vocabulary — AC-3.3); skips fenced code;
+  wire into `check-fast.sh` over `roadmap/specs` + `knowledge`. Discrimination: a seeded banned
+  phrase fails, clean prose passes (AC-3.1).
 - T5 `plugins/foundry/skills/spec-review/SKILL.md`: state that the judge's prose findings are
   advisory; the linter owns objective rules (AC-3.2).
 - Gate: `python3 scripts/test_prose_lint.py` passes; byte-identity twins green.

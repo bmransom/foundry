@@ -37,7 +37,7 @@ verdict="$(printf '%s\n' "$report" | grep -E '^SPEC_REVIEW: (CLEAN|FINDINGS)$' |
 
 if [ "$verdict" = "SPEC_REVIEW: CLEAN" ]; then
   echo 0 > "$counter_file"
-  echo "spec-convergence: CLEAN — converged (spec is house-style clean; present for Design approval)"
+  echo "spec-convergence: CLEAN — converged (no blocking findings remain; advisory prose may persist; present for Design approval)"
   exit 0
 fi
 

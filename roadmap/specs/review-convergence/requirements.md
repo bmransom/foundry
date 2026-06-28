@@ -53,13 +53,14 @@ re-review *missed*.
 
 ## US-3 — Objective prose to a deterministic linter
 
-- AC-3.1 THE objective writing-style rules — banned debt terms and a defined needless-word
-  set — SHALL be enforced by a deterministic linter in the gate, not by the judge.
-- AC-3.2 THE spec-review judge's prose findings SHALL be `advisory` — subjective taste is not
-  a gate.
-- AC-3.3 THE linter SHALL derive any repo-specific term list (e.g. debt terms) at runtime
-  from the consumer's `knowledge/glossary.md` (so the verbatim twin carries only the
-  mechanism — see design).
+- AC-3.1 THE objective writing-style rule — a defined banned-filler-phrase set — SHALL be
+  enforced by a deterministic linter in the gate, not by the judge.
+- AC-3.2 THE spec-review judge's prose taste findings SHALL be `advisory`; a debt term used
+  for its concept stays a `blocking` judge call (the glossary scopes debt terms by context —
+  "scaffold" only as a verb, "issue" only for board rows — so it is not deterministically
+  lintable).
+- AC-3.3 THE banned-filler-phrase set SHALL be generic English with no repo vocabulary, so
+  the verbatim twin ships no repo-specific content (mechanisms-not-content).
 
 ## US-4 — Loop termination on no-new-blocking
 

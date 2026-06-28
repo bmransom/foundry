@@ -29,6 +29,11 @@ echo "== board"
 python3 "$REPO/scripts/check-board.py"
 python3 "$REPO/scripts/test_check_board.py"
 
+echo "== prose"
+find "$REPO/roadmap/specs" "$REPO/knowledge" -name '*.md' ! -name index.md -print0 \
+  | xargs -0 python3 "$REPO/scripts/prose-lint.py"
+python3 "$REPO/scripts/test_prose_lint.py"
+
 echo "== context budget"
 "$REPO/scripts/check-context-budget.sh"
 
