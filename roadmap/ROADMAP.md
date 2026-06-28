@@ -118,3 +118,13 @@ parallel agent work safe and verifiable.
 | review-convergence | review-convergence: severity-gate `spec-review` (blocking/advisory), blind re-review, objective prose → a deterministic linter, + a shared cross-family review pass (DROP for code-review / UNION for spec-review, eval-gated); closes the primed-`CLEAN` COE | In progress — spec approved; implementing on `card/review-convergence` | `roadmap/specs/review-convergence/` | code-review |
 | reviewer-effort | reviewer-effort: a neutral `--effort`/`--model` knob on the fresh-session spawn, mapped per harness (claude `--effort` / codex `-c model_reasoning_effort=`), threaded so the adversarial cross-family pass runs at higher effort than the primary — eval-gated | Planned — design pending approval | `roadmap/specs/reviewer-effort/` | review-convergence |
 |  | branch protection on main: require a PR + green `check-fast` before merge | **Done** — enabled 2026-06-20: require a PR + green `gate`, enforced on everyone (incl. admins/agents) | — | spawn-isolation |
+
+### Epic 7 — Developer experience & extensibility
+
+Surfaces that make a foundry repo pleasant to live in (a native-code debugger skill) and that
+let consuming repos reshape the SDLC without forking (configurable skill hooks).
+
+| Id | Work | Status | Spec | Depends on |
+|---|---|---|---|---|
+| debug-skill | debug skill: drive `lldb` to debug native code (C/C++/Rust/Swift) — set/clear breakpoints, step (`step`/`next`/`finish`/`continue`), inspect frames, variables, and backtraces (`frame`, `p`, `bt`), attach to a live process or load a core; harness-agnostic, `gdb` a possible sibling | Backlog — spec to write | spec to write | — |
+| skill-hooks | configurable skill hooks: let a consuming repo customize the SDLC at stage boundaries (a custom Verify gate, a Finish step, …) without forking. Research (2026-06-28, web): **no `pi.dev` dependency needed** — Claude Code and Codex both ship declarative command hooks (`PreToolUse`/`PostToolUse`/`Stop`…), pi uses TypeScript extensions. Design = one gate abstraction over the SDLC stage seams + two adapters (declarative command hook for claude/codex, TS extension for pi), per the harness-agnostic pattern. Claude/Codex limit: cannot inject a step *into* a shipped skill — hook at the stage boundary or override the skill | Backlog — research done; spec to write | spec to write | harness-agnostic |
