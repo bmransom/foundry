@@ -30,12 +30,12 @@ not start a later stage until the prior gate is met.
 
 - [ ] **0 Frame** — set the autonomy dial; classify the work; pick the path below.
 - [ ] **1 Spec** — `roadmap/specs/<feature>/{requirements,design,tasks}.md` written, reviewed, and revised. GATE: no code until Design is approved.
-- [ ] **2 Plan** — bite-sized TDD tasks in `tasks.md`; board card claimed. GATE: no code until the plan is approved.
+- [ ] **2 Plan** — bite-sized TDD tasks in `tasks.md`; card claimed by its `card/<id>` branch + `wt/<id>` worktree off the default branch. GATE: no code until the plan is approved.
 - [ ] **3 Build** — feature-file Scenario first, then TDD red→green. GATE: new behavior has its Scenario before its code.
 - [ ] **4 Verify** — the repo's canonical gate green. GATE: a recorded PASS, pasted — not a claim.
 - [ ] **5 Knowledge** — `python3 scripts/knowledge.py check` clean; touched concepts updated. GATE: no stale concept or `index.md`.
 - [ ] **6 Review** — `code-review` in fresh context; fix every blocking finding. GATE: no commit or PR with an unresolved blocking finding.
-- [ ] **7 Finish** — branch first, ask before push, move the card; continue or stop per the autonomy dial. GATE: `Done` needs the recorded gate PASS.
+- [ ] **7 Finish** — commit freely in the worktree, ask before push, set the card Done in the merging PR, retire the worktree; continue or stop per the autonomy dial. GATE: `Done` = merged with the gate green.
 
 ## 0 · Frame — pick the path
 
@@ -67,19 +67,17 @@ Consider all five skills below for every feature — apply each, or note **N/A**
 
 ## 2 · Plan
 
-Break the design into bite-sized TDD tasks in `roadmap/specs/<feature>/tasks.md` — exact
-paths, real code, a test per step. Claim the card in `roadmap/ROADMAP.md` by setting the
-owner, the branch, and any out-of-repo worktree path; respect listed dependencies.
-For performance-sensitive work, include the baseline plan from `performance` before
-code (main vs feature, flag-off vs flag-on, old vs new), naming the workload and correctness gate.
+Break the design into bite-sized TDD tasks in `roadmap/specs/<feature>/tasks.md` — exact paths,
+real code, a test per step; respect dependencies. Then **claim the card and create its worktree**
+(`git worktree add -b card/<id> wt/<id> origin/<default>`) off the default — the `card/<id>` branch is the claim ([`references/worktree.md`](references/worktree.md)); for performance work, add the `performance` baseline first.
 **Gate:** no code until the plan exists and is approved.
 
 ## 3 · Build
 
-**Feature-file first.** New observable behavior gets a Scenario in `features/`
-*before* its implementation (`features/README.md` says which file and contract kind);
-then TDD red → green. Respect `AGENTS.md` Boundaries. Stage **explicit paths** when you
-commit — never `git add -A` (the tree may be shared by parallel agents).
+**Feature-file first.** New observable behavior gets a Scenario in `features/` *before* its
+implementation (`features/README.md` says which file and contract kind); then TDD red →
+green. Respect `AGENTS.md` Boundaries. Stage **explicit paths** — never `git add -A`;
+checkpoint each green step (no ask needed in your worktree).
 **Gate:** the new behavior has a feature-file Scenario before its code.
 
 ## 4 · Verify
@@ -104,11 +102,12 @@ auto-pass. Mechanics: code-review's `references/convergence.md`. **Gate:** no un
 
 ## 7 · Finish
 
-Branch first if you are on the default branch. **Ask before you commit or push.**
-Move the card on `roadmap/ROADMAP.md` Validating → Done. If a real failure showed the
-setup let an agent go wrong, write a COE from `knowledge/coe-template.md` — a COE is
-closed only by a mechanical change (gate, lint, rule, or eval case), never prose.
-**Gate:** `Done` requires the recorded gate PASS.
+Commit the finished work in your worktree; **ask before you push.** A card is **Done when its
+branch merges to the default branch with the gate green** — set `Done` in that PR, never merge
+to the default without a go-ahead, then retire the worktree ([`references/worktree.md`](references/worktree.md)).
+If a real failure let an agent go wrong, write a COE from `knowledge/coe-template.md` — closed
+only by a mechanical change (gate, lint, rule, or eval case), never prose.
+**Gate:** `Done` = merged to the default branch with the gate green.
 
 ## Don't rationalize past a gate
 
@@ -118,3 +117,4 @@ closed only by a mechanical change (gate, lint, rule, or eval case), never prose
 | "I manually checked it; it works." | Not evidence. Run the canonical gate; paste the PASS. |
 | "I'll add the Scenario after." | New behavior gets its Scenario first; after-the-fact tests pass vacuously. |
 | "`git add -A` is faster." | The tree may be shared; stage explicit paths only. |
+| "I'll mark it Done now." | `Done` = merged with the gate green; set it in the PR that merges it. |

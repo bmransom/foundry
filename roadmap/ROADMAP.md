@@ -13,15 +13,17 @@ carries a status header that points here.
 
 - A **card** is one table row: `Id | Work | Status | Spec | Depends on`. The `Id` is a
   unique, slug-safe (`^[a-z0-9][a-z0-9-]*$`) handle — required on claimable cards (Ready /
-  In progress / Validating), enforced by `scripts/check-board.py` in the gate. Claim a card
-  by adding `(@<owner>)` to its Work cell.
-- An **In progress** card names where its work lives: the branch, and the absolute
-  worktree path when the work sits in a separate or out-of-repo worktree — so a harness
-  picking it up finds existing work instead of guessing.
-- Status flow: `Backlog → Ready → In progress → Validating → Done` (+ `Planned`,
-  `Blocked` as a flag, `Superseded` terminal).
-- **`Done` requires a recorded gate PASS** once the gate exists — the gate is the
-  evaluator, not the author's assertion.
+  In progress / Validating), enforced by `scripts/check-board.py` in the gate.
+- **Claim a card by creating its `card/<id>` branch** and `wt/<id>` worktree off the
+  default branch (`git worktree add -b card/<id> wt/<id> origin/<default>`); the branch's
+  existence (`git worktree list`; the remote branch once pushed) is the claim — first claim
+  wins. Don't commit a claim to the default branch; a card's board status rides the work's PR.
+- Status flow: `Backlog → Ready → In progress → Done` (+ `Planned`, `Blocked` as a flag,
+  `Superseded` terminal). `Validating` is **reserved** for a card that still needs a named
+  post-merge check (e.g. a live verification) before `Done` — not a step every card passes.
+- **`Done` = merged to the default branch with the gate green** — the merged PR's gate run
+  is the recorded PASS; set `Done` in the merging PR, never a separate follow-up. (Release
+  version is a separate axis: release-please / CHANGELOG, not the board.)
 
 ## Standing rules
 
@@ -112,4 +114,5 @@ parallel agent work safe and verifiable.
 |  | design diagrams convention: Mermaid architecture/class diagrams in `design.md`, reviewed by spec-review (design-time) + code-review docs-sync (build-time) | **Done** — shipped in v0.1.3 (#7): convention in the spec-format seed + SI/CR diagrams; code-review docs-sync (AC-3.5) enforces diagram↔code | `roadmap/specs/README.md` | — |
 |  | vitepress Mermaid rendering: enable the Mermaid plugin so `design.md` diagrams render in the doc site | Backlog — small build-config; diagrams already render on GitHub | spec note | design diagrams convention |
 | card-ids | Card Ids: unique gate-enforced `Id` column per board card + `check-board.py` lint | **Done** — merged via #31; CI `check-fast: PASS` (the recorded gate); `SPEC_REVIEW: CLEAN` + `CODE_REVIEW: PASS` (fresh context) | `roadmap/specs/card-ids/` | spawn-isolation |
+| worktree-per-card | worktree-per-card: the card's git lifecycle — one worktree per card (`card/<id>` + `wt/<id>`) off the default branch, commit freely, **`Done` = merged** (set in the merging PR); reserves `Validating` | **Done** — merged to `main` with CI `check-fast: PASS` (the recorded gate); `SPEC_REVIEW: CLEAN` + `CODE_REVIEW: PASS` (fresh context) | `roadmap/specs/worktree-per-card/` | card-ids, lifecycle-autonomy |
 |  | branch protection on main: require a PR + green `check-fast` before merge | **Done** — enabled 2026-06-20: require a PR + green `gate`, enforced on everyone (incl. admins/agents) | — | spawn-isolation |

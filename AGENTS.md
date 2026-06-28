@@ -38,13 +38,18 @@ one script, two triggers. Bypass once with `git push --no-verify`.
 - Give a behavior-changing template or skill an eval case before it ships.
 - Close a COE only with a mechanical change (gate, lint, rule, or eval fixture), never
   prose.
+- Run each card in its own git worktree on its `card/<id>` branch off the default branch
+  (`git worktree add -b card/<id> wt/<id> origin/<default>`), never the shared primary
+  checkout — a shared workspace overloads one branch across parallel sessions. Commit each
+  green step freely (a local commit is a recoverable checkpoint); retire the worktree with
+  `scripts/worktree-retire.sh` when the work lands.
 - Write [Conventional Commits](https://www.conventionalcommits.org/) (`<type>(<scope>):
   <description>`, imperative mood); never claim a change is tested unless it was.
 - Make surgical changes — touch only what the task requires; remove only what your change
   orphaned; flag unrelated issues, don't fix them silently.
 
 **Ask first**
-- Commit or push. Branch first on the default branch.
+- Push to a remote, or merge to the default branch.
 
 ## Writing style
 
@@ -57,8 +62,9 @@ needless word costs tokens each time; cut hardest there.
 ## Task tracking
 
 `roadmap/ROADMAP.md` is the board — the single source of truth for cross-spec status. Claim
-a card by setting its owner; `Done` requires a recorded gate PASS. Specs live in
-`roadmap/specs/<feature>/`.
+a card by creating its `card/<id>` branch (its existence is the claim); a card is **Done
+when its branch merges to the default branch with the gate green** — set Done in the
+merging PR, never a separate follow-up. Specs live in `roadmap/specs/<feature>/`.
 
 ## Deeper docs
 

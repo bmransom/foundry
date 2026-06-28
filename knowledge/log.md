@@ -4,6 +4,18 @@
 
 Changes to the knowledge base, newest first. A reserved OKF file — no frontmatter.
 
+## 2026-06-27
+
+- **Convention** Redefined the **Done** board status and adopted the **worktree-per-card**
+  working model (`roadmap/specs/worktree-per-card/`). A card runs in its own
+  `card/<id>` worktree off the default branch, is committed freely as recoverable
+  checkpoints, and is **Done when its branch merges to the default branch with the gate
+  green** (set in the merging PR) — replacing "ask before every commit" and "Done = shipped
+  in a release," and the Epic-0-vs-Epic-6 inconsistency. The claim signal is the
+  `card/<id>` branch's existence; release/version tracking is a separate axis (changelog,
+  not the board). Guarded by `tests/done_merged_docs_test.sh`. Prior art: trunk-based
+  development (done = integrated to trunk).
+
 ## 2026-06-25
 
 - **Fix** Bootstrap's `generate.md` vocab-lint guidance now scopes the generated
