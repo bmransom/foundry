@@ -10,8 +10,8 @@ through the review wrappers — so the **adversarial cross-family pass can run a
 effort than the primary review**: differential reasoning where reliability matters most.
 Today `spawn-fresh-session.sh` launches a bare `claude`/`codex` with no effort or model
 control, so every review runs at the harness's session default. Builds on
-[`review-convergence`](../review-convergence/requirements.md)'s cross-family pass; grounded in
-the LLM-as-judge finding that more reasoning raises judge reliability.
+[`review-convergence`](../review-convergence/requirements.md)'s cross-family pass; motivated by
+the hypothesis (eval-gated in US-3) that more reasoning raises judge reliability.
 
 ## Glossary impact
 
@@ -19,7 +19,10 @@ the LLM-as-judge finding that more reasoning raises judge reliability.
   Reuses the harness CLIs' own vocabulary (`claude --effort`, OpenAI/codex
   `model_reasoning_effort`); a harness pass-through (like the existing `--skip-permissions`
   flag and `review-convergence`'s `blocking`/`advisory`), not a new Foundry concept — no
-  glossary row, recorded in `knowledge/log.md`.
+  glossary row, to be recorded in `knowledge/log.md` (T6).
+- **Adversarial cross-family pass** — used here as the umbrella for the two cross-family roles
+  from `review-convergence`: code-review's **refuter** (precision) and spec-review's **UNION
+  second opinion** (recall). Descriptive, not a coined entity — no glossary row.
 
 ## US-1 — A neutral effort/model passthrough on the fresh-session spawn
 
@@ -30,6 +33,9 @@ the LLM-as-judge finding that more reasoning raises judge reliability.
   `-c model_reasoning_effort=<level>` and `-m <name>`.
 - AC-1.4 WHEN neither flag is given, THE spawn SHALL launch with the harness default
   (behavior unchanged).
+- AC-1.5 WHEN the active harness has no effort/model mapping (e.g. `pi`) AND a flag is given,
+  THE spawn SHALL omit the flags and warn that effort/model is unsupported for that harness —
+  not silently drop them (consistent with AC-4.4).
 
 ## US-2 — The review wrappers thread per-role effort
 
@@ -48,7 +54,25 @@ the LLM-as-judge finding that more reasoning raises judge reliability.
   lifts its reliability (refuter precision / second-opinion recall) versus the default tier,
   on the existing cross-family A/B fixture.
 - AC-3.2 A higher-effort default for the adversarial pass SHALL ship only if the eval shows a
-  reliability gain; otherwise the default stays the base tier (cost discipline).
+  reliability gain; otherwise the default stays the base tier (cost discipline). (When adopted,
+  it lives at the user-facing wrapper — AC-4.2.)
+
+## US-4 — Default at the top layer; explicit, compatible config
+
+- AC-4.1 `spawn-fresh-session.sh` and `cross-family-review.sh` SHALL NOT inject an effort/model
+  default — they pass an explicit value through or omit the flag, so no default is buried in a
+  lower layer.
+- AC-4.2 ANY Foundry-chosen default (e.g. an A/B-gated adversary tier) SHALL be set at the
+  user-facing review wrapper, where the user can override it with an explicit flag.
+- AC-4.3 THE effort/model SHALL be passed as explicit CLI flags/arguments through the call
+  chain, adding no new environment variable to the config surface.
+- AC-4.4 Foundry SHALL forward the effort level verbatim and SHALL NOT silently rewrite it.
+- AC-4.5 A Foundry-chosen default (AC-4.2) SHALL be a level valid for the active harness — the
+  adversary runs at the intended tier, never a silent fallback to base. (The T0 tracer found
+  claude warns and falls back to its default on an unknown level rather than erroring, so a
+  Foundry default must be harness-valid.)
+- AC-4.6 `--effort`, `--model`, and the existing `--harness` SHALL compose without conflict —
+  orthogonal axes (reasoning, model, harness family).
 
 ## Metrics
 
@@ -56,3 +80,5 @@ the LLM-as-judge finding that more reasoning raises judge reliability.
   model_reasoning_effort=`) — asserted by a dry-run test, no LLM.
 - Differential effort on the adversarial pass lifts recall/precision without a
   disproportionate cost — measured by the eval (AC-3.1).
+- No buried defaults, no new env var: the dry-run asserts the bare command is unchanged when no
+  flag is given, and config flows as explicit flags through the call chain (AC-4.1, 4.3).
