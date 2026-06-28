@@ -14,7 +14,7 @@ set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 fixture="${1:-$HERE/../fixtures/spec-convergence/design.md}"
-signature="${SPEC_CONVERGENCE_SIGNATURE:-SEEDED-DEFECT-HEDGE}"
+signature="${SPEC_CONVERGENCE_SIGNATURE:-SEEDED-DEFECT-CONTRADICT}"
 driver="${SPEC_CONVERGENCE_DRIVER:?set SPEC_CONVERGENCE_DRIVER to the convergence-loop driver}"
 
 [ -f "$fixture" ] || { echo "spec-convergence-eval: FAIL — missing fixture $fixture"; exit 1; }

@@ -7,9 +7,6 @@
     { "id": "V4", "signature": "OrderAdjustmentBag", "type": "entity-model-misfit" },
     { "id": "V5", "signature": "PriceLattice", "type": "uncited-coined-term" },
     { "id": "V6", "signature": "adjustments_total", "type": "near-duplicate-identifiers" },
-    { "id": "V7", "signature": "it could perhaps be considered", "type": "passive-buried-point" },
-    { "id": "V8", "signature": "very basically", "type": "needless-qualifier" },
-    { "id": "V9", "signature": "rounding_residue", "type": "prose-should-be-table" },
     { "id": "V10", "signature": "product sheet", "type": "debt-term-in-heading" }
   ],
   "decoys": [

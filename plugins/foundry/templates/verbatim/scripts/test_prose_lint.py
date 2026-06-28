@@ -42,6 +42,12 @@ class ProseLintTest(unittest.TestCase):
         code, out = run(FENCED)
         self.assertEqual(code, 0, out)
 
+    def test_v8_needless_qualifier_caught(self):
+        # reviewer-eval V8 ("very basically") moved here: prose-lint owns objective filler.
+        code, out = run("# T\n\nThis is very basically a restatement.\n")
+        self.assertEqual(code, 1, out)
+        self.assertIn("very basically", out)
+
 
 if __name__ == "__main__":
     unittest.main()

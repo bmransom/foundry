@@ -11,7 +11,7 @@ FIXTURE="$REPO/evals/fixtures/spec-convergence/design.md"
 fail() { echo "FAIL: $1" >&2; exit 1; }
 [ -f "$EVAL" ] || fail "missing spec-convergence-eval.sh"
 [ -f "$FIXTURE" ] || fail "missing fixture"
-grep -q "SEEDED-DEFECT-HEDGE" "$FIXTURE" || fail "fixture must carry the seeded defect signature"
+grep -q "SEEDED-DEFECT-CONTRADICT" "$FIXTURE" || fail "fixture must carry the seeded defect signature"
 
 work="$(mktemp -d)"; trap 'rm -rf "$work"' EXIT
 
@@ -24,14 +24,14 @@ D
 # real-converge driver: strips the seeded defect, then reports CLEAN.
 cat > "$work/converge" <<'D'
 #!/usr/bin/env bash
-grep -v 'SEEDED-DEFECT-HEDGE' "$1" > "$1.tmp" && mv "$1.tmp" "$1"
+grep -v 'SEEDED-DEFECT-CONTRADICT' "$1" > "$1.tmp" && mv "$1.tmp" "$1"
 echo "SPEC_REVIEW: CLEAN"
 D
 
 # never-converges driver: reports FINDINGS forever, never removes the defect.
 cat > "$work/stuck" <<'D'
 #!/usr/bin/env bash
-echo "FLAGGED: still hedged"
+echo "FLAGGED: still contradictory"
 echo "SPEC_REVIEW: FINDINGS"
 D
 chmod +x "$work/fake_clean" "$work/converge" "$work/stuck"
