@@ -9,8 +9,8 @@ Fails (exit 1) on any banned filler phrase: a multi-word hedge disciplined prose
 verbatim twin ships no repo-specific content (mechanisms-not-content).
 
 Out of scope, by design: subjective taste (passive voice, a paragraph better as a table) and
-context-scoped glossary debt terms (e.g. "scaffold" only as a verb, "issue" only for board
-rows) are *judge* calls, not deterministic lints. Pure stdlib; mirrors check-board / knowledge.
+context-scoped glossary debt terms (e.g. "issue" only for board rows) are *judge* calls, not
+deterministic lints. Pure stdlib; mirrors check-board / knowledge.
 """
 
 import re

@@ -1,4 +1,4 @@
-> **Status:** Planned (2026-06-27) — design pending approval; tracked on the [board](../../ROADMAP.md).
+> **Status:** In progress (2026-06-28) — spec approved; implementing on `card/review-convergence`; tracked on the [board](../../ROADMAP.md).
 > Companion: [requirements.md](requirements.md), [design.md](design.md).
 
 # Tasks — review-convergence
@@ -26,11 +26,12 @@
 ## Wave 3 — objective prose to a deterministic linter
 
 - T4 `scripts/prose-lint.py` (+ `test_prose_lint.py`, verbatim twins): a defined
-  banned-filler-phrase set (generic English, no repo vocabulary — AC-3.3); skips fenced code;
+  banned-filler-phrase set (generic English, no repo vocabulary — AC-3.4); skips fenced code;
   wire into `check-fast.sh` over `roadmap/specs` + `knowledge`. Discrimination: a seeded banned
   phrase fails, clean prose passes (AC-3.1).
-- T5 `plugins/foundry/skills/spec-review/SKILL.md`: state that the judge's prose findings are
-  advisory; the linter owns objective rules (AC-3.2).
+- T5 `plugins/foundry/skills/spec-review/SKILL.md`: the judge's prose taste findings are
+  advisory, debt-term misuse stays a blocking judge call, the linter owns objective filler
+  (AC-3.2, AC-3.3).
 - Gate: `python3 scripts/test_prose_lint.py` passes; byte-identity twins green.
 
 ## Wave 4 — eval + knowledge
@@ -40,12 +41,12 @@
   **blocking** contract violation so `CLEAN` still requires its removal (else a now-advisory
   hedge trips the fake-clean branch); then add the blocking-holds, nit-converges, and
   primed-vs-blind discrimination cases (Metrics).
-- T7 `evals/fixtures/reviewer/answer-key.json`: reassign **V8** (needless-qualifier) to
-  `prose-lint`'s discrimination set; demote **V7** (passive/buried-point) and **V9**
-  (prose-should-be-table) to advisory and drop them from the scored recall set — subjective
-  judge calls with no deterministic home. The reviewer-eval recall set then keeps only blocking
-  contract-violations, so recall does not regress under the blocking-only footer (AC-1.2, 3.2).
-  Re-run `reviewer-eval` and record the recovered recall.
+- T7 `evals/fixtures/reviewer/answer-key.json`: reassign **V7 and V8** (lintable hedge
+  phrases) to `prose-lint`'s discrimination set; demote **V9** (prose-should-be-table) to
+  advisory and drop it from the scored recall set — a subjective judge call with no
+  deterministic home. The reviewer-eval recall set then keeps only blocking contract-violations,
+  so recall does not regress under the blocking-only footer (AC-1.2, 3.2). Re-run
+  `reviewer-eval` and record the recovered recall.
 - T8 `knowledge/log.md`: log the convergence change (no `glossary.md` row — keep code-review's
   recorded "no spec-review glossary row" decision). Close
   `knowledge/review-convergence-coe.md` (Status → closed) once the eval lands.
@@ -55,7 +56,12 @@
 
 - T9 `plugins/foundry/scripts/cross-family-review.sh` (**done**): the shared cross-family pass
   (complementary family via `refuter-family.sh`, spawn via `spawn-fresh-session.sh`, skip on
-  single-family) + its test. Cross-harness proven on the real manifest (derives `codex`).
+  single-family) + its test. Cross-harness proven on the real manifest (derives `codex`)
+  (AC-5.1, 5.2, 5.3).
+- T9b `plugins/foundry/skills/code-review/scripts/spawn-code-reviewer.sh`: adopt
+  `cross-family-review.sh` for the refuter's family-derivation + spawn (DROP combine unchanged),
+  so both skills share one mechanism (AC-5.4). Behavior-preserving — guarded by
+  `code_review_cycle_test.sh` + the footer-algebra/refuter-family tests.
 - T10 `plugins/foundry/skills/spec-review/scripts/spawn-spec-reviewer.sh` + `spec-review/SKILL.md`:
   make spec-review's launcher **compose** the shared scripts — primary review → `wait-for-report`
   → `cross-family-review.sh` (UNION goal) → `footer-algebra union`, then map the surviving

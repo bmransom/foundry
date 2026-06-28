@@ -1,4 +1,4 @@
-> **Status:** Planned (2026-06-27) — design pending approval; tracked on the [board](../../ROADMAP.md).
+> **Status:** In progress (2026-06-28) — spec approved; implementing on `card/review-convergence`; tracked on the [board](../../ROADMAP.md).
 > Companion: [design.md](design.md), [tasks.md](tasks.md).
 
 # Requirements — review-convergence
@@ -55,11 +55,11 @@ re-review *missed*.
 
 - AC-3.1 THE objective writing-style rule — a defined banned-filler-phrase set — SHALL be
   enforced by a deterministic linter in the gate, not by the judge.
-- AC-3.2 THE spec-review judge's prose taste findings SHALL be `advisory`; a debt term used
-  for its concept stays a `blocking` judge call (the glossary scopes debt terms by context —
-  "scaffold" only as a verb, "issue" only for board rows — so it is not deterministically
-  lintable).
-- AC-3.3 THE banned-filler-phrase set SHALL be generic English with no repo vocabulary, so
+- AC-3.2 THE spec-review judge's prose taste findings SHALL be `advisory`.
+- AC-3.3 A debt term used for its concept SHALL stay a `blocking` judge call — many debt terms
+  have a legitimate non-debt use ("issue" is debt for a board row but fine as a GitHub issue),
+  so a deterministic scan cannot tell a violation from legitimate use.
+- AC-3.4 THE banned-filler-phrase set SHALL be generic English with no repo vocabulary, so
   the verbatim twin ships no repo-specific content (mechanisms-not-content).
 
 ## US-4 — Loop termination on no-new-blocking
@@ -81,8 +81,9 @@ model's blind spot misses — the bias-reducing move only when the judges are de
   `refuter-family.sh`.
 - AC-5.2 WHEN no complementary family exists (single-family repo or no manifest), THE
   mechanism SHALL skip the pass and run single-agent.
-- AC-5.3 THE shared mechanism SHALL be parameterized by a goal prompt and a combine-rule, so
-  both review skills reuse it.
+- AC-5.3 THE shared mechanism SHALL be parameterized by a goal prompt; the combine-rule is a
+  caller-side Strategy (a `footer-algebra` set op — UNION for spec-review, DROP for
+  code-review), not a parameter of the shared mechanism.
 - AC-5.4 `code-review`'s pass SHALL combine **DROP-only** — the final footer is the
   candidates minus the second family's DROPs (unchanged).
 - AC-5.5 `spec-review`'s pass SHALL combine **UNION** — the second family's `blocking`
