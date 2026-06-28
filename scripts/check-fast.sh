@@ -25,6 +25,10 @@ echo "== knowledge"
 python3 "$REPO/scripts/knowledge.py" check
 python3 "$REPO/scripts/test_knowledge.py"
 
+echo "== board"
+python3 "$REPO/scripts/check-board.py"
+python3 "$REPO/scripts/test_check_board.py"
+
 echo "== context budget"
 "$REPO/scripts/check-context-budget.sh"
 

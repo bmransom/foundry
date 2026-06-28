@@ -16,7 +16,7 @@ to the Writing style it declares.
 | `## Testing` | The repo's test-scoping commands; integration over mocks; the feature-file rule: "New feature → add a Scenario; enhancement → update it; refactor → leave it." |
 | `## Contracts` | Only when an API surface exists — §Contracts. |
 | `## Logging` | Apps and services only — §Logging. |
-| `## Task tracking` | `roadmap/ROADMAP.md` is the board; claim a card by owner; `Done` requires a recorded gate PASS; specs live in `roadmap/specs/<feature>/`; ideas in `roadmap/BACKLOG.md`. |
+| `## Task tracking` | `roadmap/ROADMAP.md` is the board; each card carries a unique slug-safe `Id` (gate-enforced on claimable cards); claim a card by owner; `Done` requires a recorded gate PASS; specs live in `roadmap/specs/<feature>/`; ideas in `roadmap/BACKLOG.md`. |
 | `## Deeper docs` | One line: `knowledge/README.md` indexes everything · glossary · validation · specs. |
 
 Writing-style block:
@@ -32,7 +32,8 @@ Writing-style block:
 
 Assemble from: the detected stack rows below (only tools the repo actually
 configures), the interview-confirmed commands, and always
-`python3 scripts/knowledge.py check` and the feature-runner command.
+`python3 scripts/knowledge.py check`, `python3 scripts/check-board.py`, and the
+feature-runner command.
 
 | Stack | Commands |
 |---|---|
@@ -57,6 +58,9 @@ echo "== tests"
 
 echo "== knowledge"
 python3 scripts/knowledge.py check
+
+echo "== board"
+python3 scripts/check-board.py
 
 echo "check-fast: PASS"
 ```

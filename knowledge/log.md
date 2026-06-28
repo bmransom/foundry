@@ -28,6 +28,9 @@ Changes to the knowledge base, newest first. A reserved OKF file — no frontmat
   grounding, manifest-derived refuter families via `--harness`, and the shared
   `resolve_base` diff range. No new glossary concepts — generic prior art; provenance in
   the SKILL header. The L3 eval + the hermetic A/B gate decide refuter enablement.
+- **Update** Added the **Card id** term — a card's unique, slug-safe handle in the
+  board's `Id` column, enforced by `scripts/check-board.py` — for the card-ids feature
+  (`roadmap/specs/card-ids/`).
 
 ## 2026-06-24
 
