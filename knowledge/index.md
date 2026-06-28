@@ -13,3 +13,4 @@
 ## Decision
 
 * [COE template](/coe-template) - Correction of Error — the fill-in record for a real failure the setup permitted.
+* [COE — spec-review's binary convergence loop rubber-stamps and never converges](/review-convergence-coe) - Correction of Error — a primed, severity-blind spec-review passed CLEAN over a real contradiction.
