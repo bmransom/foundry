@@ -43,7 +43,8 @@ when the caller supplies them.
 
 First, the **target harness(es)** — which AI coding tool(s) will run this setup:
 Claude Code, Codex, or both (multi-select; default both). It drives what Generate
-emits and is recorded in the manifest.
+emits and is recorded in the manifest; `references/harness-map.md` maps each
+harness's coupling points.
 
 Then the content questions:
 
