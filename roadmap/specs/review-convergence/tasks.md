@@ -50,3 +50,20 @@
   recorded "no spec-review glossary row" decision). Close
   `knowledge/review-convergence-coe.md` (Status → closed) once the eval lands.
 - Gate: `scripts/check-fast.sh` → `check-fast: PASS`; each seeded eval defect fails the gate.
+
+## Wave 5 — the shared cross-family review pass
+
+- T9 `plugins/foundry/scripts/cross-family-review.sh`: extract the cross-model pass from
+  `spawn-code-reviewer.sh` (complementary family via `refuter-family.sh`, spawn via
+  `spawn-fresh-session.sh`), parameterized by goal prompt + combine-rule; `spawn-code-reviewer.sh`
+  calls it with **DROP** (AC-5.1–5.4). Gate: code-review's existing footer-algebra/refuter-family
+  tests pass unchanged (behavior-preserving refactor).
+- T10 `plugins/foundry/skills/spec-review/scripts/spawn-spec-reviewer.sh` + `spec-review/SKILL.md`:
+  wire the helper with the **UNION** rule + a spec-review goal prompt; footer = reviewer's
+  blocking ∪ second family's; single-family repo → skip (AC-5.2, 5.5). Document the pass in
+  `SKILL.md`.
+- T11 `evals/harness/spec-convergence-eval.sh`: cross-family A/B — a fixture where the reviewer's
+  family misses a `blocking` finding the complementary family catches; UNION must recover it with
+  no decoy-hit regression. The pass ships **disabled** until this A/B is green (AC-5.6).
+- Gate: `check-fast: PASS`; code-review behavior unchanged; the spec-review cross-family pass
+  enabled only on a green A/B.
