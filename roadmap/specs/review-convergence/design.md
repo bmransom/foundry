@@ -31,15 +31,32 @@
   condition* changes from "zero findings" to "no unresolved blocking" — which the stateless
   blind reviewer can emit directly (it re-reads the whole artifact each round; "new vs. old"
   would need state it does not have).
-- **One cross-family pass, two combine-rules.** The cross-family pass already in
-  `spawn-code-reviewer.sh` (spawn a context-isolated session on the complementary harness via
-  the shared `spawn-fresh-session.sh` + `refuter-family.sh`) is extracted to a shared helper
-  parameterized by goal prompt + combine-rule. code-review keeps **DROP-only** (its risk is
-  over-flagging); spec-review uses **UNION** (its risk is missing). The combine-rules are
-  opposite because the failure modes are: precision-up for a diff, recall-up for a spec. Each
-  one-directional rule keeps its monotonicity guarantee. Like code-review's refuter, the
-  spec-review pass ships enabled only after an A/B eval proves recall-up with no decoy
-  regression.
+- **One cross-family pass, two combine-rules — a Strategy, not a shared driver.** The
+  cross-family pass is extracted to the shared `cross-family-review.sh` (derive the
+  complementary family + a context-isolated spawn, via `refuter-family.sh` +
+  `spawn-fresh-session.sh`). The **combine-rule is a Strategy** = a set operation over
+  `footer-algebra.sh`'s one normalized signature: code-review = **DROP** (`difference`;
+  precision-up, recall-monotone-down — its risk is over-flagging a diff), spec-review =
+  **UNION** (`union`; recall-up, precision-monotone-down — its risk is missing a contract
+  violation). `footer-algebra.sh` stays **pure set algebra** — the surviving blocking set;
+  each thin orchestrator maps it to its own verdict word (`CODE_REVIEW: PASS/FAIL` vs
+  `SPEC_REVIEW: CLEAN/FINDINGS`), kept skill-side rather than parameterized into the shared
+  module (the same don't-over-couple discipline). The rules are opposite because the failure modes are; each one-directional rule
+  keeps its monotonicity guarantee, which is why a "both-directions" combine is rejected (it
+  forfeits both). The goal prompt, output format (`DROP/KEEP` vs `FLAGGED:`), and set op are
+  one cohesive bundle per kind — hence a Strategy, not three free knobs.
+- **No shared review *driver* — compose, don't unify (rejected: Template Method).** A single
+  orchestrator over spec-review and code-review was considered and **rejected**: only two uses
+  (rule of three), and they diverge structurally — code-review converges with an *internal*
+  inner loop, spec-review *externally* via `spec-convergence-hook.sh`. Unifying would force an
+  `if-kind` conditional around the loop — the start of the "wrong abstraction" tangle
+  (Metz/AHA). The genuinely shared *knowledge* already lives in shared sub-scripts
+  (`cross-family-review.sh`, `footer-algebra.sh`, `refuter-family.sh`, `wait-for-report.sh`);
+  each skill keeps a **thin orchestrator that composes them**, accepting a little transparent
+  sequencing duplication (a little copying over a little dependency). Revisit a unified driver
+  only if a third reviewer kind appears.
+- **Enablement gate.** Like code-review's refuter, the spec-review UNION pass ships enabled
+  only after an A/B eval proves recall-up with no decoy regression.
 
 ## Mechanism
 

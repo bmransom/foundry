@@ -51,17 +51,18 @@
   `knowledge/review-convergence-coe.md` (Status → closed) once the eval lands.
 - Gate: `scripts/check-fast.sh` → `check-fast: PASS`; each seeded eval defect fails the gate.
 
-## Wave 5 — the shared cross-family review pass
+## Wave 5 — the shared cross-family pass + the combine Strategy (compose, no shared driver)
 
-- T9 `plugins/foundry/scripts/cross-family-review.sh`: extract the cross-model pass from
-  `spawn-code-reviewer.sh` (complementary family via `refuter-family.sh`, spawn via
-  `spawn-fresh-session.sh`), parameterized by goal prompt + combine-rule; `spawn-code-reviewer.sh`
-  calls it with **DROP** (AC-5.1–5.4). Gate: code-review's existing footer-algebra/refuter-family
-  tests pass unchanged (behavior-preserving refactor).
+- T9 `plugins/foundry/scripts/cross-family-review.sh` (**done**): the shared cross-family pass
+  (complementary family via `refuter-family.sh`, spawn via `spawn-fresh-session.sh`, skip on
+  single-family) + its test. Cross-harness proven on the real manifest (derives `codex`).
 - T10 `plugins/foundry/skills/spec-review/scripts/spawn-spec-reviewer.sh` + `spec-review/SKILL.md`:
-  wire the helper with the **UNION** rule + a spec-review goal prompt; footer = reviewer's
-  blocking ∪ second family's; single-family repo → skip (AC-5.2, 5.5). Document the pass in
-  `SKILL.md`.
+  make spec-review's launcher **compose** the shared scripts — primary review → `wait-for-report`
+  → `cross-family-review.sh` (UNION goal) → `footer-algebra union`, then map the surviving
+  blocking set to `SPEC_REVIEW: CLEAN/FINDINGS` (verdict kept skill-side; `footer-algebra` stays
+  pure set algebra). Single-family repo → skip (AC-5.2, 5.5). Keep its **external** hook loop
+  (no inner loop, no shared driver). Add a spawn-seam test for the UNION composition. Document
+  in `SKILL.md`.
 - T11 `evals/harness/spec-convergence-eval.sh`: cross-family A/B — a fixture where the reviewer's
   family misses a `blocking` finding the complementary family catches; UNION must recover it with
   no decoy-hit regression. The pass ships **disabled** until this A/B is green (AC-5.6).
