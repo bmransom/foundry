@@ -13,15 +13,17 @@ carries a status header that points here.
 
 - A **card** is one table row: `Id | Work | Status | Spec | Depends on`. The `Id` is a
   unique, slug-safe (`^[a-z0-9][a-z0-9-]*$`) handle — required on claimable cards (Ready /
-  In progress / Validating), enforced by `scripts/check-board.py` in the gate. Claim a card
-  by adding `(@<owner>)` to its Work cell.
-- An **In progress** card names where its work lives: the branch, and the absolute
-  worktree path when the work sits in a separate or out-of-repo worktree — so a harness
-  picking it up finds existing work instead of guessing.
-- Status flow: `Backlog → Ready → In progress → Validating → Done` (+ `Planned`,
-  `Blocked` as a flag, `Superseded` terminal).
-- **`Done` requires a recorded gate PASS** once the gate exists — the gate is the
-  evaluator, not the author's assertion.
+  In progress / Validating), enforced by `scripts/check-board.py` in the gate.
+- **Claim a card by creating its `card/<id>` branch** and `wt/<id>` worktree off the
+  default branch (`git worktree add -b card/<id> wt/<id> origin/<default>`); the branch's
+  existence (`git worktree list`; the remote branch once pushed) is the claim — first claim
+  wins. Don't commit a claim to the default branch; a card's board status rides the work's PR.
+- Status flow: `Backlog → Ready → In progress → Done` (+ `Planned`, `Blocked` as a flag,
+  `Superseded` terminal). `Validating` is **reserved** for a card that still needs a named
+  post-merge check (e.g. a live verification) before `Done` — not a step every card passes.
+- **`Done` = merged to the default branch with the gate green** — the merged PR's gate run
+  is the recorded PASS; set `Done` in the merging PR, never a separate follow-up. (Release
+  version is a separate axis: release-please / CHANGELOG, not the board.)
 
 ## Standing rules
 

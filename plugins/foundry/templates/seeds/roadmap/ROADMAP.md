@@ -13,17 +13,18 @@ Run `scripts/board.sh` to render the board; `scripts/board.sh "Epic 0"` filters 
 
 - A **card** is one table row: `Id | Work | Status | Spec | Depends on`. The `Id` is a
   unique, slug-safe (`^[a-z0-9][a-z0-9-]*$`) handle — required on claimable cards (Ready /
-  In progress / Validating), enforced by `scripts/check-board.py` in the gate. Claim a card
-  by adding `(@<owner>)` to its Work cell; never take a card another agent owns. Respect the
-  Depends-on column.
-- An **In progress** card names where its work lives: the branch, and the absolute
-  worktree path when the work sits in a separate or out-of-repo worktree. A harness that
-  resumes the card reads this to find existing work instead of guessing.
-- A card's **status** is its column: `Backlog → Ready → In progress → Validating →
-  Done` (+ `Superseded`, terminal). `Blocked` and the owner are flags, not columns.
+  In progress / Validating), enforced by `scripts/check-board.py` in the gate.
+- **Claim a card by creating its `card/<id>` branch** and `wt/<id>` worktree off the
+  default branch (`git worktree add -b card/<id> wt/<id> origin/<default>`); the branch's
+  existence is the claim — first claim wins, never take an owned card. Don't commit a claim
+  to the default branch; a card's board status rides the work's PR. Respect the Depends-on column.
+- A card's **status** is its column: `Backlog → Ready → In progress → Done`
+  (+ `Superseded`, terminal). `Validating` is reserved for a card needing a named
+  post-merge check before `Done`. `Blocked` and the owner are flags, not columns.
 - The dashboard groups cards by **epic**; the epic order is the priority order.
-- **`Done` requires a recorded gate PASS** — the gate is the evaluator, not the
-  author's assertion.
+- **`Done` = merged to the default branch with the gate green** — the merged PR's gate run
+  is the recorded PASS; set `Done` in the merging PR. Release version lives in the
+  changelog, not the board.
 - The un-carded idea pool is `roadmap/BACKLOG.md`; an idea stays there until committed.
 
 ### Status taxonomy
@@ -32,9 +33,9 @@ Use these words in board tables and spec status headers.
 
 | Status | Meaning |
 |---|---|
-| Done | Implemented and verified by a recorded gate PASS. |
-| Validating | Code landed; the repo's canonical gate is running. |
-| In progress | Partially implemented, being hardened, or recently landed with known follow-up. |
+| Done | Merged to the default branch with the gate green (the merged PR's recorded PASS). |
+| Validating | Reserved: merged, but a named post-merge check (e.g. a live verification) runs before `Done`. |
+| In progress | Claimed — a `card/<id>` branch/PR is open; being built or hardened. |
 | Ready | Spec'd — `roadmap/specs/<feature>/` design and tasks approved, prerequisites met; claimable. |
 | Planned | Accepted direction; not started, or scheduled behind prerequisites. |
 | Backlog | Captured, not yet committed to build. |

@@ -55,6 +55,7 @@ Touched surfaces (all context-resident prose + one eval + one guard):
 | Surface | Change |
 |---|---|
 | `plugins/foundry/skills/code/SKILL.md` | Plan: create worktree off default; Build: checkpoint commits; Finish: commit in worktree, ask before push, `Done = merged` set in the PR, retire worktree. Reconciled with the autonomy-dial text already present. |
+| `plugins/foundry/skills/code/references/worktree.md` | New disclosed-on-demand reference holding the full mechanics (claim model, commit-freely, Done=merged), so `SKILL.md` stays under its context budget. |
 | `AGENTS.md` | Boundaries: worktree-per-card + commit-freely + ask-before-push. Task tracking: `Done = merged`. |
 | `roadmap/ROADMAP.md` + seed `templates/seeds/roadmap/ROADMAP.md` | Board conventions: `Done = merged`; status flow `… → In progress → Done`; `Validating` reserved; claim-by-`card/<id>`-branch. |
 | `plugins/foundry/skills/bootstrap/references/generate.md` | Boundaries + Task-tracking rows regenerated to match. |

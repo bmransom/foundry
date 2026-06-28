@@ -87,7 +87,7 @@ echo "lifecycle-eval: tree=$tree snapshot=$snapshot keyword=$keyword"
 echo "lifecycle-eval: log=$log"
 echo "lifecycle-eval: results=$results"
 
-prompt="Use the foundry code lifecycle skill at $SKILL — read it and follow it exactly, treating this as a NEW FEATURE (all stages). Feature: add a \`--version\` flag (or version endpoint) that prints the project version. Canned approvals: design approved as proposed; plan approved as proposed; yes, commit at Finish. Work in the current repo."
+prompt="Use the foundry code lifecycle skill at $SKILL — read it and follow it exactly, treating this as a NEW FEATURE (all stages). Feature: add a \`--version\` flag (or version endpoint) that prints the project version. Canned approvals: design approved as proposed; plan approved as proposed; commit freely to checkpoint your work, do not push. This checkout is the dedicated worktree provisioned for this card — work here; the runner created it and will retire it, so do not create or remove a worktree yourself."
 
 echo "lifecycle-eval: running headless lifecycle (this takes minutes)"
 run_failed=0
