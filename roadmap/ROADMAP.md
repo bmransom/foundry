@@ -57,36 +57,36 @@ model, forbidden terms, standing rules, or gate commands.
 | Id | Work | Status | Spec | Depends on |
 |---|---|---|---|---|
 |  | navigation-eval spec: requirements + design + tasks | Done — approved 2026-06-13 (spec-reviewer applied) | `roadmap/specs/navigation-eval/` | — |
-| nav-eval-harness | Nav-eval harness: fixture (gold span + decoys, 3 doc sizes), arms (full-load / native / knowledge.py), grader, token capture | Validating — built, gate green, live pilot N=1 ran | `roadmap/specs/navigation-eval/` | spec approval |
-| nav-cost-viz | Correctness-vs-context-cost visualization (SVG plotter, reusable) | Validating — built + unit-tested; nav chart generated. Cross-eval token wiring (reviewer/bootstrap/lifecycle) still TODO | `roadmap/specs/navigation-eval/` | token capture |
-| nav-pilot-finding | Pilot finding (N=1): all arms answer correctly (fixture non-discriminating on correctness); content loaded native ~201 < disclosure ~1.2k < full-load ~13k → disclosure protocol not necessary. Caveats: N=1, recall metric + arm enforcement need work | Validating | `roadmap/specs/navigation-eval/` | harness |
-| nav-breadth-sweep | Breadth sweep + hybrid arm: corpus-size fixture, 5 arms (incl. hybrid grep+knowledge.py), cost-vs-size crossover chart | Validating — live sweep N=1 (5/25/100) done. Finding: all arms correct at every size; native grep leanest (~219 @100) while the knowledge.py catalog (`list`) is O(N), the most expensive (~1439 @100) → disclosure does NOT pay off for greppable lookups. Untested regime: non-greppable / browse-by-topic queries | `roadmap/specs/navigation-eval/` | nav-eval harness |
+| nav-eval-harness | Nav-eval harness: fixture (gold span + decoys, 3 doc sizes), arms (full-load / native / knowledge.py), grader, token capture | Done — built, gate green, live pilot N=1 ran | `roadmap/specs/navigation-eval/` | spec approval |
+| nav-cost-viz | Correctness-vs-context-cost visualization (SVG plotter, reusable) | Done — built + unit-tested; nav chart generated. Cross-eval token wiring (reviewer/bootstrap/lifecycle) still TODO | `roadmap/specs/navigation-eval/` | token capture |
+| nav-pilot-finding | Pilot finding (N=1): all arms answer correctly (fixture non-discriminating on correctness); content loaded native ~201 < disclosure ~1.2k < full-load ~13k → disclosure protocol not necessary. Caveats: N=1, recall metric + arm enforcement need work | Done | `roadmap/specs/navigation-eval/` | harness |
+| nav-breadth-sweep | Breadth sweep + hybrid arm: corpus-size fixture, 5 arms (incl. hybrid grep+knowledge.py), cost-vs-size crossover chart | Done — live sweep N=1 (5/25/100) done. Finding: all arms correct at every size; native grep leanest (~219 @100) while the knowledge.py catalog (`list`) is O(N), the most expensive (~1439 @100) → disclosure does NOT pay off for greppable lookups. Untested regime: non-greppable / browse-by-topic queries | `roadmap/specs/navigation-eval/` | nav-eval harness |
 
 ### Epic 2 — Knowledge format (OKF alignment)
 
 | Id | Work | Status | Spec | Depends on |
 |---|---|---|---|---|
 |  | okf-alignment spec: requirements + design + tasks | Done — approved 2026-06-14 (spec-reviewer applied) | `roadmap/specs/okf-alignment/` | — |
-| okf-migration | OKF migration: `type` field, knowledge/concept vocabulary, `knowledge.py`, reserved `index.md`/`log.md`, rule + glossary (@main) | Validating — in-tree migration complete; check-fast: PASS; full bootstrap/reviewer eval confirmation not recorded here | `roadmap/specs/okf-alignment/` | spec approval |
+| okf-migration | OKF migration: `type` field, knowledge/concept vocabulary, `knowledge.py`, reserved `index.md`/`log.md`, rule + glossary (@main) | Done — in-tree migration complete; check-fast: PASS; full bootstrap/reviewer eval confirmation not recorded here | `roadmap/specs/okf-alignment/` | spec approval |
 
 ### Epic 3 — Migration-aware update
 
 | Id | Work | Status | Spec | Depends on |
 |---|---|---|---|---|
 |  | migration-aware-update spec: requirements + design + tasks | Done — approved 2026-06-14 (spec-reviewer applied) | `roadmap/specs/migration-aware-update/` | OKF alignment |
-| mau-convention-plumbing | Convention plumbing: `conventionVersion` in manifest (bootstrap stamps) + migration registry (@main) | Validating — check-fast: PASS | `roadmap/specs/migration-aware-update/` | spec approval |
-| mau-okf-playbook | OKF migration playbook + update pre-flight (detect → dry-run → branch → chain → no-regression → stamp) + deterministic preflight (@main) | Validating — check-fast: PASS; migration-eval okf 7/7 | `roadmap/specs/migration-aware-update/` | convention plumbing |
-| mau-eval-safety-net | Eval safety net: harness + tier-1 fixtures (okf, legacy, dirty, red-gate) + chaining/idempotency (@main) | Validating — tier-1 behaviors verified (cold `claude -p` composite + Claude Code engine okf 7/7); unified headless capstone deferred (usage limit) | `roadmap/specs/migration-aware-update/` | OKF playbook |
+| mau-convention-plumbing | Convention plumbing: `conventionVersion` in manifest (bootstrap stamps) + migration registry (@main) | Done — check-fast: PASS | `roadmap/specs/migration-aware-update/` | spec approval |
+| mau-okf-playbook | OKF migration playbook + update pre-flight (detect → dry-run → branch → chain → no-regression → stamp) + deterministic preflight (@main) | Done — check-fast: PASS; migration-eval okf 7/7 | `roadmap/specs/migration-aware-update/` | convention plumbing |
+| mau-eval-safety-net | Eval safety net: harness + tier-1 fixtures (okf, legacy, dirty, red-gate) + chaining/idempotency (@main) | Done — tier-1 behaviors verified (cold `claude -p` composite + Claude Code engine okf 7/7); unified headless capstone deferred (usage limit) | `roadmap/specs/migration-aware-update/` | OKF playbook |
 
 ### Epic 4 — Harness-agnostic foundry
 
 | Id | Work | Status | Spec | Depends on |
 |---|---|---|---|---|
 |  | harness-agnostic spec: requirements + design + tasks | Done — approved 2026-06-16 (spec-reviewer applied) | `roadmap/specs/harness-agnostic/` | migration-aware-update |
-| ha-axis-a | Axis A — foundry runs under Codex: harness map, plugin-root fix, invocation neutralization, shared `spec-reviewer.md`, distribution (`.agents/plugins/` + `.codex-plugin/`) | Validating — gate green; `foundry@foundry` discovered live under codex | `roadmap/specs/harness-agnostic/` | spec approval |
-| ha-axis-b | Axis B — bootstrap emits per-harness: interview question, conditional `CLAUDE.md`, rules → `rules/`, `.foundry/manifest.json` + `harnesses` | Validating — gate green; foundry self-host manifest present (T12 knowledge.py → BACKLOG) | `roadmap/specs/harness-agnostic/` | Axis A |
-| ha-axis-c | Axis C — convention-3 retrofit migration + update read-path (new-then-legacy, no re-prompt, add-a-harness) | Validating — gate green | `roadmap/specs/harness-agnostic/` | Axis B |
-| ha-evals-selfhost | Evals + self-host: manifest-enforcing readability eval + self-host convergence done; live matrix (codex/claude headless: bootstrap, migration, reviewer parity, dogfood) → BACKLOG | Validating — readability + convergence green; missing/mismatched manifest is now a failing eval case | `roadmap/specs/harness-agnostic/` | Axis C |
+| ha-axis-a | Axis A — foundry runs under Codex: harness map, plugin-root fix, invocation neutralization, shared `spec-reviewer.md`, distribution (`.agents/plugins/` + `.codex-plugin/`) | Done — gate green; `foundry@foundry` discovered live under codex | `roadmap/specs/harness-agnostic/` | spec approval |
+| ha-axis-b | Axis B — bootstrap emits per-harness: interview question, conditional `CLAUDE.md`, rules → `rules/`, `.foundry/manifest.json` + `harnesses` | Done — gate green; foundry self-host manifest present (T12 knowledge.py → BACKLOG) | `roadmap/specs/harness-agnostic/` | Axis A |
+| ha-axis-c | Axis C — convention-3 retrofit migration + update read-path (new-then-legacy, no re-prompt, add-a-harness) | Done — gate green | `roadmap/specs/harness-agnostic/` | Axis B |
+| ha-evals-selfhost | Evals + self-host: manifest-enforcing readability eval + self-host convergence done; live matrix (codex/claude headless: bootstrap, migration, reviewer parity, dogfood) → BACKLOG | Done — readability + convergence green; missing/mismatched manifest is now a failing eval case | `roadmap/specs/harness-agnostic/` | Axis C |
 
 ### Epic 5 — Harness deliberation
 
@@ -103,8 +103,8 @@ parallel agent work safe and verifiable.
 | Id | Work | Status | Spec | Depends on |
 |---|---|---|---|---|
 |  | spawn-isolation: worktree-per-session in the shared fresh-session runner (the parallel-safety enabler) + sandbox the evals | **Done** — shipped in v0.1.3 (#8 @ `0057800`); independently verified (check-fast PASS, hermetic, discrimination real); includes the `.git/config` corruption root-cause fix (GIT_DIR leak in check-fast) | `roadmap/specs/spawn-isolation/` | — |
-| code-review | code-review: skill + numbered Review stage (Verify → Knowledge → Review → Finish); the green-but-wrong gate (complete-impl, docs-sync, robust tests, sensible defaults, simplicity) + an eval-gated cross-model drop-only refuter | **In progress** — design approved; building end-to-end (Track A, off `main`) | `roadmap/specs/code-review/` | spawn-isolation |
-| lifecycle-autonomy | lifecycle-autonomy: an autonomy dial for the `code` lifecycle — one level (Supervised/Guided/Autonomous) + a stop-point; set once at Frame, harness-aware (`/loop`, Codex `/goal`) (@claude, branch: feat/autonomy-dogfood) | Validating — built + gate-green (spec CLEAN; reference + code-skill hooks + static test + glossary); behavioral proof (T5): the e2e autonomous mode mechanically asserts the AC-2.4 invariant (main untouched — features integrate on a non-default branch), the named stop-point, and the no-progress guard, exercised by the Codex dogfood | `roadmap/specs/lifecycle-autonomy/` | — |
+| code-review | code-review: skill + numbered Review stage (Verify → Knowledge → Review → Finish); the green-but-wrong gate (complete-impl, docs-sync, robust tests, sensible defaults, simplicity) + an eval-gated cross-model drop-only refuter | Done — shipped on `main` (`plugins/foundry/skills/code-review/`; gate tests green: `code_review_*`, `score_review`); inner/outer convergence loops + cross-model refuter landed | `roadmap/specs/code-review/` | spawn-isolation |
+| lifecycle-autonomy | lifecycle-autonomy: an autonomy dial for the `code` lifecycle — one level (Supervised/Guided/Autonomous) + a stop-point; set once at Frame, harness-aware (`/loop`, Codex `/goal`) (@claude, branch: feat/autonomy-dogfood) | Done — built + gate-green (spec CLEAN; reference + code-skill hooks + static test + glossary); behavioral proof (T5): the e2e autonomous mode mechanically asserts the AC-2.4 invariant (main untouched — features integrate on a non-default branch), the named stop-point, and the no-progress guard, exercised by the Codex dogfood | `roadmap/specs/lifecycle-autonomy/` | — |
 |  | reviewer-eval repoint: point `evals/harness/reviewer-eval.sh` off the removed `agents/spec-reviewer.md` at the `spec-review` skill | **Done** — shipped in v0.1.3 (#7); reviewer-eval green (recall 1.0, 0 decoys) + a missing-file guard | spec note | — |
 | self-improving-loop | self-improving loop S1–S4: signal store → proposer cron → A/B consult UI → deliberate→spec→code pipeline | **In progress** — loop-spine deliberated; **S1 (signal store) spec being authored** (Track B, off `main`); two-zone storage decided; S2–S4 follow (S4 needs code-review) | spec to write | spawn-isolation, code-review |
 |  | issue-triage: GitHub issues as a signal source — host cron ingests read-only → durable triage ledger → human whether/how consult → mechanically-gated `issue-act` | Planned — design done (deliberated); spec after loop S1+S3 | spec to write | self-improving loop S1+S3 |
