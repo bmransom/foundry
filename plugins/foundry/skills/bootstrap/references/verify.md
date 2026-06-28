@@ -20,7 +20,7 @@ Expected — every row present (plus whatever the repo already had):
 | `knowledge/.vitepress/{config.ts,site.json}` · `knowledge/{package.json,tsconfig.json}` | verbatim (`site.json` is a seed) |
 | `roadmap/specs/README.md` · `features/README.md` · `rules/{spec,knowledge}-conventions.md` | seeds |
 | `features/<name>.feature` + its runner wiring | generated |
-| `scripts/{knowledge.py,test_knowledge.py,board.sh,install-hooks.sh,worktree-retire.sh}` · `.githooks/pre-push` | verbatim |
+| `scripts/{knowledge.py,test_knowledge.py,board.sh,check-board.py,test_check_board.py,install-hooks.sh,worktree-retire.sh}` · `.githooks/pre-push` | verbatim |
 | `scripts/check-fast.sh` · `.github/workflows/check-fast.yml` | generated |
 | `scripts/verify.sh` (+ lock) | generated — only when an expensive validation exists |
 | `scripts/vocab-lint.sh` | generated — only when the glossary debt column has entries |

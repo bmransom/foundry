@@ -11,9 +11,11 @@ description: The tracked kanban board — the single source of truth for cross-s
 
 Run `scripts/board.sh` to render the board; `scripts/board.sh "Epic 0"` filters to one epic.
 
-- A **card** is one table row: `Work | Status | Spec | Depends on`. Claim a card by
-  adding `(@<owner>)` to its Work cell; never take a card another agent owns.
-  Respect the Depends-on column.
+- A **card** is one table row: `Id | Work | Status | Spec | Depends on`. The `Id` is a
+  unique, slug-safe (`^[a-z0-9][a-z0-9-]*$`) handle — required on claimable cards (Ready /
+  In progress / Validating), enforced by `scripts/check-board.py` in the gate. Claim a card
+  by adding `(@<owner>)` to its Work cell; never take a card another agent owns. Respect the
+  Depends-on column.
 - An **In progress** card names where its work lives: the branch, and the absolute
   worktree path when the work sits in a separate or out-of-repo worktree. A harness that
   resumes the card reads this to find existing work instead of guessing.
@@ -49,5 +51,5 @@ Use these words in board tables and spec status headers.
 
 ### Epic 0 — `<the first epic>`
 
-| Work | Status | Spec | Depends on |
-|---|---|---|---|
+| Id | Work | Status | Spec | Depends on |
+|---|---|---|---|---|
