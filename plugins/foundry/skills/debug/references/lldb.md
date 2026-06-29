@@ -72,7 +72,8 @@ Build first with `cc -g -O0` (or `-Og`); `-O2` elides locals and inlines frames 
 
 ## Tips
 
-- ASan amplifies memory bugs: `cc -g -O1 -fsanitize=address` makes an out-of-bounds
-  write trap *at the write* with the exact frame, not later.
+- ASan amplifies memory bugs: `cc -g -O1 -fno-inline -fsanitize=address` makes an
+  out-of-bounds write trap *at the write*, not later (`-fno-inline` keeps the faulting
+  line out of an inlined caller's frame).
 - `settings set target.process.stop-on-exec false` to run past `exec`.
 - Script a whole session into a file and run `lldb -s session.lldb -- ./bin`.

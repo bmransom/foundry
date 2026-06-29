@@ -21,7 +21,7 @@ loop with `i == 8` and writes `buf[8]` — one past the buffer.
 
 ## 1. Build with debug info (and ASan to trap the write)
 
-    cc -g -O1 -fsanitize=address evals/fixtures/debug/buggy.c -o /tmp/buggy
+    cc -g -O1 -fno-inline -fsanitize=address evals/fixtures/debug/buggy.c -o /tmp/buggy
 
 ## 2. Break where it likely goes wrong, conditional on the bad iteration
 
@@ -54,7 +54,8 @@ The breakpoint **hit** at `buggy.c:11` with `i == 8` and `n == 8`. The buffer ho
 ints (`buf[0..7]`), so `buf[8]` is one past the end.
 
 (Without the condition, run plainly and let ASan stop the program: it reports
-`heap-buffer-overflow ... WRITE of size 4` at `buggy.c:11` with the same frame.)
+`heap-buffer-overflow ... WRITE of size 4` at `buggy.c:11` — the `-fno-inline` above
+keeps `sum_of_squares` a real frame, so the write isn't blamed on the inlined caller.)
 
 ## 4. Localize — the deliverable
 

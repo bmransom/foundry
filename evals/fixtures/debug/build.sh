@@ -6,7 +6,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OUT="${2:-/tmp/buggy}"
 CC="${CC:-cc}"
 case "${1:-asan}" in
-  asan)  "$CC" -g -O1 -fsanitize=address "$HERE/buggy.c" -o "$OUT" ;;
+  asan)  "$CC" -g -O1 -fno-inline -fsanitize=address "$HERE/buggy.c" -o "$OUT" ;;
   plain) "$CC" -g -O0 "$HERE/buggy.c" -o "$OUT" ;;
   *) echo "usage: build.sh [asan|plain] [out]" >&2; exit 2 ;;
 esac

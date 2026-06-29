@@ -4,7 +4,7 @@
 
 Changes to the knowledge base, newest first. A reserved OKF file — no frontmatter.
 
-## 2026-06-29
+## 2026-06-28
 
 - **Update** Added the **`debug`** skill (`plugins/foundry/skills/debug/`): drive `lldb` to
   localize a fault in native code (breakpoints, stepping, frame/variable/backtrace inspection,
@@ -13,8 +13,6 @@ Changes to the knowledge base, newest first. A reserved OKF file — no frontmat
   mirroring `code-review`/`spec-review`). Discrimination is gate-proven by
   `evals/harness/test_grade_debug.py` (run via `tests/grade_debug_test.sh`): a debugger-used
   transcript passes, a static-only correct guess fails; the live `lldb` run is deferred.
-
-## 2026-06-28
 
 - **Convention** `spec-review` is now **severity-gated** like `code-review`: findings carry
   `blocking`/`advisory`, the `FLAGGED:` footer carries the blocking ones, and `SPEC_REVIEW:
