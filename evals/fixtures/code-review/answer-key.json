@@ -6,7 +6,10 @@
     { "id": "V3", "signature": "gargantuan_pricing_engine", "type": "oversized-function" },
     { "id": "V4", "signature": "--purge-cache", "type": "public-cli-behavior-without-docs" },
     { "id": "V5", "signature": "shipping job", "type": "debt-term-outside-replaces" },
-    { "id": "V6", "signature": "partner_timeout", "type": "buried-scattered-default" }
+    { "id": "V6", "signature": "partner_timeout", "type": "buried-scattered-default" },
+    { "id": "V7", "signature": "expired", "type": "ripple-half-applied-change" },
+    { "id": "V8", "signature": "format_legacy_report", "type": "dead-code-orphaned" },
+    { "id": "V9", "signature": "summarize_partner_failure", "type": "duplicate-extractable" }
   ],
   "decoys": [
     { "id": "D1", "signature": "print --help", "type": "legitimate-cli-surface" },
@@ -15,6 +18,9 @@
     { "id": "D4", "signature": "buildPayload", "type": "style-naming-linter-owns" },
     { "id": "D5", "signature": "handle_4xx", "type": "spec-conforming-no-retry-4xx" },
     { "id": "D6", "signature": "confirmation", "type": "invented-requirement" },
-    { "id": "D7", "signature": "per_order_cost", "type": "guarded-read-context" }
+    { "id": "D7", "signature": "per_order_cost", "type": "guarded-read-context" },
+    { "id": "D8", "signature": "order_sync_version", "type": "public-api-not-dead" },
+    { "id": "D9", "signature": "order_key", "type": "coincidental-duplication" },
+    { "id": "D10", "signature": "line_key", "type": "coincidental-duplication" }
   ]
 }

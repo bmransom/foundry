@@ -34,3 +34,21 @@ def split_bill(total, count):
     if count <= 0:
         raise ValueError("count must be positive")  # guards per_order_cost
     return per_order_cost(total, count)
+
+
+# D8 (public API, not dead): order_sync_version is exported for external consumers and is
+# unused *internally* — unused-internally is NOT dead code. A grep shows it is the package's
+# public version surface; flagging it as dead is the false positive the check must avoid.
+def order_sync_version():
+    return "1.0"
+
+
+# D9 (coincidental duplication, rule of three): order_key and line_key each happen to read
+# `.id`, but they are different concepts on different types — two trivial coincidental
+# one-liners are NOT an extractable duplicate. Flagging them is the over-DRY false positive.
+def order_key(order):
+    return order.id
+
+
+def line_key(line):
+    return line.id
