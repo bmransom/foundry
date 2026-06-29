@@ -8,11 +8,14 @@
 - T1 `plugins/foundry/skills/knowledge/SKILL.md`: the guidance — **home selection** (glossary
   term / concept file / `log.md` / `AGENTS.md` convention), the **four OKF types**, **provenance
   + anchoring**, **append-don't-overwrite**, **coherence** (orphan / stale / missing-page /
-  contradiction), and the mechanics (`knowledge.py check`/`index`, log the change) — within the
-  ≤120-line budget; `name`/`description` frontmatter (AC-1.1, AC-1.2).
+  contradiction), **progressive disclosure** (the `index.md` → `outline` → `section` read path +
+  the maintainer's `index.md`/`description`/headings duty), and the mechanics — within the
+  ≤120-line budget; `name`/`description` frontmatter (AC-1.1, AC-1.2, AC-1.4).
 - T2 `plugins/foundry/skills/knowledge/references/okf.md` + `coherence.md`: the OKF format + type
-  taxonomy (one concept/file, frontmatter, `index.md`/`log.md`, links-as-graph), and the
-  Karpathy coherence checks with how to run each; both linked from `SKILL.md` (AC-1.3).
+  taxonomy (one concept/file, frontmatter, `index.md`/`log.md`, links-as-graph) **and a
+  grounded "Differences from OKF" table** (fixed types, required fields, strict lint, `lifecycle`,
+  append-only log — AC-1.5); the Karpathy coherence checks (using `lifecycle: superseded` for a
+  stale claim) with how to run each; both linked from `SKILL.md` (AC-1.3).
 - Gate: `check-context-budget.sh` (≤120) + `check-skill-references.sh` (references reachable).
 
 ## Wave 2 — wire into the lifecycle

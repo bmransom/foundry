@@ -32,7 +32,17 @@ defers naming to `naming-standards`.
 - AC-1.2 THE skill SHALL be invocable — `name` + `description` frontmatter scoped to maintaining
   the knowledge base.
 - AC-1.3 THE depth — the OKF format and the coherence checklist — SHALL live in `references/`,
-  each reachable from `SKILL.md`.
+  each reachable from `SKILL.md` (the skill is itself progressively disclosed: a lean entry +
+  on-demand references).
+- AC-1.4 THE skill SHALL teach **progressive disclosure** of the base: the read path `index.md`
+  (catalog) → `knowledge.py outline <concept>` → `knowledge.py section <concept> <heading>` (read
+  by slice, never full-load), and the maintainer's duty to keep `index.md` current and write a
+  tight `description` + clear headings so the catalog and slice-navigation work.
+- AC-1.5 `references/okf.md` SHALL document where Foundry **diverges from the OKF spec** —
+  grounded in `knowledge.py` / `knowledge-config.json`: a fixed four-`type` set (unknown type
+  fails the lint, vs. OKF's open/tolerant types), required `title`/`description`/`type` (vs. OKF's
+  `type`-only), strict conformance, the `lifecycle` field for staleness (no OKF equivalent), and
+  an append-only `log.md`.
 
 ## US-2 — The lifecycle defers to it
 

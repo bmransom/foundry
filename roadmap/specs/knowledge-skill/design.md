@@ -17,7 +17,16 @@
   to sources, and lint for orphans / stale claims / missing pages / contradictions. Foundry is
   deliberately **stricter than OKF's permissiveness**: `knowledge.py` lints frontmatter, the
   glossary is a hard contract, and `check-skill-references` forbids orphans — the skill encodes
-  that, not OKF's "tolerate anything."
+  that, not OKF's "tolerate anything." `references/okf.md` records the concrete divergences,
+  grounded in `knowledge-config.json` — a fixed four-`type` set, required `title`/`description`,
+  a strict lint, append-only `log.md`, and a **`lifecycle` field (current/superseded/historical)**
+  for staleness that OKF has no equivalent for (Foundry's answer to Karpathy's stale-claim risk).
+- **Progressive disclosure end to end.** The skill is structured for it — a lean `SKILL.md` →
+  `references/okf.md` + `coherence.md`, loaded on demand — and it *teaches* it: the base's read
+  path is `index.md` (catalog) → `knowledge.py outline <concept>` → `section <concept> <heading>`,
+  so a reader takes a slice, never the whole file (the navigation-eval lesson). The maintainer
+  keeps `index.md` current and writes a tight one-line `description` + clear headings, so the
+  catalog and slice-navigation work — bad metadata breaks disclosure for every later reader.
 - **The coherence lint is skill-guided judgment now; the mechanical subset already exists.**
   Frontmatter is gated by `knowledge.py check`; skill-reference orphans by
   `check-skill-references.sh`. Contradiction / stale-claim / missing-page detection is

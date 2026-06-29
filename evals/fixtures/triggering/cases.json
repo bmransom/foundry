@@ -1,7 +1,7 @@
 {
   "fixture": "triggering",
-  "note": "Skill-routing corpus: given the 12 foundry skill descriptions, which single skill should a fresh model consult for each user message, or NONE (trivial, a non-foundry skill, or unrelated). Measures whether descriptions support correct routing — a proxy for live triggering, not skill activation. Categories: positive (should route to the named skill), recall_stress (positive phrased without the obvious keyword), keyword_trap (shares a keyword with a skill but routes elsewhere), near_miss_negative (adjacent to a skill but should not trigger), system_negative (unrelated or non-foundry).",
-  "expect_values": ["bootstrap", "code", "code-review", "design-patterns", "extract-skill", "handoff", "harness-deliberation", "modular-structure", "naming-standards", "performance", "spec-review", "update", "NONE"],
+  "note": "Skill-routing corpus: given the 14 foundry skill descriptions, which single skill should a fresh model consult for each user message, or NONE (trivial, a non-foundry skill, or unrelated). Measures whether descriptions support correct routing — a proxy for live triggering, not skill activation. Categories: positive (should route to the named skill), recall_stress (positive phrased without the obvious keyword), keyword_trap (shares a keyword with a skill but routes elsewhere), near_miss_negative (adjacent to a skill but should not trigger), system_negative (unrelated or non-foundry).",
+  "expect_values": ["bootstrap", "code", "code-review", "debug", "design-patterns", "extract-skill", "handoff", "harness-deliberation", "knowledge", "modular-structure", "naming-standards", "performance", "spec-review", "update", "NONE"],
   "cases": [
     {"id": "perf-latency", "query": "the /search endpoint p99 jumped from 80ms to 400ms after my last deploy, help me figure out what regressed", "expect": "performance", "category": "positive"},
     {"id": "perf-throughput", "query": "I want to compare throughput of the new rust parser against the old go one before we switch", "expect": "performance", "category": "positive"},
@@ -40,6 +40,10 @@
     {"id": "neg-brainstorm", "query": "let's brainstorm the design for the notifications feature", "expect": "NONE", "category": "system_negative"},
     {"id": "neg-tdd", "query": "write unit tests for parseInvoice using TDD", "expect": "NONE", "category": "system_negative"},
     {"id": "neg-weather", "query": "what's the weather in Tokyo tomorrow?", "expect": "NONE", "category": "system_negative"},
-    {"id": "neg-haiku", "query": "write a haiku about databases", "expect": "NONE", "category": "system_negative"}
+    {"id": "neg-haiku", "query": "write a haiku about databases", "expect": "NONE", "category": "system_negative"},
+    {"id": "know-home", "query": "I'm adding a new concept to our knowledge base — should it be a glossary term, a new concept file, or just a log entry?", "expect": "knowledge", "category": "positive"},
+    {"id": "know-coherence", "query": "two of our knowledge docs contradict each other after my change — reconcile them and keep the base coherent", "expect": "knowledge", "category": "recall_stress"},
+    {"id": "know-trap", "query": "what should we call the new field in our knowledge-base config?", "expect": "naming-standards", "category": "keyword_trap"},
+    {"id": "debug-segfault", "query": "my C program segfaults on startup — drive lldb to find the faulting line", "expect": "debug", "category": "positive"}
   ]
 }
