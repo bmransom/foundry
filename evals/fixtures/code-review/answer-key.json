@@ -20,6 +20,7 @@
     { "id": "D6", "signature": "confirmation", "type": "invented-requirement" },
     { "id": "D7", "signature": "per_order_cost", "type": "guarded-read-context" },
     { "id": "D8", "signature": "order_sync_version", "type": "public-api-not-dead" },
-    { "id": "D9", "signature": "order_key", "type": "coincidental-duplication" }
+    { "id": "D9", "signature": "order_key", "type": "coincidental-duplication" },
+    { "id": "D10", "signature": "line_key", "type": "coincidental-duplication" }
   ]
 }
