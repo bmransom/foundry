@@ -28,6 +28,15 @@
 - **`gate-sync` is repo- and harness-agnostic.** It reads the gate command from `AGENTS.md`
   Commands (which `update` already parses) and matches by script basename — no assumption about
   the gate's shape beyond "it names the script it runs."
+- **Future-proof with a gate, not a review reminder (US-5).** AGENTS.md requires closing a gap
+  with a mechanism, not prose — so the guarantee that a *future* gate tool gets wired is a
+  **self-host lint**: `gate-sync` dogfooded as a deterministic check over Foundry's own
+  `scripts/` markers + `check-fast.sh`, plus a registry-head == `conventionVersion` invariant.
+  This is **Foundry-specific** (it inspects Foundry's own gate), so it lives in Foundry's gate +
+  a `rules/` entry — **never** the shipped `code-review` skill (mechanisms-not-content). The
+  judgment part ("is this a convention break needing a migration?") can't be deterministic, so it
+  is a `rules/` line `code-review` reads. (The general way a *consumer* injects a repo-specific
+  review check is **skill-hooks** — backlog; Foundry doesn't need it because it owns its gate.)
 
 ## Mechanism
 
@@ -49,7 +58,9 @@ flowchart TD
 | `plugins/foundry/skills/update/SKILL.md` | A `gate-sync` step (in §6 Report / §7 Verify): for each installed marked gate tool, check the gate; flag + snippet the unwired ones; offer to apply. |
 | `plugins/foundry/skills/update/references/migrations/` | New `card-ids.md` playbook (convention 4) + a registry row; bump the head. |
 | `.foundry/manifest.json` (foundry's own) | Stamp `conventionVersion: 4`. |
-| `tests/` | A `gate-sync` test: an unwired marked tool is flagged, a wired one is not; the `card-ids` detector fires on a pre-`Id` board and is idempotent. |
+| `scripts/check-gate-tools.sh` (+ wired into `check-fast.sh`) | Self-host lint (US-5): every `foundry-gate-tool`-marked `scripts/*` is referenced in `check-fast.sh`; registry head == manifest `conventionVersion`. Foundry-local — not a template. |
+| `rules/self-host-conventions.md` (or an `AGENTS.md` Boundary) | A convention break ships with a migration + registry bump; `code-review` reads it. |
+| `tests/` | A `gate-sync` test: an unwired marked tool is flagged, a wired one is not; the `card-ids` detector fires on a pre-`Id` board and is idempotent; `check-gate-tools.sh` fails on an unwired marked script / a drifted `conventionVersion`. |
 
 ## Metrics
 

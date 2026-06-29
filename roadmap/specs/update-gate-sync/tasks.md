@@ -36,3 +36,17 @@
 - T6 `tests/`: the `card-ids` detector fires on a pre-`Id` fixture board and is idempotent after
   backfill; the bundled `check-board.py` flips fail→pass (AC-4.1, AC-4.2, AC-4.3).
 - Gate: `scripts/check-fast.sh` → `check-fast: PASS`; `Gate tool` glossary row + `log.md` entry.
+
+## Wave 4 — self-host the check (US-5, Foundry-local)
+
+- T7 `scripts/check-gate-tools.sh` (+ wire into `check-fast.sh`): assert every
+  `foundry-gate-tool`-marked `scripts/*` is referenced
+  in `check-fast.sh`, and that the migration registry head equals `.foundry/manifest.json`
+  `conventionVersion` — fail the gate otherwise (AC-5.1, AC-5.2). Foundry-local; **not** a
+  verbatim template.
+- T8 `rules/self-host-conventions.md` (or an `AGENTS.md` Boundary): a convention break (board /
+  template / frontmatter structure change) ships with a migration + registry bump, so
+  `code-review` flags a PR that omits it (AC-5.3).
+- T9 `tests/check_gate_tools_test.sh`: a marked script missing from `check-fast.sh` fails the
+  lint; a drifted `conventionVersion` fails it; the wired/in-sync state passes (discrimination).
+- Gate: `check-fast.sh` runs `check-gate-tools.sh` and stays green on Foundry itself.

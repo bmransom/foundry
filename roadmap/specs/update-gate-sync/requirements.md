@@ -61,6 +61,20 @@ paths read it. Plus a one-time `card-ids` migration to backfill the now-required
 - AC-4.4 THE migration registry head SHALL become convention 4.
 - AC-4.5 Foundry's own manifest `conventionVersion` SHALL be stamped 4.
 
+## US-5 — Self-host: Foundry's own gate catches the drift (not a review reminder)
+
+A mechanical, **Foundry-local** check (rationale in [design.md](design.md)) — it lives in
+Foundry's gate, not the shipped `code-review` skill.
+
+- AC-5.1 A self-host check in Foundry's gate SHALL assert every `foundry-gate-tool`-marked script
+  under `scripts/` is wired into `check-fast.sh`, failing the gate if a marked tool is unwired
+  (the deterministic dogfood of `gate-sync`).
+- AC-5.2 THE self-host check SHALL assert the migration registry head equals Foundry's manifest
+  `conventionVersion`, failing the gate if a convention shipped without its registry bump.
+- AC-5.3 A `rules/` entry SHALL require that a convention break (a board / template / frontmatter
+  structure change) ships with a migration + registry bump, so `code-review` — which reads the
+  repo contract and `rules/` — flags a PR that omits it (the irreducibly-judgment part).
+
 ## Metrics
 
 - A freshly bootstrapped gate references both `check-board.py` and `prose-lint.py` (AC-2.2).
@@ -68,3 +82,5 @@ paths read it. Plus a one-time `card-ids` migration to backfill the now-required
   is not flagged (AC-3.1/3.4 discrimination).
 - The `card-ids` migration backfills `Id`s so `check-board.py` passes on a board that failed
   before; an already-`Id` board does not re-trigger (AC-4.1/4.2/4.3).
+- Foundry's own gate fails if a `foundry-gate-tool`-marked script is added without wiring it into
+  `check-fast.sh`, or if `conventionVersion` drifts from the registry head (AC-5.1/5.2).
