@@ -1,8 +1,11 @@
+---
+okf_version: 0.1
+---
+
 # Foundry knowledge
 
 ## Reference
 
-* [Knowledge index](/README) - How foundry's knowledge base is organized — the four types, the knowledge tool, the listing.
 * [Foundry glossary — the ubiquitous language](/glossary) - The vocabulary contract for foundry's specs, code, and concepts.
 * [Validation](/validation) - Foundry's verification gates — command, what each catches, when it fires.
 
