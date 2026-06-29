@@ -1,4 +1,4 @@
-> **Status:** Done (2026-06-29) — built; live lldb/test run deferred. Tracked on the [board](../../ROADMAP.md).
+> **Status:** Done (2026-06-29) — built; native executor live-proven via lldb. Tracked on the [board](../../ROADMAP.md).
 > Companion: [requirements.md](requirements.md), [design.md](design.md).
 
 # Tasks — verify-by-execution

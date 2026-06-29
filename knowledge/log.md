@@ -6,6 +6,12 @@ Changes to the knowledge base, newest first. A reserved OKF file — no frontmat
 
 ## 2026-06-29
 
+- **Validation** verify-by-execution's **native executor is live-proven**:
+  `evals/harness/verify-exec-live.sh` builds the debug fixture with ASan + symbols and drives a
+  **real `lldb` session** through `verify-finding.sh run native` — the seeded heap-OOB reproduces →
+  **verified**, the fixed target (`i < n`) drops → **refuted**. The native path is no longer a stub
+  (it runs an lldb-built repro check). Live eval (needs `lldb`/`cc`), kept out of the fast gate.
+
 - **Convention** `code-review` verifies blocking findings **by execution**, not just reading
   (`verify-finding.sh`): the cross-model refuter *runs* a finding's check (its test, a repro
   snippet, or `lldb` via the `debug` skill) — **verified** may block, **refuted** drops,

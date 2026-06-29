@@ -28,8 +28,10 @@ eq "$(VERIFY_EXEC_CMD="$work/mock" "$V" run native odd-case)"    unrunnable "sea
 # run real path: the check command's exit code is the repro contract (0=reproduces).
 eq "$("$V" run test  t 'true')"  verified   "real check exit0->verified"
 eq "$("$V" run test  t 'false')" refuted    "real check exit1->refuted"
-eq "$("$V" run snippet s '')"    unrunnable "real no-check->unrunnable"
-eq "$("$V" run native x)"        unrunnable "native live-deferred->unrunnable"
+eq "$("$V" run snippet s '')"      unrunnable "real no-check->unrunnable"
+eq "$("$V" run native x)"          unrunnable "native no-repro->unrunnable"
+eq "$("$V" run native t 'true')"   verified   "native repro-check exit0->verified"
+eq "$("$V" run native t 'false')"  refuted    "native repro-check exit1->refuted"
 
 # decide — the verify-by-execution rule across every AC path.
 eq "$("$V" decide blocking no  -          yes)" block    "AC-1.4 non-executable blocking still blocks"
