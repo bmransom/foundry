@@ -29,7 +29,8 @@ run() {
     case "$kind" in
       test|snippet)
         if [ -z "$check" ]; then rc=2; else
-          set +e; eval "$check" >/dev/null 2>&1; rc=$?; set -e
+          # Subshell so a check using the `exit` builtin cannot escape the rc capture.
+          set +e; ( eval "$check" ) >/dev/null 2>&1; rc=$?; set -e
         fi ;;
       native)
         # Route to the debug skill (lldb). Live run deferred — without a wired repro,

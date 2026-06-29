@@ -110,7 +110,7 @@ main() {
   local refuter_on=0
   if [ -n "$refuter_family" ] && [ "$refuter_family" != "$reviewer_family" ]; then refuter_on=1; fi
 
-  local refuter_head="Use the code-review skill's REFUTER contract at $(plugin_root)/skills/code-review/SKILL.md. You are a single asymmetric refute pass — NOT a debate. READ-ONLY: edit nothing. You receive ONLY the candidate FLAGGED findings and the diff for range $range; you do NOT see the reviewer's reasoning. Per candidate finding, KEEP it only with concrete evidence it is real, else mark it DROP. You may only REMOVE a finding, never ADD one."
+  local refuter_head="Use the code-review skill's REFUTER contract at $(plugin_root)/skills/code-review/SKILL.md. You are a single asymmetric refute pass — NOT a debate. READ-ONLY: edit nothing. You receive ONLY the candidate FLAGGED findings and the diff for range $range; you do NOT see the reviewer's reasoning. Per candidate finding, KEEP it only with concrete evidence it is real, else mark it DROP. VERIFY BY EXECUTION: for a blocking, checkable finding, RUN its check via $(plugin_root)/scripts/verify-finding.sh (its test, a repro snippet, or lldb via the debug skill) rather than re-reading — KEEP a verified finding, DROP a refuted one, and DROP (demote out of the blocking footer) an un-runnable one. You may only REMOVE or DEMOTE a finding, never ADD one."
 
   # --- Dry run: preview every launch, spawn nothing, wait for nothing. --------
   if [ "$dry_run" -eq 1 ]; then
