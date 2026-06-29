@@ -6,6 +6,14 @@ Changes to the knowledge base, newest first. A reserved OKF file — no frontmat
 
 ## 2026-06-28
 
+- **Update** Added the **`knowledge`** skill (`plugins/foundry/skills/knowledge/`): the
+  KB-maintenance judgment `code` Stage 5 now defers to — home selection (glossary / concept /
+  `log.md` / `AGENTS.md`), the four OKF types, provenance + citation-anchoring,
+  append-don't-overwrite, coherence (orphan / stale / missing-page / contradiction), and
+  progressive disclosure (`index.md` → `outline` → `section`). `references/okf.md` documents
+  Foundry's divergences from Google's OKF (fixed types, required fields, strict lint, the
+  `lifecycle` staleness field, append-only log); grounded in OKF + Karpathy's LLM-Wiki. No
+  glossary row (generic KB practice).
 - **Update** Added the **`Gate tool`** term and the `# foundry-gate-tool:` marker (a sibling of
   `foundry-template:` / `foundry-seed:`): a verbatim script self-declares that it belongs in the
   gate by carrying its literal gate line, so `bootstrap` and `update` wire every marked tool with

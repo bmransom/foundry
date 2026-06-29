@@ -87,9 +87,9 @@ Run the repo's canonical gate — the command `AGENTS.md` Commands names.
 
 ## 5 · Knowledge
 
-Run `python3 scripts/knowledge.py check` on any new or changed concept, regenerate the
-listing (`python3 scripts/knowledge.py index`), and log the change in `knowledge/log.md`.
-Update `AGENTS.md` if a convention changed.
+Use the `knowledge` skill to place and record the change — its home (glossary term / concept /
+`log.md` / `AGENTS.md`), OKF type, provenance, and coherence. Mechanics: `python3 scripts/knowledge.py
+check`, regenerate the `index`, log to `knowledge/log.md`, update `AGENTS.md` if a convention changed.
 **Gate:** no finish with a stale concept or `index.md`.
 
 ## 6 · Review
