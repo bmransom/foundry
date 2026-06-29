@@ -20,8 +20,9 @@
   from `AGENTS.md` Commands, and for each installed marked gate tool, grep that gate for the
   script; flag any unwired tool in the §6 report with its marker snippet, and offer to apply on
   go-ahead (never silent) (AC-1.3, AC-3.1, AC-3.2, AC-3.3, AC-3.4).
-- Gate: a `tests/gate_sync_test.sh` — an unwired marked tool is flagged with its snippet; a wired
-  one is not (discrimination, AC-3.4).
+- Gate: gate-sync's discrimination is the self-host lint's deterministic dogfood —
+  `tests/check_gate_tools_test.sh` proves an unwired marked tool fails and a wired one passes
+  (AC-3.4).
 
 ## Wave 3 — the card-ids migration
 

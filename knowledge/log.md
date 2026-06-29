@@ -6,6 +6,11 @@ Changes to the knowledge base, newest first. A reserved OKF file — no frontmat
 
 ## 2026-06-28
 
+- **Update** Added the **`Gate tool`** term and the `# foundry-gate-tool:` marker (a sibling of
+  `foundry-template:` / `foundry-seed:`): a verbatim script self-declares that it belongs in the
+  gate by carrying its literal gate line, so `bootstrap` and `update` wire every marked tool with
+  no hardcoded list. A Foundry-local `check-gate-tools.sh` enforces the wiring + the
+  registry-head == `conventionVersion` invariant (`update-gate-sync`).
 - **Update** Added the **`debug`** skill (`plugins/foundry/skills/debug/`): drive `lldb` to
   localize a fault in native code (breakpoints, stepping, frame/variable/backtrace inspection,
   attach, cores); `gdb` is a documented sibling via an `lldb`↔`gdb` map. Generic debugger

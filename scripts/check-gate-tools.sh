@@ -21,7 +21,7 @@ while IFS= read -r script; do
     echo "check-gate-tools: $base carries a foundry-gate-tool marker but is not wired into $(basename "$GATE_FILE")" >&2
     fail=1
   fi
-done < <(grep -rlF '# foundry-gate-tool:' "$SCRIPTS_DIR" 2>/dev/null || true)
+done < <(grep -rlE '^# foundry-gate-tool:' "$SCRIPTS_DIR" 2>/dev/null || true)
 
 # 2. Registry head == manifest conventionVersion.
 head_conv="$(grep -oE '^\| [0-9]+ ' "$REGISTRY_FILE" | grep -oE '[0-9]+' | sort -n | tail -1)"
