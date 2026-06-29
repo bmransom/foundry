@@ -1,4 +1,4 @@
-> **Status:** Planned (2026-06-28) — design pending approval; tracked on the [board](../../ROADMAP.md).
+> **Status:** Backlog (2026-06-28) — drafted; parked on the open triggering-guarantee question (Open question, below); tracked on the [board](../../ROADMAP.md).
 > Companion: [requirements.md](requirements.md), [tasks.md](tasks.md).
 
 # Design — skill-hooks
@@ -60,6 +60,22 @@ and asserts a block with the reason surfaced; flips `.foundry/hooks.json` to dis
 the stage proceeds; and asserts an enabled-but-missing hook warns (a failed config), never a silent
 skip. Runtime: a hook fires at most twice per stage (pre+post) across 8 stages (≤16/feature) — not
 a hot path; perf N/A.
+
+## Open question — guaranteed triggering (parks this card)
+
+The convention triggers hooks from the `code` checklist — **agent-run, so advisory-strength**: the
+agent can skip a hook. *Guaranteeing* a pre/post hook fires can't ride agent discretion. Web research
+(2026-06-28) across LangGraph, LangChain agent middleware, the OpenAI Agents SDK, Claude Code hooks,
+and durable-execution engines (Temporal/Inngest/DBOS) converges on one principle: **a deterministic
+runtime — not the LLM — must own the loop and fire the hooks** (Anthropic's *workflow vs. agent*:
+predefined code paths vs. model-directed processes; receipts patch the wrong layer). Foundry already
+embodies this in its convergence hooks (`code-review-convergence-hook.sh`, `spec-convergence-hook.sh`
+deterministically drive review sub-sessions via `spawn-fresh-session.sh`). So the robust design is a
+**deterministic stage-boundary driver** that runs enabled pre/post hooks (script → exec; skill →
+spawn a fresh session) around each stage's agent work — guaranteed, harness-agnostic, no per-harness
+native-hook adapter. The cost: it shifts `code` toward a driver-owned lifecycle (a real architectural
+call), and a skill hook costs a spawned sub-session. **Parked** until that inversion is scoped — then
+either re-found this spec on the driver, or spec the lifecycle driver first.
 
 ## Out of scope
 

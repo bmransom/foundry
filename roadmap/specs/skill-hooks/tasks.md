@@ -1,4 +1,4 @@
-> **Status:** Planned (2026-06-28) — design pending approval; tracked on the [board](../../ROADMAP.md).
+> **Status:** Backlog (2026-06-28) — drafted; parked on the open triggering-guarantee question (see [design.md](design.md) Open question); tracked on the [board](../../ROADMAP.md).
 > Companion: [requirements.md](requirements.md), [design.md](design.md).
 
 # Tasks — skill-hooks
