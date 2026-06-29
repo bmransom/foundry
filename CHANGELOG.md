@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.10](https://github.com/bmransom/foundry/compare/v0.1.9...v0.1.10) (2026-06-29)
+
+
+### Features
+
+* **debug:** debug skill — drive lldb to localize native-code faults ([#43](https://github.com/bmransom/foundry/issues/43)) ([94dd081](https://github.com/bmransom/foundry/commit/94dd0815c75ed74d84a8ab2725ef9efdee09a10c))
+
 ## [0.1.9](https://github.com/bmransom/foundry/compare/v0.1.8...v0.1.9) (2026-06-29)
 
 
