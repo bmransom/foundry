@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.1.9](https://github.com/bmransom/foundry/compare/v0.1.8...v0.1.9) (2026-06-29)
+
+
+### Features
+
+* **board:** card-ids — Id column + check-board.py gate lint ([#31](https://github.com/bmransom/foundry/issues/31)) ([8c25660](https://github.com/bmransom/foundry/commit/8c25660e3ed46214e15a874971d314cbfe4dd3a9))
+* **lifecycle:** worktree-per-card + Done = merged ([#34](https://github.com/bmransom/foundry/issues/34)) ([74b5f59](https://github.com/bmransom/foundry/commit/74b5f5936c74952607f11690a788fc0771afe144))
+* **review:** review-convergence — severity-gated, blind, prose-lint + cross-family abstraction ([#37](https://github.com/bmransom/foundry/issues/37)) ([edb01b3](https://github.com/bmransom/foundry/commit/edb01b327b2ac75195cc6b95c24d71ce6772b1ca))
+
 ## [0.1.8](https://github.com/bmransom/foundry/compare/v0.1.7...v0.1.8) (2026-06-28)
 
 
