@@ -13,9 +13,11 @@ fail() { echo "FAIL: $1" >&2; exit 1; }
 work="$(mktemp -d)"
 trap 'rm -rf "$work"; rm -f "$REPO"/evals/results/code-review-*-armA.ndjson "$REPO"/evals/results/code-review-*-armB.ndjson 2>/dev/null || true' EXIT
 
-# All 5 seeded violations, zero decoy signatures — holds the bar (recall 5/5, decoys 0).
+# Every seeded violation, zero decoy signatures — holds the bar (recall 1.0, decoys 0).
+# Derived from the answer key so it never goes stale when a violation is added.
 flag_all() {
-  printf 'FLAGGED: AC-2.1\nFLAGGED: sync complete\nFLAGGED: gargantuan_pricing_engine\nFLAGGED: --purge-cache\nFLAGGED: shipping job\nCODE_REVIEW: FAIL\n'
+  python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); [print("FLAGGED:", v["signature"]) for v in d["violations"]]; print("CODE_REVIEW: FAIL")' \
+    "$REPO/evals/fixtures/code-review/answer-key.json"
 }
 flag_all > "$work/armA.txt"
 flag_all > "$work/armB.txt"
@@ -25,7 +27,7 @@ set +e; out="$("$EVAL" --score-ab "$work/armA.txt" "$work/armB.txt" 2>&1)"; rc=$
 grep -q "refuter ENABLED" <<<"$out" || fail "Arm B holding the bar must ENABLE the refuter: $out"
 [ "$rc" -eq 0 ] || fail "ENABLED must exit 0, got $rc: $out"
 
-# Arm B drops two real violations (flags 3/5 -> recall 0.6 < 0.8) -> refuter DISABLED, nonzero.
+# Arm B flags only 3 of the seeded violations (recall < 0.8) -> refuter DISABLED, nonzero.
 printf 'FLAGGED: AC-2.1\nFLAGGED: sync complete\nFLAGGED: gargantuan_pricing_engine\nCODE_REVIEW: FAIL\n' > "$work/armB_weak.txt"
 set +e; out="$("$EVAL" --score-ab "$work/armA.txt" "$work/armB_weak.txt" 2>&1)"; rc=$?; set -e
 grep -q "refuter DISABLED" <<<"$out" || fail "Arm B below the bar must DISABLE the refuter: $out"

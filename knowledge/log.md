@@ -6,6 +6,13 @@ Changes to the knowledge base, newest first. A reserved OKF file — no frontmat
 
 ## 2026-06-29
 
+- **Convention** `code-review` gains coverage **beyond the diff**: **Complete implementation** now
+  flags a **half-applied change** (a parallel call site / enum case / mirrored file updated in one
+  place but not its twin — cite the twin), and a new **Dead / duplicate code** dimension flags a
+  symbol the change orphaned (zero references — but a public API is not dead, cite the grep) and
+  copy-paste past the rule of three (coincidental 2× is not DRY-violating). Eval: seeded V7 (ripple
+  `expired` cache choice), V8 (dead `format_legacy_report`), V9 (duplicate `summarize_*_failure`) +
+  decoys D8 (public-API-not-dead), D9 (coincidental).
 - **Convention** `code-review`'s defaults dimension now checks **placement**, not just
   sensibility: a value should default once at the boundary (the highest layer the caller could
   supply it), with mandatory parameters downstream — the reviewer flags a buried or scattered

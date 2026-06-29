@@ -54,9 +54,7 @@ The full grading table, evidence sources, and size tripwires live in
 
 - **Lifecycle evidence** — spec, diff, board, `validation.md`; the recorded gate
   decides.
-- **Complete implementation** — build an **AC → Scenario → test → code** matrix;
-  flag any AC with no implementing artifact. Mechanical artifacts are the coverage
-  signal; keyword-mapping an AC to changed code is not coverage.
+- **Complete implementation** — build an **AC → Scenario → test → code** matrix; flag any AC with no artifact (keyword-mapping is not coverage). Flag a **half-applied change**: a parallel call site, enum case, or mirrored file the change touched in one place but not its twin (cite the twin).
 - **Docs sync** — RUN `python3 scripts/knowledge.py check` yourself; verify each
   `design.md` architecture/class diagram against the shipped components and flag a
   drifted diagram; flag a `design.md` with no Metrics section and no N/A.
@@ -73,6 +71,7 @@ The full grading table, evidence sources, and size tripwires live in
 - **Performance / efficiency** — flag a hot-path algorithmic regression, redundant
   IO/model/tool calls, or hoistable per-item work; a hot-path regression blocks, a
   cold-path tuning opportunity is advisory (grounded in the `performance` skill).
+- **Dead / duplicate code** — flag a symbol the change orphaned (grep shows zero references — but a public API/entrypoint is not dead, cite the grep), and copy-paste the change introduced past the rule of three (two coincidental occurrences are not DRY-violating). Advisory.
 - **Defaults** — flag footgun/magic-value defaults, and a default not at the boundary (buried deep or scattered, no single source of truth): a value defaults once at the highest layer the caller could supply it, required downstream; a real boundary default (CLI flag, public API) is correct.
 - **Robust tests** — flag a test that does not **discriminate** a seeded defect,
   exercises only a fake or the happy path, or omits failure/edge cases.

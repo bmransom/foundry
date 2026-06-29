@@ -427,3 +427,11 @@ def gargantuan_pricing_engine(order, catalog):
     total = total + step_139
     report.append(("step", 139, step_139))
     return total, report
+
+
+def format_legacy_report(order, catalog):
+    """DEAD: the old report builder this change replaced with gargantuan_pricing_engine.
+    Nothing calls format_legacy_report anymore (grep the tree — zero references); the
+    change orphaned it but left the body behind."""
+    total = sum(order.quantity_at(i) * catalog.price_at(i) for i in range(1, 10))
+    return f"legacy total: {total}"

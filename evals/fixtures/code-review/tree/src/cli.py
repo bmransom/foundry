@@ -10,7 +10,7 @@ def build_parser():
     # now purge only the partner-response cache, leaving the request cache intact.
     parser.add_argument(
         "--purge-cache",
-        choices=["partner", "request", "all"],
+        choices=["partner", "request", "all", "expired"],
         default="all",
         help="which cache to purge",
     )
@@ -41,5 +41,13 @@ def main(argv=None):
 
 def purge_cache(which):
     """Clear the named cache (AC-3.1)."""
-    # Real implementation would clear the cache store here.
-    return which
+    # RIPPLE: build_parser now also offers `--purge-cache expired`, but this dispatch was
+    # not updated to handle it — a half-applied change; `purge expired` falls through to the
+    # ValueError. Either wire `expired` here or drop it from the choices.
+    if which == "partner":
+        return "partner cache cleared"
+    if which == "request":
+        return "request cache cleared"
+    if which == "all":
+        return "all caches cleared"
+    raise ValueError(f"unknown cache {which}")
