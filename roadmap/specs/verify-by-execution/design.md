@@ -1,4 +1,4 @@
-> **Status:** Planned (2026-06-29) — design pending approval; tracked on the [board](../../ROADMAP.md).
+> **Status:** Done (2026-06-29) — built; live lldb/test run deferred. Tracked on the [board](../../ROADMAP.md).
 > Companion: [requirements.md](requirements.md), [tasks.md](tasks.md).
 
 # Design — verify-by-execution

@@ -6,6 +6,13 @@ Changes to the knowledge base, newest first. A reserved OKF file — no frontmat
 
 ## 2026-06-29
 
+- **Convention** `code-review` verifies blocking findings **by execution**, not just reading
+  (`verify-finding.sh`): the cross-model refuter *runs* a finding's check (its test, a repro
+  snippet, or `lldb` via the `debug` skill) — **verified** may block, **refuted** drops,
+  **un-runnable** demotes to advisory. Additive — single-harness keeps today's read-based blocking,
+  no recall regression. Folds `refuter-reproduce` as the native executor. Hermetic
+  `verify_finding_test.sh`; live `lldb`/test run deferred.
+
 - **Convention** `code-review` gains coverage **beyond the diff**: **Complete implementation** now
   flags a **half-applied change** (a parallel call site / enum case / mirrored file updated in one
   place but not its twin — cite the twin), and a new **Dead / duplicate code** dimension flags a

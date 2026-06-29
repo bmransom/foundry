@@ -13,8 +13,15 @@ never fixes; the lifecycle agent fixes between outer rounds.
    (lowercase + collapsed whitespace), so `AC-2.1` and `AC-2.10` never collide.
 3. Stop at **two consecutive passes that add nothing new**, or the **20-pass ceiling**.
 4. Run the **cross-model refuter ONCE** over the converged union (footer + diff only).
-5. **Recompute** the final footer (union minus the refuter's DROPs) and the verdict —
-   FAIL iff a blocking finding survives — never the reviewer's forgeable verdict line.
+   Per **blocking, checkable** finding it runs `verify-finding.sh run` (the finding's test,
+   a repro snippet, or `lldb` via the `debug` skill) and records **verified / refuted /
+   un-runnable** — execution, not re-reading, is the strongest DROP criterion.
+5. **Recompute** the final footer and verdict via `verify-finding.sh decide`, never the
+   reviewer's forgeable verdict line: a **refuted** finding drops; an **un-runnable**
+   executable blocking finding **demotes** to advisory; a blocking finding survives only if
+   **verified** or a mechanically-checked class (unimplemented AC, docs-sync). FAIL iff a
+   surviving blocking finding remains. **Additive:** single-harness (refuter skipped, step 4
+   off) keeps today's behavior — a blocking finding survives on read-evidence, no demotion.
 
 A reviewer report that never completes (timeout) FAILS — never a false PASS.
 

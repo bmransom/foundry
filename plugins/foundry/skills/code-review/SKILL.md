@@ -110,8 +110,9 @@ harness family**, read-only, to drop the reviewer's false positives. It is a
 - Context-isolated: it sees ONLY the candidate `FLAGGED:` findings and the
   diff/artifact, never the reviewer's reasoning.
 - Per finding, KEEP only with concrete evidence the finding is real, else **DROP**.
-- **DROP-only**: it may only REMOVE a `FLAGGED:` finding, never ADD one
+- **DROP-only**: it may only REMOVE or DEMOTE a `FLAGGED:` finding, never ADD one
   (recall-monotone-down, precision-up).
+- **Verify by execution** — for a **blocking, checkable** finding, run `verify-finding.sh` (its test, a repro snippet, or `lldb` via `debug`): **verified** may block, **refuted** drops, **un-runnable** demotes to advisory. Additive — single-harness skips it (today's blocking). See [`convergence.md`](references/convergence.md).
 - One harness family only → skip the refuter; run the reviewer single-agent.
 
 The refuter is enabled by default only after the A/B eval proves it holds mean
