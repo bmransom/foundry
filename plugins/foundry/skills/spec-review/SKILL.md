@@ -15,12 +15,12 @@ reviewer sees the artifact, not the author's rationale.
    The wrapper delegates to Foundry's shared fresh-session runner.
 3. Wait for the report in `.foundry/reports/spec-review/`.
 4. Read the report, apply accepted fixes, and re-review. The re-pass is **blind** —
-   spawn a fresh reviewer on the current artifact; never hand it a summary of what you
-   changed (a judge told what changed verifies instead of re-scrutinizing).
+   spawn a fresh reviewer on the current artifact; never hand it a summary of your
+   changes (a judge told what changed verifies instead of re-scrutinizing).
 
 If fresh context is unavailable, review inline and say so. Never run a **primed** re-pass
 inline: if you cannot spawn a fresh reviewer for round 2+, hold the gate rather than let
-your account of the edits stand in for an independent pass.
+your account of the edits replace an independent pass.
 
 ## Contract
 
@@ -58,7 +58,7 @@ Return a findings list grouped by file. Each finding includes location, problem,
 **severity** — `blocking` or `advisory` — and a concrete fix. Emit a
 `FLAGGED: <short signature>` line for **each blocking finding** (the convergence loop and
 `score_review.py` read these); list advisory findings separately, without `FLAGGED:` lines.
-Note clean files briefly, then the single highest-priority blocking fix.
+Note clean files briefly, then the highest-priority blocking fix.
 
 Classify severity: a **contract violation** — a wrong canonical name, a debt term used for
 its concept, an entity-model conflict, missing provenance, a spec-format breach, or an
@@ -73,5 +73,4 @@ End with a final verdict line — the **last line** of the report — exactly on
 - `SPEC_REVIEW: FINDINGS` — one or more `blocking` findings above.
 
 This verdict is the loop's deterministic stop token: it re-reviews (blind) after each edit
-until no `blocking` finding remains. Advisory findings never hold the gate. Emit the verdict
-on every review.
+until no `blocking` finding remains. Emit the verdict on every review.

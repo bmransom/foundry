@@ -5,8 +5,7 @@ description: Use when choosing, reviewing, or changing names for features, conce
 
 # Naming Standards
 
-Names are contracts. Prefer names that make the domain model, responsibility, and
-change intent obvious without extra comments.
+Names are contracts. Prefer names that make the domain model, responsibility, and change intent obvious without extra comments.
 
 ## Order Of Authority
 
@@ -28,10 +27,9 @@ change intent obvious without extra comments.
 
 ## Spec Loop
 
-During spec review, inspect every new canonical term, public API, config knob,
-metric, directory, and persisted field. Search comparable tools or standards when
-the name shapes user understanding. Update `knowledge/glossary.md` for terms the
-repo should keep using.
+During spec review, inspect every new canonical term, public API, config knob, metric,
+directory, and persisted field. Search comparable tools or standards when the name shapes
+user understanding. Update `knowledge/glossary.md` for terms the repo should keep using.
 
 ## Examples
 

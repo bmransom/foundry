@@ -1,13 +1,9 @@
 # AGENTS.md — Foundry
 
-Foundry is a Claude Code plugin (plus its marketplace) that bootstraps an AI-assisted
-engineering setup into any repo: spec-driven development, executable Gherkin features, a
-vitepress doc site, a tracked kanban board, a glossary-as-contract, verification gates,
-and COE-driven eval accretion. Foundry ships the mechanisms; repos supply the content.
-
-Foundry is self-hosted — developed under its own conventions. The board is
-`roadmap/ROADMAP.md`; per-feature detail lives in `roadmap/specs/<feature>/`; vocabulary in
-`knowledge/glossary.md`.
+Foundry is a self-hosted Claude Code plugin (+ marketplace) that bootstraps a spec-driven
+engineering setup into any repo — it ships the mechanisms; repos supply the content (README
+has the full pitch). Developed under its own conventions: the board is `roadmap/ROADMAP.md`,
+per-feature detail in `roadmap/specs/<feature>/`, vocabulary in `knowledge/glossary.md`.
 
 ## Commands
 
@@ -17,8 +13,8 @@ scripts/install-hooks.sh                   # once per clone: route git hooks thr
 claude plugin validate plugins/foundry     # manifest check only (runs inside the gate)
 ```
 
-The gate runs from `.githooks/pre-push` and from CI (`.github/workflows/check-fast.yml`):
-one script, two triggers. Bypass once with `git push --no-verify`.
+The gate runs from `.githooks/pre-push` and CI (`.github/workflows/check-fast.yml`): one
+script, two triggers. Bypass once with `git push --no-verify`.
 
 ## Boundaries
 
@@ -35,11 +31,10 @@ one script, two triggers. Bypass once with `git push --no-verify`.
   search the prior art and record provenance in `knowledge/glossary.md`.
 - Keep foundry's verbatim-template copies byte-identical to
   `plugins/foundry/templates/verbatim/` (modulo the version marker) — the self-host gate.
-- Ship a convention break (a board, template, or frontmatter structure change) with its
-  migration: add the `references/migrations/` playbook and bump the registry head +
-  `conventionVersion`. A new **gate tool** carries a `# foundry-gate-tool:` marker and is wired
-  into the gate. `check-gate-tools.sh` enforces both mechanically; `code-review` flags a PR that
-  breaks a convention without a migration.
+- Ship a convention break (a board, template, or frontmatter structure change) with its migration
+  — add the `references/migrations/` playbook, bump the registry head + `conventionVersion`. A new
+  **gate tool** carries a `# foundry-gate-tool:` marker, wired into the gate. `check-gate-tools.sh`
+  enforces both mechanically; `code-review` flags a convention break with no migration.
 - Give a behavior-changing template or skill an eval case before it ships.
 - Close a COE only with a mechanical change (gate, lint, rule, or eval fixture), never
   prose.

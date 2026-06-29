@@ -5,17 +5,15 @@ description: Use when choosing, reviewing, or refactoring object, module, or ser
 
 # Design Patterns
 
-Use patterns as names for recurring design forces, not decoration. State the
-problem, the candidate pattern, the simpler alternative, and why the pattern earns
-its complexity in this repo.
+Use patterns as names for recurring design forces, not decoration. State the problem,
+the candidate pattern, the simpler alternative, and why the pattern earns its complexity here.
 
 ## Decision Rules
 
 - Prefer the repo's existing architecture and idioms before introducing a pattern.
 - Prefer composition over inheritance unless the relationship is truly "is-a".
 - Keep the public interface small; hide construction, IO, and vendor details at boundaries.
-- Choose the lightest pattern that removes real duplication, isolates volatility,
-  or makes an extension point explicit.
+- Choose the lightest pattern that removes real duplication, isolates volatility, or makes an extension point explicit.
 - Reject pattern cosplay: if a function, map, or small module is clearer, use it.
 
 ## Pattern Catalog
@@ -41,8 +39,7 @@ During design review, ask:
 - What simpler design would fail under the expected change?
 - What tests prove the pattern's contract?
 
-Record the chosen pattern and rejected simpler alternative in the design only when
-the choice materially shapes implementation.
+Record the chosen pattern and rejected simpler alternative in the design only when the choice materially shapes implementation.
 
 ## Traps
 

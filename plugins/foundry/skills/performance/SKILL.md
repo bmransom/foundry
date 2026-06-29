@@ -49,7 +49,7 @@ without naming the extra work and normalizing the metric.
 
 ## Profiling And Attribution
 
-Use profilers after a fair gap is confirmed, not as the headline benchmark.
+Use profilers after confirming a fair gap, not as the headline benchmark.
 
 - Start resource-first: CPU, memory, disk, network, locks, queues, external calls,
   utilization, saturation, and errors.

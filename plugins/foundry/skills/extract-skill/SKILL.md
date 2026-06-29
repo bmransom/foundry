@@ -5,20 +5,18 @@ description: Use when the current session revealed a reusable agent workflow, de
 
 # Extract Skill
 
-Distill a reusable skill from current-session evidence. Do not search historical
-sessions unless the user explicitly asks.
+Distill a reusable skill from this session's evidence; don't search past sessions unless the user explicitly asks.
 
 ## Candidate Selection
 
-Use the active conversation and files explicitly provided in this session. Propose
-1-3 candidates, each with:
+Use this session's conversation and provided files. Propose 1-3 candidates, each with:
 
 - `name`: lowercase hyphenated skill name.
 - `scope`: what the skill helps future agents do.
-- `trigger`: when the skill should load, preferably as a development lifecycle moment.
+- `trigger`: when the skill should load, preferably a development lifecycle moment.
 - `procedure`: the reusable steps learned.
 - `exclude`: project-specific facts or one-off details to keep out.
-- `eval prompts`: 2-3 prompts that would show whether the skill works.
+- `eval prompts`: 2-3 prompts that show whether the skill works.
 
 Ask the user to pick a candidate or provide a different one before drafting.
 
@@ -63,15 +61,14 @@ realistic prompts and expected behavior
 
 ## Drafting Spawn
 
-After the brief is written and printed, spawn a same-harness drafting session:
+After writing and printing the brief, spawn a same-harness drafting session:
 
 ```bash
 scripts/spawn-extractor.sh "<name>" ".agent/skill-extractions/<name>/brief.md"
 ```
 
-If the harness or tmux cannot be detected, print the command and seed prompt.
-The script delegates to Foundry's shared fresh-session runner so Claude, Codex, and
-Pi use the same prompt-file and tmux launch path.
+If harness or tmux detection fails, print the command and seed prompt. The script delegates
+to Foundry's shared fresh-session runner so Claude, Codex, and Pi share one prompt-file and tmux launch path.
 
 ## Quality Bar
 

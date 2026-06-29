@@ -5,9 +5,8 @@ description: Use when a Foundry spec needs a mediated Codex plus Claude Code des
 
 # Harness Deliberation
 
-Run a two-harness mediated design session for a Foundry repo. The broker owns
-session storage, preflight, turns, decisions, replay, snapshots, and generated
-spec files.
+Run a two-harness mediated design session for a Foundry repo. The broker owns session
+storage, preflight, turns, decisions, replay, snapshots, and generated spec files.
 
 ## Runner
 
