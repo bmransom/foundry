@@ -1,4 +1,4 @@
-> **Status:** Planned (2026-06-28) — design pending approval; tracked on the [board](../../ROADMAP.md).
+> **Status:** Validating (2026-06-28) — implemented, gate green (`check-fast: PASS`); the live `lldb` eval is the pending check; tracked on the [board](../../ROADMAP.md).
 > Companion: [requirements.md](requirements.md), [tasks.md](tasks.md).
 
 # Design — debug-skill

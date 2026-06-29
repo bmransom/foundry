@@ -6,6 +6,14 @@ Changes to the knowledge base, newest first. A reserved OKF file — no frontmat
 
 ## 2026-06-28
 
+- **Update** Added the **`debug`** skill (`plugins/foundry/skills/debug/`): drive `lldb` to
+  localize a fault in native code (breakpoints, stepping, frame/variable/backtrace inspection,
+  attach, cores); `gdb` is a documented sibling via an `lldb`↔`gdb` map. Generic debugger
+  practice — **no glossary row** (prior art the LLDB/GDB docs; provenance in the SKILL header,
+  mirroring `code-review`/`spec-review`). Discrimination is gate-proven by
+  `evals/harness/test_grade_debug.py` (run via `tests/grade_debug_test.sh`): a debugger-used
+  transcript passes, a static-only correct guess fails; the live `lldb` run is deferred.
+
 - **Convention** `spec-review` is now **severity-gated** like `code-review`: findings carry
   `blocking`/`advisory`, the `FLAGGED:` footer carries the blocking ones, and `SPEC_REVIEW:
   CLEAN` means *no unresolved blocking finding* (advisory may remain). The convergence re-pass
