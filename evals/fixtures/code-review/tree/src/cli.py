@@ -14,6 +14,14 @@ def build_parser():
         default="all",
         help="which cache to purge",
     )
+    # The boundary owns the partner timeout: a CLI flag with a default is the right
+    # place for this knob. Downstream code should require the value, not re-default it.
+    parser.add_argument(
+        "--partner-timeout",
+        type=int,
+        default=30,
+        help="partner request timeout (seconds)",
+    )
     return parser
 
 

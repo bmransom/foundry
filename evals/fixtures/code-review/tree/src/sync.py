@@ -8,9 +8,10 @@ from .logging import wide_event
 
 def sync_order(order, endpoint, partner_timeout=30):
     """Serialize the Order's Lines, POST them, store the tracking id (AC-1.1)."""
-    # partner_timeout is a policy default set here, deep in an internal function, and the
-    # same 30 is repeated in poll_status below. The operator configures the timeout at the
-    # CLI (build_parser), so the value defaults far from where it is chosen.
+    # The CLI already owns this knob (build_parser's --partner-timeout, default 30), so
+    # sync_order should *require* partner_timeout, not re-default it. The same 30 is
+    # defaulted again here and in poll_status — the value defaults at two layers below the
+    # boundary, scattering the source of truth.
     payload = json.dumps({"lines": [serialize_line(line) for line in order.lines]})
     request = urllib.request.Request(
         endpoint, data=payload.encode("utf-8"), method="POST"
