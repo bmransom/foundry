@@ -1,6 +1,6 @@
 {
   "pluginVersion": "0.1.0",
-  "conventionVersion": 3,
+  "conventionVersion": 4,
   "harnesses": [
     "claude-code",
     "codex"

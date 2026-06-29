@@ -33,8 +33,11 @@
   arrive later, in update §4/§6 + gate-sync) (AC-4.1, AC-4.2, AC-4.3).
 - T5 `references/migrations/README.md`: add the convention-4 `card-ids` row; bump the head to 4.
   Stamp Foundry's own `.foundry/manifest.json` `conventionVersion: 4` (AC-4.4, AC-4.5).
-- T6 `tests/`: the `card-ids` detector fires on a pre-`Id` fixture board and is idempotent after
-  backfill; the bundled `check-board.py` flips fail→pass (AC-4.1, AC-4.2, AC-4.3).
+- T6 The `card-ids` discrimination is gate-proven by the existing `scripts/test_check_board.py`
+  (`test_claimable_missing_id_fails`, `test_missing_id_column_fails`, blank-id-on-Done passes) —
+  the state the migration restores; the detector is idempotent by construction (it keys on the
+  absent `Id` column the migration adds), matching the other migrations' no-unit-test convention
+  (AC-4.1, AC-4.2, AC-4.3).
 - Gate: `scripts/check-fast.sh` → `check-fast: PASS`; `Gate tool` glossary row + `log.md` entry.
 
 ## Wave 4 — self-host the check (US-5, Foundry-local)
@@ -44,8 +47,8 @@
   in `check-fast.sh`, and that the migration registry head equals `.foundry/manifest.json`
   `conventionVersion` — fail the gate otherwise (AC-5.1, AC-5.2). Foundry-local; **not** a
   verbatim template.
-- T8 `rules/self-host-conventions.md` (or an `AGENTS.md` Boundary): a convention break (board /
-  template / frontmatter structure change) ships with a migration + registry bump, so
+- T8 An `AGENTS.md` Boundary (Foundry-local — it is Foundry's own contract): a convention break
+  (board / template / frontmatter structure change) ships with a migration + registry bump, so
   `code-review` flags a PR that omits it (AC-5.3).
 - T9 `tests/check_gate_tools_test.sh`: a marked script missing from `check-fast.sh` fails the
   lint; a drifted `conventionVersion` fails it; the wired/in-sync state passes (discrimination).

@@ -71,9 +71,10 @@ Foundry's gate, not the shipped `code-review` skill.
   (the deterministic dogfood of `gate-sync`).
 - AC-5.2 THE self-host check SHALL assert the migration registry head equals Foundry's manifest
   `conventionVersion`, failing the gate if a convention shipped without its registry bump.
-- AC-5.3 A `rules/` entry SHALL require that a convention break (a board / template / frontmatter
-  structure change) ships with a migration + registry bump, so `code-review` — which reads the
-  repo contract and `rules/` — flags a PR that omits it (the irreducibly-judgment part).
+- AC-5.3 A repo-contract entry (an `AGENTS.md` Boundary or a `rules/` file) SHALL require that a
+  convention break (a board / template / frontmatter structure change) ships with a migration +
+  registry bump, so `code-review` — which reads the contract — flags a PR that omits it (the
+  irreducibly-judgment part).
 
 ## Metrics
 
