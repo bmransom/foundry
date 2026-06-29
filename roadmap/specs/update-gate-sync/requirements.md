@@ -1,4 +1,4 @@
-> **Status:** Planned (2026-06-28) — design pending approval; tracked on the [board](../../ROADMAP.md).
+> **Status:** Done (2026-06-28) — built, `check-fast: PASS`, `CODE_REVIEW: PASS`; tracked on the [board](../../ROADMAP.md).
 > Companion: [design.md](design.md), [tasks.md](tasks.md).
 
 # Requirements — update-gate-sync
