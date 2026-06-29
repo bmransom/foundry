@@ -34,6 +34,9 @@ find "$REPO/roadmap/specs" "$REPO/knowledge" -name '*.md' ! -name index.md -prin
   | xargs -0 python3 "$REPO/scripts/prose-lint.py"
 python3 "$REPO/scripts/test_prose_lint.py"
 
+echo "== gate tools"
+"$REPO/scripts/check-gate-tools.sh"
+
 echo "== context budget"
 "$REPO/scripts/check-context-budget.sh"
 
