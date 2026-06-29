@@ -73,7 +73,7 @@ The full grading table, evidence sources, and size tripwires live in
 - **Performance / efficiency** — flag a hot-path algorithmic regression, redundant
   IO/model/tool calls, or hoistable per-item work; a hot-path regression blocks, a
   cold-path tuning opportunity is advisory (grounded in the `performance` skill).
-- **Sensible defaults** — flag footgun defaults or unexplained magic values.
+- **Defaults** — flag footgun/magic-value defaults, and a default not at the boundary (buried deep or scattered, no single source of truth): a value defaults once at the highest layer the caller could supply it, required downstream; a real boundary default (CLI flag, public API) is correct.
 - **Robust tests** — flag a test that does not **discriminate** a seeded defect,
   exercises only a fake or the happy path, or omits failure/edge cases.
 
