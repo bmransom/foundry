@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.1.11](https://github.com/bmransom/foundry/compare/v0.1.10...v0.1.11) (2026-06-29)
+
+
+### Features
+
+* **code-review:** coverage beyond the diff — ripple, dead, duplicate ([#55](https://github.com/bmransom/foundry/issues/55)) ([6052721](https://github.com/bmransom/foundry/commit/6052721ca2b9ac4696955d706be4cd5370d298c1))
+* **code-review:** defaults dimension checks placement (default at the boundary) ([#50](https://github.com/bmransom/foundry/issues/50)) ([8a0828e](https://github.com/bmransom/foundry/commit/8a0828edc70cb69577e586faa7054fbfe1c95346))
+* **code-review:** verify-by-execution — run the check, don't just read it ([#58](https://github.com/bmransom/foundry/issues/58)) ([7ab4bf6](https://github.com/bmransom/foundry/commit/7ab4bf6ff4d62cbf71c266495906c1bde0b2c063))
+* **knowledge:** knowledge skill — KB-maintenance judgment, progressive disclosure, OKF differences ([#48](https://github.com/bmransom/foundry/issues/48)) ([8658ff6](https://github.com/bmransom/foundry/commit/8658ff6a3260c2c3bd2b94377d7efe4019e7f961))
+* **update-gate-sync:** gate tools self-declare; bootstrap+update wire them; card-ids migration; self-host lint ([#46](https://github.com/bmransom/foundry/issues/46)) ([dd99019](https://github.com/bmransom/foundry/commit/dd99019366551b570d21903d622f14bc8cc4977e))
+* **verify-by-execution:** live lldb eval — native executor is real, reproduce-or-drop proven ([#59](https://github.com/bmransom/foundry/issues/59)) ([9139217](https://github.com/bmransom/foundry/commit/9139217d1c6640aac518196187b2c7954182dc04))
+
 ## [0.1.10](https://github.com/bmransom/foundry/compare/v0.1.9...v0.1.10) (2026-06-29)
 
 
