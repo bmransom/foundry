@@ -31,9 +31,11 @@ Writing-style block:
 ## Gate wiring — check-fast.sh
 
 Assemble from: the detected stack rows below (only tools the repo actually
-configures), the interview-confirmed commands, and always
-`python3 scripts/knowledge.py check`, `python3 scripts/check-board.py`, and the
-feature-runner command.
+configures), the interview-confirmed commands, always `python3 scripts/knowledge.py check`
+and the feature-runner command, and **every `# foundry-gate-tool:`-marked script in
+`scripts/`** — read each script's marker line for its exact gate invocation, so a new gate
+tool is wired automatically (currently `check-board.py` and `prose-lint.py`; never a
+hardcoded subset).
 
 | Stack | Commands |
 |---|---|
@@ -59,8 +61,13 @@ echo "== tests"
 echo "== knowledge"
 python3 scripts/knowledge.py check
 
+# every `# foundry-gate-tool:`-marked script in scripts/, each at its marker's invocation:
 echo "== board"
 python3 scripts/check-board.py
+
+echo "== prose"
+find roadmap/specs knowledge -name '*.md' ! -name index.md -print0 \
+  | xargs -0 python3 scripts/prose-lint.py
 
 echo "check-fast: PASS"
 ```

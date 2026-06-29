@@ -27,5 +27,6 @@ residue such as a stray `kind:` is a completeness failure, never a trigger.
 |---|---|---|---|---|
 | 2 | `okf-knowledge` | `docs/` concepts and a top-level `specs/` → `knowledge/` + `roadmap/`; `kind`→`type` | a manifest `docs`/`test-docs` entry, `scripts/docs.py`, `docs/docs-config.json`, or a top-level `docs/` directory | [okf-knowledge.md](okf-knowledge.md) |
 | 3 | `harness-agnostic` | `.claude/rules/` → `rules/`; `.foundry-manifest.json` → `.foundry/manifest.json`; record the harness set | a top-level `.foundry-manifest.json` (manifest not yet under `.foundry/`) or a `.claude/rules/` directory | [harness-agnostic.md](harness-agnostic.md) |
+| 4 | `card-ids` | board gains a required slug-safe `Id` column (on claimable cards), enforced by `check-board.py` | a `roadmap/ROADMAP.md` card-table header with no `Id` column, or a manifest `conventionVersion < 4` | [card-ids.md](card-ids.md) |
 
 Convention 1 is the pre-OKF `docs/` layout — no row, because nothing migrates *to* it.

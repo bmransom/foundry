@@ -35,6 +35,11 @@ one script, two triggers. Bypass once with `git push --no-verify`.
   search the prior art and record provenance in `knowledge/glossary.md`.
 - Keep foundry's verbatim-template copies byte-identical to
   `plugins/foundry/templates/verbatim/` (modulo the version marker) — the self-host gate.
+- Ship a convention break (a board, template, or frontmatter structure change) with its
+  migration: add the `references/migrations/` playbook and bump the registry head +
+  `conventionVersion`. A new **gate tool** carries a `# foundry-gate-tool:` marker and is wired
+  into the gate. `check-gate-tools.sh` enforces both mechanically; `code-review` flags a PR that
+  breaks a convention without a migration.
 - Give a behavior-changing template or skill an eval case before it ships.
 - Close a COE only with a mechanical change (gate, lint, rule, or eval fixture), never
   prose.

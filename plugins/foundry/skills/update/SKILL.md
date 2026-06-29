@@ -27,13 +27,9 @@ a later phase until the prior gate is met.
 
 ## 1 · Read state
 
-Read `.foundry/manifest.json` (legacy fallback: a top-level `.foundry-manifest.json`) —
-the shape bootstrap writes and Legacy backfills:
-
-```json
-{ "pluginVersion": "0.2.0", "conventionVersion": 3,
-  "harnesses": ["claude-code"], "files": { "scripts/board.sh": { "template": "board", "version": 1, "sha256": "<hex>" } } }
-```
+Read `.foundry/manifest.json` (legacy fallback: a top-level `.foundry-manifest.json`) — the
+shape bootstrap writes and Legacy backfills: `pluginVersion`, `conventionVersion`, `harnesses`,
+and `files` (each installed verbatim file's `template` / `version` / `sha256`).
 
 `conventionVersion` is the layout the repo is on; absent → §2 places it by detection.
 `harnesses` is the recorded target set; add or remove one per `references/add-harness.md`. No manifest → Legacy mode.
@@ -92,6 +88,10 @@ One table before anything is written — a row per template: path | class (verba
 seed) | verdict (current / refreshed / customized / new / announced; Legacy adds
 pristine-backfilled / needs-review). Then apply refreshes and new installs only: copy
 byte-exact, keep scripts executable, update each manifest entry.
+
+**Gate-sync.** A verbatim script with a `# foundry-gate-tool:` marker belongs in the gate. After installs, grep
+the repo's gate (the command `AGENTS.md` Commands names) for each installed marked tool's basename; flag every
+unwired one with its marker line as the snippet, offer to add it on go-ahead, never silently edit the gate.
 
 ## 7 · Verify
 

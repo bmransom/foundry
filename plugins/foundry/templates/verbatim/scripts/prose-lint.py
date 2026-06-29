@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-# foundry-template: prose-lint v1
+# foundry-template: prose-lint v2
+# foundry-gate-tool: find roadmap/specs knowledge -name '*.md' ! -name index.md -print0 | xargs -0 python3 scripts/prose-lint.py
 """Lint context-resident prose for banned filler phrases — a deterministic writing-style gate.
 
 Usage: prose-lint.py <file.md> [file.md ...]

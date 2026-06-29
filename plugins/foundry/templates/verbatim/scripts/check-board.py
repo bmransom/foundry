@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-# foundry-template: check-board v1
+# foundry-template: check-board v2
+# foundry-gate-tool: python3 scripts/check-board.py
 """Lint the ROADMAP board: card ids must be unique, slug-safe, and present on claimable cards.
 
 Usage: check-board.py [roadmap-path]   (default: roadmap/ROADMAP.md beside this script's repo)
