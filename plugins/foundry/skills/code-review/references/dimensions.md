@@ -43,7 +43,12 @@ Codex when the reviewer is Claude), read-only.
   cannot be talked into agreement.
 - **Per finding:** KEEP it only if you can produce concrete evidence the finding
   is real; else mark it DROP.
-- **DROP-only.** The refuter may only REMOVE a `FLAGGED:` finding, never ADD one.
+- **Verify by execution.** For a **blocking, checkable** finding, *run* the check —
+  `verify-finding.sh run` (its test, a repro snippet, or `lldb` via the `debug` skill),
+  not re-reading: **verified** may block, **refuted** drops, **un-runnable** demotes to
+  advisory (`verify-finding.sh decide`). Execution is the strongest DROP criterion; it is
+  ADDITIVE — single-harness skips it, keeping today's read-based blocking.
+- **DROP-only.** The refuter may only REMOVE or DEMOTE a `FLAGGED:` finding, never ADD one.
   The combined system is recall-monotone-down and precision-up.
 - **Single asymmetric pass.** One pass, one direction — NOT a symmetric debate or
   a multi-round argument. A debate collapses to sycophantic consensus that can
