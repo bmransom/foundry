@@ -2,7 +2,9 @@
 
 The [`debug`](../SKILL.md) workflow is identical under `gdb` — only the spelling
 differs. `gdb` leads on most Linux toolchains (GCC); `lldb` leads on macOS / Clang /
-Swift. Use this map to drive the same loop with `gdb`.
+Swift. For Rust on a gdb host, `rust-gdb` is the wrapper (the `rust-lldb` twin —
+it loads the std pretty-printers; see [`lldb.md`](lldb.md)). Use this map to drive the
+same loop with `gdb`.
 
 ## Driving non-interactively
 
