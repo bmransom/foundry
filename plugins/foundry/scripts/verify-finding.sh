@@ -27,15 +27,14 @@ run() {
     set +e; "$VERIFY_EXEC_CMD" "$kind" "$target" >/dev/null 2>&1; rc=$?; set -e
   else
     case "$kind" in
-      test|snippet)
+      test|snippet|native)
+        # All three run a repro command (exit 0 = the finding reproduces). `native` is an
+        # lldb-driven repro the `debug` skill builds (build -g, breakpoint, run); a finding
+        # with no runnable repro stays unrunnable. Subshell so a check using the `exit`
+        # builtin cannot escape the rc capture.
         if [ -z "$check" ]; then rc=2; else
-          # Subshell so a check using the `exit` builtin cannot escape the rc capture.
           set +e; ( eval "$check" ) >/dev/null 2>&1; rc=$?; set -e
         fi ;;
-      native)
-        # Route to the debug skill (lldb). Live run deferred — without a wired repro,
-        # the native fault is not reproducible here, so: unrunnable (a hypothesis).
-        rc=2 ;;
       *) rc=2 ;;
     esac
   fi
