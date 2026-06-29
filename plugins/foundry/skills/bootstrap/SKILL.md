@@ -13,7 +13,7 @@ with the plugin at `<plugin root>/templates/` — `verbatim/` (byte-exact
 tooling) and `seeds/` (content starting points the repo will own).
 
 Copy into your reply; check off as you go. A gate is a **prohibition**: do not
-start a later phase until the prior gate is met.
+start a phase until the prior gate is met.
 
 - [ ] **1 Inspect** — detect the stack, entrypoints, repo shape. GATE: write the detection report before asking any questions.
 - [ ] **2 Interview** — collect the repo's content. GATE: no files written until every answer is recorded.
@@ -32,19 +32,19 @@ Detect and report before asking anything:
 - Repo shape: service/app, library, or CLI.
 - What already exists: AGENTS.md, CLAUDE.md, CI workflows, hooks, docs.
 
-**The repo owns its existing files.** Never overwrite an existing AGENTS.md, CI
-workflow, or script: merge additively where a section is missing; otherwise
-report the conflict and skip the file.
+**The repo owns its existing files.** Never overwrite an AGENTS.md, CI workflow,
+or script: merge additively where a section is missing; otherwise report the
+conflict and skip the file.
 
 ## 2 · Interview
 
-Ask through the harness's question tool when one is present; accept canned answers
-when the caller supplies them.
+Ask through the harness's question tool when present; accept canned answers the
+caller supplies.
 
-First, the **target harness(es)** — which AI coding tool(s) will run this setup:
+First, the **target harness(es)** — which AI coding tool(s) run this setup:
 Claude Code, Codex, or both (multi-select; default both). It drives what Generate
-emits and is recorded in the manifest; `references/harness-map.md` maps each
-harness's coupling points.
+emits and goes in the manifest; `references/harness-map.md` maps each harness's
+coupling points.
 
 Then the content questions:
 

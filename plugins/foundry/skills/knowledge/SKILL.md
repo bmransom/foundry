@@ -54,11 +54,10 @@ disagreeing about the *same* concept — scoped: files sharing no concept can't 
 ## Progressive disclosure
 
 Read the base by **slice**, never by full-load: `index.md` (the catalog — one line per concept) →
-`knowledge.py outline <concept>` (its heading tree) → `knowledge.py section <concept> <heading>`
-(one section). So a maintainer keeps that path working: run `knowledge.py index` after a change,
-write a tight one-line `description` (the catalog entry), and use clear headings — bad metadata
-breaks disclosure for every later reader. Mark a superseded claim `lifecycle: superseded` rather
-than deleting it; that is Foundry's staleness signal (OKF has none).
+`knowledge.py outline <concept>` (its heading tree) → `knowledge.py section <concept> <heading>`.
+Keep that path working: run `knowledge.py index` after a change, write a tight one-line
+`description`, and use clear headings — bad metadata breaks disclosure. Mark a superseded claim
+`lifecycle: superseded` rather than deleting it — Foundry's staleness signal (OKF has none).
 
 ## Mechanics
 

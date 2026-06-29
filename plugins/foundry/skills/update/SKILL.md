@@ -97,12 +97,11 @@ unwired one with its marker line as the snippet, offer to add it on go-ahead, ne
 
 Migration checks first: `python3 scripts/knowledge.py check`, each applied migration's
 residue scan (per its playbook §Self-verify), manifest-sha match — all green. Then the
-repo's canonical gate (the command AGENTS.md Commands names): require **no
-regression** against the §3 baseline — a check green before must stay green; a gate
-already red before is reported, not blamed. Revert and flag any refresh that broke a
-check. Set the manifest's plugin version to the installed plugin's. Review `git
-status`, propose the commit with explicit paths, **ask before committing**, and leave
-the migration branch for the caller to merge.
+repo's canonical gate (the command AGENTS.md Commands names): require **no regression**
+against the §3 baseline — a gate already red before is reported, not blamed. Revert and
+flag any refresh that broke a check. Set the manifest's plugin version to the installed
+plugin's. Review `git status`, propose the commit with explicit paths, **ask before
+committing**, and leave the migration branch for the caller to merge.
 
 ## Legacy mode — pre-manifest repo
 

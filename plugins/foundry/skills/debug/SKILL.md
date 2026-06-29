@@ -5,14 +5,12 @@ description: Use when debugging a crash, hang, wrong result, or memory fault in 
 
 # Debug
 
-Drive `lldb` to find *why* a native program misbehaves — localize the faulting line
-and the state that proves it, don't guess from the source. The agent runs `lldb`
-through the shell, so prefer **batch mode** over the interactive prompt.
+Drive `lldb` to find *why* a native program misbehaves — localize the faulting line and the
+state that proves it; don't guess from the source. The agent runs `lldb` through the shell, so prefer **batch mode** over the interactive prompt.
 
-**Scope.** This is the debugger tool, not the lifecycle. Use the `code` skill's
-bug-fix path to *frame and fix* a bug; reach for `debug` when localizing a fault in a
-compiled binary or core needs breakpoints and runtime inspection. Generic debugger
-practice — no glossary row; it reuses no coined Foundry terms.
+**Scope.** The debugger tool, not the lifecycle. Use the `code` skill's bug-fix path to
+*frame and fix* a bug; reach for `debug` when localizing a fault in a compiled binary or core
+needs breakpoints and runtime inspection. Generic debugger practice — no glossary row; it reuses no coined Foundry terms.
 
 ## Drive lldb non-interactively
 

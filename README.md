@@ -58,13 +58,17 @@ Installed once at user scope, these run in every repo:
 | `/foundry:bootstrap` | Installs the setup into the current repo: inspect → interview → copy → generate → verify |
 | `/foundry:update` | Refreshes installed templates on a version bump; never overwrites your content |
 | `code` skill | Drives feature work: spec → plan → build → verify → finish |
+| `code-review` skill | Grades a diff against its spec before Finish — completeness, docs sync, defaults, test discrimination |
 | `performance` skill | Treats performance-sensitive work as a lifecycle concern: baseline → benchmark → profile → attribute |
 | `naming-standards` skill | Reviews glossary, API, file, metric, and config names before they become contracts |
 | `design-patterns` skill | Chooses patterns such as Strategy, Adapter, Observer, Factory, Builder, Facade, Decorator, Command, and State when they earn their complexity |
 | `modular-structure` skill | Reviews directory layout, module boundaries, dependency direction, and public/internal APIs |
 | `spec-review` skill | Reviews specs and context-resident prose against the glossary and writing style, preferably in fresh context |
+| `knowledge` skill | Maintains the OKF knowledge base — home selection, the four types, provenance, and coherence |
 | `handoff` skill | Captures verified state and starts a same-harness successor session |
 | `extract-skill` skill | Distills reusable workflows from a session into user, repo, or plugin skills |
+| `debug` skill | Drives `lldb` to localize a fault in native code — breakpoints, stepping, frame and variable inspection |
+| `harness-deliberation` skill | Mediates a Codex + Claude design session with a recorded decision |
 
 ## Setup
 
@@ -88,11 +92,11 @@ codex plugin marketplace add bmransom/foundry
 codex plugin add foundry@foundry
 ```
 
-Then, in the repo you want to set up, run the bootstrap skill — `/foundry:bootstrap` in
-Claude Code, or ask Codex to bootstrap foundry into the repo.
+Then run the bootstrap skill in the target repo — `/foundry:bootstrap` in Claude Code, or
+ask Codex to bootstrap foundry.
 
 It detects your stack, interviews you, installs the setup, and proves it works before
-it proposes a commit. It never overwrites an existing `AGENTS.md`, CI workflow, or
+proposing a commit. It never overwrites an existing `AGENTS.md`, CI workflow, or
 script: it merges additively, or reports the conflict and skips. When the plugin
 version bumps, `/foundry:update` pulls template improvements and leaves your content
 untouched.

@@ -5,8 +5,7 @@ description: Use when designing, reviewing, or refactoring directory layout, mod
 
 # Modular Structure
 
-A clean structure makes ownership and dependency direction obvious. Put code where
-future maintainers will look first, and keep each module's reason to change narrow.
+A clean structure makes ownership and dependency direction obvious. Put code where future maintainers look first, and keep each module's reason to change narrow.
 
 ## Principles
 

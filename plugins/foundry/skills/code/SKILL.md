@@ -5,10 +5,9 @@ description: "Use when implementing, adding, changing, or fixing a feature in a 
 
 # The code lifecycle
 
-The high-level dispatcher for feature work in a foundry repo. Keep repo facts in
-`AGENTS.md`, `rules/`, and the knowledge base; defer judgment-heavy checks to
-lower-level skills so this lifecycle stays small. When a specialized skill fits a
-stage, prefer it — it supersedes the method here; otherwise the stage's instruction stands.
+Dispatches feature work in a foundry repo. Keep repo facts in `AGENTS.md`, `rules/`,
+and the knowledge base; defer judgment-heavy checks to lower-level skills so this
+lifecycle stays small. A specialized skill that fits a stage supersedes the method here; otherwise the stage's instruction stands.
 
 Every repo-specific detail comes from:
 
@@ -20,8 +19,8 @@ Every repo-specific detail comes from:
 | Vocabulary | `knowledge/glossary.md` |
 | The board | `roadmap/ROADMAP.md` |
 
-**Precondition.** If there is no `AGENTS.md` or `roadmap/ROADMAP.md`, stop and
-point the user to the bootstrap skill rather than writing foundry files.
+**Precondition.** Without `AGENTS.md` or `roadmap/ROADMAP.md`, stop and point the
+user to the bootstrap skill rather than writing foundry files.
 
 ## The checklist
 

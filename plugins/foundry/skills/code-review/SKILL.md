@@ -5,9 +5,8 @@ description: Use when reviewing an implementation diff against its spec before F
 
 # Code Review
 
-Review a change in fresh context against its spec and the repo contract. Read-only:
-return findings, never edit the consumer repo. Prefer a fresh context so the
-reviewer sees the code, not the author's rationale.
+Review a change against its spec and the repo contract. Read-only: return findings,
+never edit the consumer repo. Prefer fresh context so the reviewer sees the code, not the author's rationale.
 
 **Provenance.** Code review is generic industry practice, not a coined Foundry
 concept; the `spec-review` sibling has no glossary row, so `code-review` adds none.
