@@ -1,4 +1,4 @@
-> **Status:** Validating (2026-06-28) — implemented, gate green (`check-fast: PASS`); the live `lldb` eval is the pending check; tracked on the [board](../../ROADMAP.md).
+> **Status:** Done (2026-06-28) — implemented, gate green (`check-fast: PASS`), merged via #43; live `lldb` eval passed (discrimination confirmed); tracked on the [board](../../ROADMAP.md).
 > Companion: [requirements.md](requirements.md), [design.md](design.md).
 
 # Tasks — debug-skill
