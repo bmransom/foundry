@@ -14,8 +14,17 @@ form (`breakpoint set`) and the alias (`b`); aliases are shown after `=`.
 | Open a core dump | `lldb -c core ./bin` (macOS cores: raise the limit with `ulimit -c unlimited`) |
 | Environment / cwd | `process launch -E VAR=val -w /path` |
 
-Build first with `cc -g -O0` (or `-Og`); `-O2` elides locals and inlines frames so
-`frame variable` reads `<unavailable>`.
+Build first with debug info; `-O2`/`--release` elides locals and inlines frames so
+`frame variable` reads `<unavailable>`. The command loop below is identical across the
+native family — only the build and the launch wrapper differ:
+
+| Language | Build with symbols | Driver |
+|---|---|---|
+| C / C++ / Obj-C | `cc -g -O0` (or `-Og`) | `lldb` |
+| Rust | `cargo build` (the debug profile carries DWARF) or `rustc -g` | **`rust-lldb`** — wraps `lldb` to load the std pretty-printers, so `Vec`/`String`/`Option`/`Result` print structurally (`rust-gdb` is the gdb twin) |
+| Swift | `swiftc -g`, or a debug build | `lldb` (built-in Swift support) |
+
+`rust-lldb target/debug/<bin>` then drives breakpoints/stepping exactly as below.
 
 ## Breakpoints
 
