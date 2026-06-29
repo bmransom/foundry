@@ -4,6 +4,15 @@
 
 Changes to the knowledge base, newest first. A reserved OKF file — no frontmatter.
 
+## 2026-06-29
+
+- **Convention** `code-review`'s defaults dimension now checks **placement**, not just
+  sensibility: a value should default once at the boundary (the highest layer the caller could
+  supply it), with mandatory parameters downstream — the reviewer flags a buried or scattered
+  default (no single source of truth), generalizing the `reviewer-effort` default-at-the-top
+  principle. Eval: a seeded buried/scattered `partner_timeout` default (V6) in the `code-review`
+  fixture.
+
 ## 2026-06-28
 
 - **Update** Added the **`knowledge`** skill (`plugins/foundry/skills/knowledge/`): the

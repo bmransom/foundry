@@ -5,7 +5,8 @@
     { "id": "V2", "signature": "sync complete", "type": "logging-mix-raw-print" },
     { "id": "V3", "signature": "gargantuan_pricing_engine", "type": "oversized-function" },
     { "id": "V4", "signature": "--purge-cache", "type": "public-cli-behavior-without-docs" },
-    { "id": "V5", "signature": "shipping job", "type": "debt-term-outside-replaces" }
+    { "id": "V5", "signature": "shipping job", "type": "debt-term-outside-replaces" },
+    { "id": "V6", "signature": "partner_timeout", "type": "buried-scattered-default" }
   ],
   "decoys": [
     { "id": "D1", "signature": "print --help", "type": "legitimate-cli-surface" },
