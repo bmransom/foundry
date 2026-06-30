@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.12](https://github.com/bmransom/foundry/compare/v0.1.11...v0.1.12) (2026-06-30)
+
+
+### Features
+
+* **knowledge:** lifecycle-aware listings, okf_version in index, README dead-link fix ([#61](https://github.com/bmransom/foundry/issues/61)) ([fc9399c](https://github.com/bmransom/foundry/commit/fc9399c589e513f668e39bd6b68e4b70fba843b4))
+
 ## [0.1.11](https://github.com/bmransom/foundry/compare/v0.1.10...v0.1.11) (2026-06-29)
 
 
