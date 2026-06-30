@@ -6,6 +6,11 @@ Changes to the knowledge base, newest first. A reserved OKF file — no frontmat
 
 ## 2026-06-29
 
+- **Update** knowledge-listing fidelity (`okf-listing-fidelity`): `knowledge/README.md` is now a
+  reserved file (it was `srcExclude`d from the vitepress build yet listed → a dead sidebar link); the
+  generated `index.md` declares `okf_version`; and `list`/`index.md`/sidebar order current concepts
+  first, tagging non-current ones `(superseded)`/`(historical)`.
+
 - **Validation** verify-by-execution's **native executor is live-proven**:
   `evals/harness/verify-exec-live.sh` builds the debug fixture with ASan + symbols and drives a
   **real `lldb` session** through `verify-finding.sh run native` — the seeded heap-OOB reproduces →

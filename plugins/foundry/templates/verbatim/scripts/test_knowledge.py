@@ -208,17 +208,9 @@ class ListOutputTests(unittest.TestCase):
         self.assertIn("[lp · 2026-06-05]", text)
 
     def test_list_tags_noncurrent_and_trails_it(self):
+        # Input is mis-ordered (non-current first) so the assertion discriminates the
+        # current_first sort: a no-op sort would leave 'old' ahead of 'new' and fail.
         concepts = [
-            {
-                "path": "knowledge/new.md",
-                "title": "New",
-                "description": "live",
-                "type": "decision",
-                "crate": None,
-                "lifecycle": "current",
-                "_ok": True,
-                "_meta": {},
-            },
             {
                 "path": "knowledge/old.md",
                 "title": "Old",
@@ -226,6 +218,16 @@ class ListOutputTests(unittest.TestCase):
                 "type": "decision",
                 "crate": None,
                 "lifecycle": "superseded",
+                "_ok": True,
+                "_meta": {},
+            },
+            {
+                "path": "knowledge/new.md",
+                "title": "New",
+                "description": "live",
+                "type": "decision",
+                "crate": None,
+                "lifecycle": "current",
                 "_ok": True,
                 "_meta": {},
             },
@@ -273,15 +275,9 @@ class IndexTests(unittest.TestCase):
         self.assertIn("* [Glossary](/glossary) - the contract", out)
 
     def test_index_trails_and_tags_noncurrent(self):
+        # Mis-ordered input (non-current first) so the order assertion discriminates
+        # the current_first sort, not a coincidence of input order.
         concepts = [
-            {
-                "path": "knowledge/new.md",
-                "title": "New",
-                "description": "live",
-                "type": "decision",
-                "crate": None,
-                "lifecycle": "current",
-            },
             {
                 "path": "knowledge/old.md",
                 "title": "Old",
@@ -289,6 +285,14 @@ class IndexTests(unittest.TestCase):
                 "type": "decision",
                 "crate": None,
                 "lifecycle": "superseded",
+            },
+            {
+                "path": "knowledge/new.md",
+                "title": "New",
+                "description": "live",
+                "type": "decision",
+                "crate": None,
+                "lifecycle": "current",
             },
         ]
         out = knowledge.build_index(concepts, MINIMAL_CONFIG)
@@ -426,20 +430,22 @@ class SiteGenTests(unittest.TestCase):
         self.assertTrue(dec["collapsed"])
 
     def test_build_sidebar_tags_and_trails_noncurrent(self):
+        # Mis-ordered input (non-current first) so the expected [New, Old] output
+        # discriminates the current_first sort rather than echoing input order.
         concepts = [
-            {
-                "path": "knowledge/new.md",
-                "title": "New",
-                "type": "decision",
-                "crate": None,
-                "lifecycle": "current",
-            },
             {
                 "path": "knowledge/old.md",
                 "title": "Old",
                 "type": "decision",
                 "crate": None,
                 "lifecycle": "historical",
+            },
+            {
+                "path": "knowledge/new.md",
+                "title": "New",
+                "type": "decision",
+                "crate": None,
+                "lifecycle": "current",
             },
         ]
         sidebar = knowledge.build_sidebar(concepts, MINIMAL_CONFIG)

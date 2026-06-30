@@ -44,7 +44,7 @@
     "scripts/test_knowledge.py": {
       "template": "test-knowledge",
       "version": 2,
-      "sha256": "1caebbf7baa703b9c30fe1469e4543f7ab23e64236e2fac22ace004051cdcf2f"
+      "sha256": "fbd1710837488074b2e11da3cc0f7873a9e0926b782fdf00894c9dbd8d1e263f"
     },
     "scripts/worktree-retire.sh": {
       "template": "worktree-retire",
