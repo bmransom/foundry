@@ -62,7 +62,15 @@ Consider all five skills below for every feature — apply each, or note **N/A**
 4. Use `modular-structure` for placement, bounded contexts, dependency direction, public/internal APIs, and directory shape.
 5. Use `performance` for hot paths, resource use, model/tool calls, and user-visible latency.
 
-**Gate:** no implementation until the Design is approved.
+**De-risk before you commit.** The required context map (`roadmap/specs/README.md` §Diagrams)
+locates each stage of the routine and its per-context algorithm — not just the boxes. For any
+assumption you can't settle on paper — an algorithm's feasibility, an interface's fit, a
+performance ceiling — design a **tracer bullet**: the thinnest end-to-end slice that tests it,
+run before the design locks. Low confidence is a spec signal, not a Build risk — keep speccing
+and firing tracer bullets until the design holds.
+
+**Gate:** no implementation until the Design is approved — every open assumption resolved or
+carried by a tracer bullet, never absorbed into Build.
 
 ## 2 · Plan
 

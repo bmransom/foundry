@@ -3,7 +3,7 @@ title: Spec format
 description: How specs are written — requirements, design, and tasks per feature.
 ---
 
-<!-- foundry-seed: specs-readme v2 -->
+<!-- foundry-seed: specs-readme v3 -->
 
 # Specs
 
@@ -49,7 +49,8 @@ diagram where the component has object-oriented or typed structure — a shell-o
 component uses architecture plus data-flow, not a class diagram. Diagrams are reviewed
 twice: by `spec-review` at design time (accuracy and glossary vocabulary) and by
 `code-review`'s docs-sync at build time (the diagram matches the shipped code; drift is
-a finding).
+a finding). Where the feature has a core routine, the diagram locates each of its stages and
+the algorithm in each context — not just the boxes.
 
 ## Review before approval
 
