@@ -9,7 +9,8 @@
     { "id": "V6", "signature": "partner_timeout", "type": "buried-scattered-default" },
     { "id": "V7", "signature": "expired", "type": "ripple-half-applied-change" },
     { "id": "V8", "signature": "format_legacy_report", "type": "dead-code-orphaned" },
-    { "id": "V9", "signature": "summarize_partner_failure", "type": "duplicate-extractable" }
+    { "id": "V9", "signature": "summarize_partner_failure", "type": "duplicate-extractable" },
+    { "id": "V10", "signature": "PARTNER_API_KEY", "type": "ambient-env-read-below-boundary" }
   ],
   "decoys": [
     { "id": "D1", "signature": "print --help", "type": "legitimate-cli-surface" },
@@ -21,6 +22,7 @@
     { "id": "D7", "signature": "per_order_cost", "type": "guarded-read-context" },
     { "id": "D8", "signature": "order_sync_version", "type": "public-api-not-dead" },
     { "id": "D9", "signature": "order_key", "type": "coincidental-duplication" },
-    { "id": "D10", "signature": "line_key", "type": "coincidental-duplication" }
+    { "id": "D10", "signature": "line_key", "type": "coincidental-duplication" },
+    { "id": "D11", "signature": "PARTNER_ENDPOINT", "type": "boundary-env-read-populates-config" }
   ]
 }

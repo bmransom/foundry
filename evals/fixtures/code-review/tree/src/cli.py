@@ -1,6 +1,7 @@
 """Cache-purge CLI (AC-3.1)."""
 
 import argparse
+import os
 
 
 def build_parser():
@@ -21,6 +22,15 @@ def build_parser():
         type=int,
         default=30,
         help="partner request timeout (seconds)",
+    )
+    # CORRECT: the boundary may read the environment to populate a config default.
+    # This is the right place for an env read — PARTNER_ENDPOINT seeds the CLI default,
+    # and downstream code receives the resolved value as config; it does not read the
+    # environment itself. Not a Config violation.
+    parser.add_argument(
+        "--partner-endpoint",
+        default=os.environ.get("PARTNER_ENDPOINT", "https://partner.example/api"),
+        help="partner API endpoint",
     )
     return parser
 

@@ -52,8 +52,7 @@ Resolve the **autonomy** dial first — the level + stop-point bounding how far 
 
 ## 1 · Spec
 
-Write `roadmap/specs/<feature>/{requirements,design,tasks}.md` in the format
-`roadmap/specs/README.md` defines and the vocabulary of `knowledge/glossary.md`.
+Write `roadmap/specs/<feature>/{requirements,design,tasks}.md` in the format `roadmap/specs/README.md` defines, in the vocabulary of `knowledge/glossary.md`.
 Consider all five skills below for every feature — apply each, or note **N/A** with a reason. Name the metrics that tell whether the feature works, or N/A. Never skip silently; re-loop on any spec or vocabulary change:
 
 1. Use `spec-review` in fresh context (requirements, design, tasks) — the spec-convergence loop: re-review after each edit until `SPEC_REVIEW: CLEAN`, cap 10; at the cap, surface remaining `FLAGGED:` findings and hold the Design gate.
@@ -62,15 +61,9 @@ Consider all five skills below for every feature — apply each, or note **N/A**
 4. Use `modular-structure` for placement, bounded contexts, dependency direction, public/internal APIs, and directory shape.
 5. Use `performance` for hot paths, resource use, model/tool calls, and user-visible latency.
 
-**De-risk before you commit.** The required context map (`roadmap/specs/README.md` §Diagrams)
-locates each stage of the routine and its per-context algorithm — not just the boxes. For any
-assumption you can't settle on paper — an algorithm's feasibility, an interface's fit, a
-performance ceiling — design a **tracer bullet**: the thinnest end-to-end slice that tests it,
-run before the design locks. Low confidence is a spec signal, not a Build risk — keep speccing
-and firing tracer bullets until the design holds.
+**De-risk before Build.** For any assumption you can't settle on paper — an algorithm's feasibility, an interface's fit, a performance ceiling — design a **tracer bullet** (the thinnest end-to-end slice that tests it) and run it before the design locks. Low confidence is a spec signal, not a Build risk: keep speccing until the design holds.
 
-**Gate:** no implementation until the Design is approved — every open assumption resolved or
-carried by a tracer bullet, never absorbed into Build.
+**Gate:** no implementation until the Design is approved — every open assumption resolved or carried by a tracer bullet, never absorbed into Build.
 
 ## 2 · Plan
 
