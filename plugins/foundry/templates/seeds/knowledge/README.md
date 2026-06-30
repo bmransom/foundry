@@ -4,7 +4,7 @@ description: How the knowledge base is organized — the four types, the knowled
 type: reference
 ---
 
-<!-- foundry-seed: knowledge-readme v1 -->
+<!-- foundry-seed: knowledge-readme v2 -->
 
 # Knowledge
 
@@ -32,7 +32,8 @@ Every concept carries frontmatter — `title`, `description`, and one `type`:
 ## Reserved files
 
 `index.md` is the generated listing (the site home); `log.md` is the change log,
-newest first. Both follow the Open Knowledge Format — no frontmatter.
+newest first. Both follow the Open Knowledge Format; `index.md` declares
+`okf_version` in its frontmatter, `log.md` carries none.
 
 ## See also
 

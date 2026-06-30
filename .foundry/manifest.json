@@ -38,13 +38,13 @@
     },
     "scripts/knowledge.py": {
       "template": "knowledge",
-      "version": 1,
-      "sha256": "9d65fb962c3dad26494fb88a137c4f79f4d034ec2c20a05b3131691ad7dd426a"
+      "version": 2,
+      "sha256": "83801d9d1c275fda71ef2b2e5f9d697cadfedd4a1ceb164d7f2dcb4c8294be78"
     },
     "scripts/test_knowledge.py": {
       "template": "test-knowledge",
-      "version": 1,
-      "sha256": "99716ecccee5792945c68ff319350304924f1c6fa37166c5ce8aed31b24a6c93"
+      "version": 2,
+      "sha256": "fbd1710837488074b2e11da3cc0f7873a9e0926b782fdf00894c9dbd8d1e263f"
     },
     "scripts/worktree-retire.sh": {
       "template": "worktree-retire",

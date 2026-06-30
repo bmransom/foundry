@@ -9,7 +9,8 @@ Foundry's knowledge base is a Google **Open Knowledge Format** bundle — the fo
 - **Frontmatter** — `type`, `title`, `description` (Foundry requires all three), plus a
   `lifecycle` (`current` / `superseded` / `historical`).
 - **Reserved files** — `index.md` (a generated catalog for *progressive disclosure*, one line per
-  concept) and `log.md` (the dated, newest-first change history).
+  concept, opening with an `okf_version` frontmatter that declares bundle conformance) and
+  `log.md` (the dated, newest-first change history).
 - **Links are the graph** — a markdown link from A to B asserts a relationship; the relationship
   lives in the prose, not the link.
 - **Read by slice** — navigate `index.md` → `knowledge.py outline <concept>` → `section <concept>

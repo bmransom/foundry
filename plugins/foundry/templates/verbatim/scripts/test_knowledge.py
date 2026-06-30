@@ -1,4 +1,4 @@
-# foundry-template: test-knowledge v1
+# foundry-template: test-knowledge v2
 import json
 import os
 import sys
@@ -207,6 +207,35 @@ class ListOutputTests(unittest.TestCase):
         self.assertIn("knowledge/glossary.md", text)
         self.assertIn("[lp · 2026-06-05]", text)
 
+    def test_list_tags_noncurrent_and_trails_it(self):
+        # Input is mis-ordered (non-current first) so the assertion discriminates the
+        # current_first sort: a no-op sort would leave 'old' ahead of 'new' and fail.
+        concepts = [
+            {
+                "path": "knowledge/old.md",
+                "title": "Old",
+                "description": "stale",
+                "type": "decision",
+                "crate": None,
+                "lifecycle": "superseded",
+                "_ok": True,
+                "_meta": {},
+            },
+            {
+                "path": "knowledge/new.md",
+                "title": "New",
+                "description": "live",
+                "type": "decision",
+                "crate": None,
+                "lifecycle": "current",
+                "_ok": True,
+                "_meta": {},
+            },
+        ]
+        text = knowledge.format_list(concepts, MINIMAL_CONFIG)
+        self.assertIn("[superseded]", text)
+        self.assertLess(text.index("knowledge/new.md"), text.index("knowledge/old.md"))
+
     def test_public_view_drops_internal_keys(self):
         view = knowledge.public_view(self._concepts()[0])
         self.assertEqual(
@@ -231,14 +260,46 @@ class IndexTests(unittest.TestCase):
             }
         ]
 
-    def test_index_has_no_frontmatter(self):
+    def test_index_declares_okf_version(self):
         out = knowledge.build_index(self._concepts(), MINIMAL_CONFIG)
-        self.assertFalse(out.startswith("---"))
+        self.assertTrue(out.startswith("---\nokf_version: 0.1\n---\n"))
+
+    def test_index_okf_version_from_config(self):
+        config = {**MINIMAL_CONFIG, "okf_version": "0.2"}
+        out = knowledge.build_index(self._concepts(), config)
+        self.assertIn("okf_version: 0.2", out)
 
     def test_index_lists_entry_with_link_and_description(self):
         out = knowledge.build_index(self._concepts(), MINIMAL_CONFIG)
         self.assertIn("## Reference", out)
         self.assertIn("* [Glossary](/glossary) - the contract", out)
+
+    def test_index_trails_and_tags_noncurrent(self):
+        # Mis-ordered input (non-current first) so the order assertion discriminates
+        # the current_first sort, not a coincidence of input order.
+        concepts = [
+            {
+                "path": "knowledge/old.md",
+                "title": "Old",
+                "description": "stale",
+                "type": "decision",
+                "crate": None,
+                "lifecycle": "superseded",
+            },
+            {
+                "path": "knowledge/new.md",
+                "title": "New",
+                "description": "live",
+                "type": "decision",
+                "crate": None,
+                "lifecycle": "current",
+            },
+        ]
+        out = knowledge.build_index(concepts, MINIMAL_CONFIG)
+        # current leads, superseded trails and carries an italic lifecycle tag
+        self.assertLess(out.index("[New]"), out.index("[Old]"))
+        self.assertIn("* [Old](/old) - stale _(superseded)_", out)
+        self.assertNotIn("New](/new) - live _(", out)
 
     def test_check_fails_when_index_stale(self):
         with tempfile.TemporaryDirectory() as root:
@@ -367,6 +428,29 @@ class SiteGenTests(unittest.TestCase):
         self.assertFalse(ref["collapsed"])
         dec = next(s for s in sidebar if s["text"] == "Decision")
         self.assertTrue(dec["collapsed"])
+
+    def test_build_sidebar_tags_and_trails_noncurrent(self):
+        # Mis-ordered input (non-current first) so the expected [New, Old] output
+        # discriminates the current_first sort rather than echoing input order.
+        concepts = [
+            {
+                "path": "knowledge/old.md",
+                "title": "Old",
+                "type": "decision",
+                "crate": None,
+                "lifecycle": "historical",
+            },
+            {
+                "path": "knowledge/new.md",
+                "title": "New",
+                "type": "decision",
+                "crate": None,
+                "lifecycle": "current",
+            },
+        ]
+        sidebar = knowledge.build_sidebar(concepts, MINIMAL_CONFIG)
+        items = next(s for s in sidebar if s["text"] == "Decision")["items"]
+        self.assertEqual([i["text"] for i in items], ["New", "Old (historical)"])
 
     def test_sync_copies_crate_concepts_into_site(self):
         with tempfile.TemporaryDirectory() as root:

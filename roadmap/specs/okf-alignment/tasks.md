@@ -23,8 +23,8 @@ boxes; remaining validation is the full bootstrap/reviewer eval confirmation.
 ### Wave 3: Concept content  (depends on Wave 2)
 - [ ] T8: flip `kind:`→`type:` — `knowledge/{glossary,validation,coe-template,releasing,README}.md`. AC-1.1
 - [ ] T9: flip `kind:`→`type:` — `plugins/foundry/templates/seeds/knowledge/{glossary,validation,coe-template,README}.md`. AC-1.1/4.1
-- [ ] T10 (D3): confirm `README.md` is an ordinary concept (`type: reference`, not reserved) so it lints + lists — covered by T6 `reserved_files` + T8/T9. AC-1.4
-- [ ] T11 (D2): regenerate the OKF listing (no frontmatter) via `knowledge.py index` — `knowledge/index.md` + seed. AC-1.4
+- [ ] T10 (D3): confirm `README.md` is an ordinary concept (`type: reference`, not reserved) so it lints + lists — covered by T6 `reserved_files` + T8/T9. AC-1.4 *(superseded by `okf-listing-fidelity`: `README.md` is now reserved — it was `srcExclude`d yet listed → a dead link.)*
+- [ ] T11 (D2): regenerate the OKF listing (no frontmatter) via `knowledge.py index` — `knowledge/index.md` + seed. AC-1.4 *(amended by `okf-listing-fidelity`: the listing now carries an `okf_version` frontmatter.)*
 - [ ] T12: add OKF §7 change log (no frontmatter; `## YYYY-MM-DD`, newest first) — `knowledge/log.md` + seed. AC-3.1
 
 ### Wave 4: Rules, glossary, roadmap strip  (depends on Wave 1; parallel with Wave 3)

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# foundry-template: knowledge v1
+# foundry-template: knowledge v2
 """knowledge — list and lint the curated knowledge concepts by type + description.
 
 Dev tooling for agents/humans navigating this repo's knowledge base. Not part of
@@ -164,6 +164,19 @@ def public_view(concept):
     }
 
 
+def noncurrent_lifecycle(concept):
+    """The lifecycle name when a concept is not current, else '' — the de-emphasis
+    tag the listings carry so a superseded/historical record never reads as live."""
+    lifecycle = concept.get("lifecycle") or "current"
+    return "" if lifecycle == "current" else lifecycle
+
+
+def current_first(group):
+    """Stable-sort a type group so current concepts lead and non-current trail,
+    preserving path order within each tier."""
+    return sorted(group, key=lambda c: bool(noncurrent_lifecycle(c)))
+
+
 def format_list(concepts, config):
     """Render concepts grouped by type, one line each, as a string."""
     types = config["types"]
@@ -173,12 +186,14 @@ def format_list(concepts, config):
         if not group:
             continue
         out.append(type_name.upper() + (" (dated)" if type_name == "decision" else ""))
-        for concept in group:
+        for concept in current_first(group):
             bits = []
             if concept["crate"]:
                 bits.append(concept["crate"])
             if type_name == "decision" and concept["_meta"].get("updated"):
                 bits.append(concept["_meta"]["updated"])
+            if noncurrent_lifecycle(concept):
+                bits.append(noncurrent_lifecycle(concept))
             tag = f" [{' · '.join(bits)}]" if bits else ""
             out.append(f"  {concept['path']}{tag}  {concept['description']}")
     return "\n".join(out)
@@ -254,22 +269,28 @@ def site_url(path):
 
 
 def build_index(concepts, config):
-    """OKF directory listing (§6): no frontmatter; a section per type;
-    '* [Title](/url) - description' entries. Doubles as the VitePress home."""
+    """OKF bundle-root index (§6): an `okf_version` frontmatter declaring conformance,
+    then a section per type with '* [Title](/url) - description' entries. Non-current
+    concepts trail their type and carry an italic lifecycle tag. Doubles as the
+    VitePress home."""
     types = config["types"]
     title = config.get("index_title", "Knowledge")
-    out = [f"# {title}", ""]
+    okf_version = config.get("okf_version", "0.1")
+    out = ["---", f"okf_version: {okf_version}", "---", "", f"# {title}", ""]
     for type_name in types:
         group = [c for c in concepts if c["type"] == type_name]
         if not group:
             continue
         out.append(f"## {type_name.capitalize()}")
         out.append("")
-        for concept in group:
+        for concept in current_first(group):
             label = concept["title"] or concept["path"]
             link = site_url(concept["path"])
             desc = concept["description"]
             entry = f"* [{label}]({link}) - {desc}" if desc else f"* [{label}]({link})"
+            lifecycle = noncurrent_lifecycle(concept)
+            if lifecycle:
+                entry += f" _({lifecycle})_"
             out.append(entry)
         out.append("")
     return "\n".join(out).rstrip() + "\n"
@@ -292,15 +313,19 @@ def check_index_fresh(root, config):
 
 
 def build_sidebar(concepts, config):
-    """VitePress sidebar: one collapsible section per type, items by title."""
+    """VitePress sidebar: one collapsible section per type, items by title.
+    Non-current concepts trail their type and carry a lifecycle tag."""
     types = config["types"]
     sidebar = []
     for type_name in types:
-        items = [
-            {"text": c["title"] or c["path"], "link": site_url(c["path"])}
-            for c in concepts
-            if c["type"] == type_name
-        ]
+        group = [c for c in concepts if c["type"] == type_name]
+        items = []
+        for c in current_first(group):
+            text = c["title"] or c["path"]
+            lifecycle = noncurrent_lifecycle(c)
+            if lifecycle:
+                text += f" ({lifecycle})"
+            items.append({"text": text, "link": site_url(c["path"])})
         if items:
             sidebar.append(
                 {

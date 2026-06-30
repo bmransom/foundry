@@ -12,8 +12,8 @@ Align foundry's knowledge subsystem to the [Open Knowledge Format](https://githu
 
 - AC-1.1 WHERE a non-reserved markdown file exists under `knowledge/`, THE SYSTEM SHALL require a non-empty `type` frontmatter field, replacing `kind`.
 - AC-1.2 WHEN the knowledge tool runs `check`, IF a non-reserved `knowledge/**/*.md` file lacks a parseable, non-empty `type`, THEN it SHALL exit nonzero naming the file.
-- AC-1.3 THE SYSTEM SHALL treat `knowledge/index.md` and `knowledge/log.md` as reserved files (no frontmatter) and exclude them from the `type` lint.
-- AC-1.4 WHERE `knowledge/index.md` exists, THE SYSTEM SHALL render it as both an OKF directory listing (no frontmatter; section headings over `* [Title](/url) - description` entries) and the vitepress site home, with no `layout: home` hero.
+- AC-1.3 THE SYSTEM SHALL treat `knowledge/index.md`, `knowledge/log.md`, and `knowledge/README.md` as reserved files and exclude them from the `type` lint. (`README.md` reserved by `okf-listing-fidelity`; `index.md` carries an `okf_version` frontmatter, `log.md` none.)
+- AC-1.4 WHERE `knowledge/index.md` exists, THE SYSTEM SHALL render it as both an OKF directory listing (an `okf_version`-only frontmatter — amended by `okf-listing-fidelity`; section headings over `* [Title](/url) - description` entries) and the vitepress site home, with no `layout: home` hero.
 - AC-1.5 THE SYSTEM SHALL keep `type` values constrained to the enumerated set `reference | architecture | guide | decision` — foundry remains stricter than OKF's open-string `type` by deliberate choice (curated knowledge base).
 - AC-1.6 THE SYSTEM SHALL scope the concept format to `knowledge/`. Roadmap and features files (`roadmap/ROADMAP.md`, `roadmap/BACKLOG.md`, `roadmap/specs/**`, `features/**`) are not concepts and SHALL NOT carry `type`/`kind` frontmatter; the vestigial `kind: reference` on these files — foundry's own and the seeds — SHALL be removed, preserving any `foundry-seed:` marker.
 
