@@ -66,6 +66,66 @@ def parse_claude_stream_json(raw: str) -> StageResult:
     )
 
 
+def parse_codex_jsonl(raw: str) -> StageResult:
+    """Parse codex exec's `--json` JSONL event stream.
+
+    `item.completed` events with `item.type == "agent_message"` carry the agent's
+    text (the last one wins, matching a multi-turn run's final reply). `turn.completed`
+    carries token usage: `input_tokens`/`output_tokens` are already totals — unlike
+    claude's cache accounting, codex's `cached_input_tokens` and
+    `reasoning_output_tokens` are subset breakdowns already counted in those totals
+    (OpenAI usage-object semantics), not additional. A `turn.failed` event (or a
+    top-level `error` event with no successful turn) signals failure: exit_status 1,
+    text carries the error message, no token usage.
+    """
+    text = None
+    input_tokens = 0
+    output_tokens = 0
+    failed = False
+    error_message = None
+
+    for lineno, line in enumerate(raw.splitlines(), start=1):
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            event = json.loads(line)
+        except json.JSONDecodeError as e:
+            raise ParseError(f"malformed codex jsonl at line {lineno}: {e}") from e
+
+        event_type = event.get("type")
+        if event_type == "item.completed" and event.get("item", {}).get("type") == "agent_message":
+            text = event["item"].get("text")
+        elif event_type == "turn.completed":
+            usage = event.get("usage", {})
+            input_tokens = usage.get("input_tokens", 0)
+            output_tokens = usage.get("output_tokens", 0)
+        elif event_type == "turn.failed":
+            failed = True
+            error_message = event.get("error", {}).get("message")
+        elif event_type == "error":
+            error_message = event.get("message", error_message)
+
+    if failed:
+        return StageResult(
+            text=error_message or "codex run failed",
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+            exit_status=1,
+        )
+
+    if text is None:
+        raise ParseError("no 'agent_message' item found in codex jsonl output")
+
+    return StageResult(
+        text=text,
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
+        exit_status=0,
+    )
+
+
 PARSERS = {
     "claude-stream-json": parse_claude_stream_json,
+    "codex-jsonl": parse_codex_jsonl,
 }

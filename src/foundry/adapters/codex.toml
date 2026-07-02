@@ -1,0 +1,13 @@
+name = "codex"
+
+[instruction]
+file = "AGENTS.md"      # codex reads AGENTS.md natively -- no pointer symlink needed
+
+[headless]
+command = ["codex", "exec", "--json", "--sandbox", "workspace-write",
+           "-m", "{model}", "@{prompt_file}"]
+effort_args = ["-c", "model_reasoning_effort={effort}"]   # appended only when effort is set
+parser = "codex-jsonl"
+
+[interactive]
+command = ["codex", "-m", "{model}"]

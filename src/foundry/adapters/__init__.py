@@ -32,7 +32,7 @@ class AdapterError(Exception):
 class Adapter:
     name: str
     instruction_file: str
-    instruction_pointer: str
+    instruction_pointer: str | None
     headless_command: tuple
     effort_args: tuple
     parser_name: str
@@ -56,6 +56,14 @@ def _str(table: dict, key: str, qualified_name: str) -> str:
     if not isinstance(value, str):
         raise AdapterError(f"{qualified_name}.{key}: must be a string")
     return value
+
+
+def _str_optional(table: dict, key: str, qualified_name: str) -> str | None:
+    """Like _str, but a missing key is None rather than an error (e.g. codex has
+    no CLAUDE.md-style pointer -- it reads AGENTS.md natively)."""
+    if key not in table:
+        return None
+    return _str(table, key, qualified_name)
 
 
 def _str_list(table: dict, key: str, qualified_name: str) -> tuple:
@@ -82,7 +90,7 @@ def load(name: str) -> Adapter:
     return Adapter(
         name=adapter_name,
         instruction_file=_str(instruction, "file", f"{adapter_name}.instruction"),
-        instruction_pointer=_str(instruction, "pointer", f"{adapter_name}.instruction"),
+        instruction_pointer=_str_optional(instruction, "pointer", f"{adapter_name}.instruction"),
         headless_command=_str_list(headless, "command", f"{adapter_name}.headless"),
         effort_args=_str_list(headless, "effort_args", f"{adapter_name}.headless")
         if "effort_args" in headless

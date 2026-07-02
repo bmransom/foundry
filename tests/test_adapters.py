@@ -14,10 +14,16 @@ from foundry.adapters import (
     headless,
     load,
 )
-from foundry.adapters.parsers import ParseError, StageResult, parse_claude_stream_json
+from foundry.adapters.parsers import (
+    ParseError,
+    StageResult,
+    parse_claude_stream_json,
+    parse_codex_jsonl,
+)
 from foundry.config import Route
 
 FIXTURES = Path(__file__).parent / "fixtures" / "adapters" / "claude-code"
+CODEX_FIXTURES = Path(__file__).parent / "fixtures" / "adapters" / "codex"
 
 
 # --- TOML load ---------------------------------------------------------
@@ -236,3 +242,122 @@ def test_parse_claude_stream_json_is_error_maps_to_nonzero_exit_status():
 
     assert result.exit_status == 1
     assert result.text == "boom"
+
+
+# --- codex: TOML load -----------------------------------------------------
+
+
+def test_load_codex_adapter():
+    adapter = load("codex")
+
+    assert isinstance(adapter, Adapter)
+    assert adapter.name == "codex"
+    assert adapter.instruction_file == "AGENTS.md"
+    assert adapter.headless_command == (
+        "codex", "exec", "--json", "--sandbox", "workspace-write",
+        "-m", "{model}", "@{prompt_file}",
+    )
+    assert adapter.effort_args == ("-c", "model_reasoning_effort={effort}")
+    assert adapter.parser_name == "codex-jsonl"
+    assert adapter.interactive_command == ("codex", "-m", "{model}")
+
+
+def test_load_codex_adapter_tolerates_missing_pointer():
+    # codex reads AGENTS.md natively: no CLAUDE.md-style symlink pointer needed.
+    adapter = load("codex")
+
+    assert adapter.instruction_pointer is None
+
+
+# --- codex: effort omitted / appended -------------------------------------
+
+
+def _codex_fixture_text(name: str) -> str:
+    return (CODEX_FIXTURES / name).read_text()
+
+
+def test_codex_headless_omits_effort_args_when_effort_unset():
+    adapter = load("codex")
+    runner = RecordingRunner(_codex_fixture_text("hello.jsonl"))
+    route = Route(harness="codex", model="gpt-5.5", effort=None)
+
+    headless(adapter, "/tmp/prompt.md", route, "/tmp/ws", run=runner)
+
+    argv, workspace = runner.calls[0]
+    assert "-c" not in argv
+    assert "model_reasoning_effort=high" not in argv
+    assert workspace == "/tmp/ws"
+
+
+def test_codex_headless_appends_effort_args_when_effort_set():
+    adapter = load("codex")
+    runner = RecordingRunner(_codex_fixture_text("hello.jsonl"))
+    route = Route(harness="codex", model="gpt-5.5", effort="high")
+
+    headless(adapter, "/tmp/prompt.md", route, "/tmp/ws", run=runner)
+
+    argv, _ = runner.calls[0]
+    assert argv[-2:] == ["-c", "model_reasoning_effort=high"]
+
+
+def test_codex_headless_returns_parsed_stage_result():
+    adapter = load("codex")
+    runner = RecordingRunner(_codex_fixture_text("hello.jsonl"))
+    route = Route(harness="codex", model="gpt-5.5", effort=None)
+
+    result = headless(adapter, "/tmp/prompt.md", route, "/tmp/ws", run=runner)
+
+    assert isinstance(result, StageResult)
+    assert result.text == "ok"
+    assert result.exit_status == 0
+
+
+# --- codex: parser vs the recorded conformance fixtures --------------------
+
+
+def test_parse_codex_jsonl_against_recorded_hello_fixture():
+    raw = _codex_fixture_text("hello.jsonl")
+
+    result = parse_codex_jsonl(raw)
+
+    assert result == StageResult(
+        text="ok",
+        input_tokens=13948,  # already totals cached_input_tokens (OpenAI usage semantics)
+        output_tokens=20,    # already totals reasoning_output_tokens
+        exit_status=0,
+    )
+
+
+def test_parse_codex_jsonl_against_recorded_error_fixture():
+    # Real recorded transcript: `codex exec --json -m totally-bogus-model-xyz ...`
+    raw = _codex_fixture_text("error.jsonl")
+
+    result = parse_codex_jsonl(raw)
+
+    assert result.exit_status == 1
+    assert "not supported" in result.text
+    assert result.input_tokens == 0
+    assert result.output_tokens == 0
+
+
+def test_parse_codex_jsonl_on_malformed_input_raises_clear_error():
+    raw = _codex_fixture_text("malformed.jsonl")
+
+    with pytest.raises(ParseError) as excinfo:
+        parse_codex_jsonl(raw)
+
+    assert "\n" not in str(excinfo.value)
+
+
+def test_parse_codex_jsonl_missing_agent_message_raises():
+    raw = _codex_fixture_text("no-result.jsonl")
+
+    with pytest.raises(ParseError) as excinfo:
+        parse_codex_jsonl(raw)
+
+    assert "agent_message" in str(excinfo.value)
+
+
+def test_parse_codex_jsonl_on_empty_input_raises():
+    with pytest.raises(ParseError):
+        parse_codex_jsonl("")
