@@ -56,13 +56,19 @@ requirement.
 
 ## Output contract
 
-The report tail carries three parts in order:
+The report tail carries four parts in order:
 
 1. The findings body — each finding states its **severity**, **dimension**,
    **file:line**, **evidence**, **problem**, and a concrete **fix**.
-2. A `FLAGGED:` footer — one `FLAGGED: <signature>` line per flagged finding; a
+2. A `FINDINGS:` line — a single-line JSON array, one object per finding:
+   `{"severity": "blocking"|"advisory", "path": "<repo-relative path>", "line":
+   <int|null>, "body": "<comment text>"}`. `line` is `null` for a file-level finding
+   with no single anchor line. `[]` when there are no findings. This is the
+   machine-parseable transport `foundry review` posts as anchored PR comments
+   (AC-9.1); the prose findings body above stays for a human reader.
+3. A `FLAGGED:` footer — one `FLAGGED: <signature>` line per flagged finding; a
    complete-implementation finding's signature is the unimplemented AC id (e.g. `AC-2.1`).
-3. A single verdict line, last.
+4. A single verdict line, last.
 
 Severity is the gate, not finding count. Emit `CODE_REVIEW: FAIL` whenever an unresolved
 **blocking** finding exists; emit `CODE_REVIEW: PASS` when every finding is advisory or

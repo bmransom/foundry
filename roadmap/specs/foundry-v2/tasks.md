@@ -143,7 +143,7 @@ TDD — the test lands red first — and names the gate that proves it. Implemen
   driver's headless path; per-cell pass/fail + cost table; discrimination grading
   (AC-8.2). Gate: matrix run on one fixture pasted into the PR.
 - **T18 — PR-review runner.** `review/pr.py`: `gh pr checkout` into an isolated
-  worktree, run the review stage (reviewer + refuter convergence), post findings as
+  worktree, run the review stage (a single review pass — convergence is deferred, see Deferred), post findings as
   anchored PR comments via `gh api`; never approve/merge (AC-9.2). Live smoke on a
   scratch PR in this repo. Gate: pytest green + smoke PR link.
 
@@ -157,3 +157,7 @@ spec/review marker gates cannot see their `SPEC_REVIEW:`/`CODE_REVIEW:` last lin
 FAIL deterministically (never auto-pass). Candidate fixes when scheduled: tee/PTY
 capture, or a headless grading call over the worktree after the session exits.
 Command-shaped gates work fully interactive.
+
+Driver review-stage convergence (reviewer + refuter loop): T18 ships a single
+review-stage pass; the convergence primitive is driver-wide, not stage-specific, and
+likely lands on the pr-deliberation card.

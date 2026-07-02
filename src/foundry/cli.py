@@ -6,9 +6,8 @@ from pathlib import Path
 
 from foundry import __version__
 
-# Stub subcommands: later tasks (T18 review) fill these in.
-# `run`, `runs`, `gate`, `doctor`, `bootstrap`, `update`, and `eval` are wired below.
-STUB_SUBCOMMANDS = ["review"]
+# All subcommands are wired: run, runs, gate, doctor, bootstrap, update, eval, review.
+STUB_SUBCOMMANDS: list[str] = []
 
 RUN_PATHS = ("feature", "bug-fix", "refactor", "enhancement")
 
@@ -101,6 +100,15 @@ def build_parser() -> argparse.ArgumentParser:
     ev.add_argument(
         "--dry-run", action="store_true",
         help="list the cells×fixtures that would run, without calling a harness",
+    )
+
+    review = subparsers.add_parser(
+        "review", help="run the review stage against a GitHub PR (AC-9.1)"
+    )
+    review.add_argument("pr_number", type=int, help="the PR number to review")
+    review.add_argument(
+        "--keep", action="store_true",
+        help="keep the isolated review worktree instead of cleaning it up",
     )
 
     for name in STUB_SUBCOMMANDS:
@@ -237,6 +245,21 @@ def _eval(args) -> int:
     return 0 if ok else 1
 
 
+def _review(args) -> int:
+    from foundry.review.pr import ReviewError, run_review
+
+    try:
+        result = run_review(args.pr_number, repo_root=Path.cwd(), keep=args.keep)
+    except ReviewError as e:
+        print(f"foundry review: {e}", file=sys.stderr)
+        return 2
+    print(
+        f"foundry review #{args.pr_number}: CODE_REVIEW {result.verdict} "
+        f"({len(result.findings)} finding(s) posted); run {result.run_id}"
+    )
+    return 0 if result.verdict == "PASS" else 1
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -257,6 +280,8 @@ def main(argv: list[str] | None = None) -> int:
         return _update(args)
     if args.command == "eval":
         return _eval(args)
+    if args.command == "review":
+        return _review(args)
     print(f"foundry {args.command}: not yet implemented", file=sys.stderr)
     return 2
 
