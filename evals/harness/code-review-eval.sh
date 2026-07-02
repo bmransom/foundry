@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Headless code-review eval (Layer 3): run the code-review skill over the seeded
+# Headless code-review eval (Layer 3): run the review rubric (src/foundry/rubrics/review.md,
+# which absorbed the retired code-review skill in T16) over the seeded
 # fixture N times, then score recall and decoy hits mechanically against the
 # answer key via score_review.py (UNCHANGED). Honest framing: at affordable N
 # this is a smoke alarm for large regressions, not statistics.
@@ -15,8 +16,8 @@
 #               mean recall >= 4/5 AND decoy hits = 0, else disable it.
 #
 # Scoring reads only the findings text — a transcript echoes the code under
-# review, so every signature would match. The skill under test is
-# plugins/foundry/skills/code-review/SKILL.md, never a removed agent file.
+# review, so every signature would match. The content under test is
+# src/foundry/rubrics/review.md, never a removed agent file.
 set -euo pipefail
 
 HARNESS="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -24,7 +25,7 @@ FOUNDRY_REPO="$(cd "$HARNESS/../.." && pwd)"
 FIXTURE_DIR="$FOUNDRY_REPO/evals/fixtures/code-review"
 TREE="$FIXTURE_DIR/tree"
 ANSWER_KEY="$FIXTURE_DIR/answer-key.json"
-REVIEW_SKILL="$FOUNDRY_REPO/plugins/foundry/skills/code-review/SKILL.md"
+REVIEW_SKILL="$FOUNDRY_REPO/src/foundry/rubrics/review.md"
 if [ ! -f "$REVIEW_SKILL" ]; then
   echo "code-review-eval: missing review skill $REVIEW_SKILL" >&2
   exit 1

@@ -23,6 +23,12 @@ FOUNDRY_REPO="$(cd "$HARNESS/../.." && pwd)"
 RESULTS_DIR="$FOUNDRY_REPO/evals/results"
 SKILL="$FOUNDRY_REPO/plugins/foundry/skills/code/SKILL.md"
 
+# T16: the `code` lifecycle skill retired; its stage judgment now lives in
+# src/foundry/rubrics/{spec,plan,build,knowledge,review}.md, driven by `foundry run`.
+# This eval is pending a repoint onto the driver's stage prompts before it can run.
+echo "lifecycle-eval: PENDING rubric repoint (T16) — the code skill retired; re-home this eval on the driver's stage prompts (src/foundry/rubrics/) before running." >&2
+exit 3
+
 GRADE_ONLY=0
 DEFAULT_KEYWORD="version"
 

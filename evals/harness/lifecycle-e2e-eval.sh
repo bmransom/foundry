@@ -202,6 +202,17 @@ $descs
 PROMPT
 }
 
+# T16: the headless-drive modes build their prompts from the retired `code` and
+# `bootstrap` skills; that judgment now lives in src/foundry/rubrics/ driven by
+# `foundry run`. Until this eval is re-homed on the driver's stage prompts, the
+# drive modes are pending a rubric repoint. The deterministic install modes
+# (--plan, --setup-only, --verify-only) are unaffected and still run.
+case "$mode" in
+  bootstrap|feature|autonomous)
+    echo "lifecycle-e2e: PENDING rubric repoint (T16) — mode '$mode' drove the retired code/bootstrap skills; re-home it on the driver's stage prompts (src/foundry/rubrics/) before running." >&2
+    exit 3 ;;
+esac
+
 case "$mode" in
   setup)
     repo="${LIFECYCLE_E2E_SETUP_DIR:-$(mktemp -d)}"

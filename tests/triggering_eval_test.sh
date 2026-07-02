@@ -31,19 +31,18 @@ python3 -c "
 import json
 cases = json.load(open('$CASES'))['cases']
 json.dump([{'id': c['id'], 'predicted': c['expect']} for c in cases], open('$TMP/perfect.json', 'w'))
-flipped = [{'id': c['id'], 'predicted': ('NONE' if c['expect'] != 'NONE' else 'code')} for c in cases]
+flipped = [{'id': c['id'], 'predicted': ('NONE' if c['expect'] != 'NONE' else 'performance')} for c in cases]
 json.dump(flipped, open('$TMP/wrong.json', 'w'))
 "
 "$RUNNER" --grade-only "$TMP/perfect.json" >/dev/null || fail "perfect predictions should grade as pass"
 if "$RUNNER" --grade-only "$TMP/wrong.json" >/dev/null 2>&1; then fail "wrong predictions should fail the grade"; fi
 
-# --- classify: the reply->skill matcher resolves the LONGEST name, never a prefix ----
-# 'code' sorts before 'code-review' and \bcode\b matches inside 'code-review', so a naive
-# first-match would score a correct 'code-review' answer as 'code'. Longest-first fixes it.
-[ "$("$RUNNER" --classify-reply "code-review")" = "code-review" ] \
-  || fail "classify must map 'code-review' to code-review, not the 'code' prefix"
-[ "$("$RUNNER" --classify-reply "code")" = "code" ] \
-  || fail "classify must still map 'code' to code"
+# --- classify: the reply->skill matcher resolves a live skill name, else NONE ----
+# The matcher still tries the LONGEST name first (a name that is a prefix of another would
+# otherwise steal a longer answer); the code/code-review collision that motivated it retired
+# with those skills (T16), so the live roster has no prefix pair left to assert on.
+[ "$("$RUNNER" --classify-reply "performance")" = "performance" ] \
+  || fail "classify must map 'performance' to performance"
 [ "$("$RUNNER" --classify-reply "chitchat, nothing to do")" = "NONE" ] \
   || fail "classify must map a non-skill reply to NONE"
 

@@ -59,16 +59,11 @@ single SKILL.md unless scripts/assets/evals are clearly justified
 realistic prompts and expected behavior
 ```
 
-## Drafting Spawn
+## Drafting
 
-After writing and printing the brief, spawn a same-harness drafting session:
-
-```bash
-scripts/spawn-extractor.sh "<name>" ".agent/skill-extractions/<name>/brief.md"
-```
-
-If harness or tmux detection fails, print the command and seed prompt. The script delegates
-to Foundry's shared fresh-session runner so Claude, Codex, and Pi share one prompt-file and tmux launch path.
+After writing and printing the brief, draft the skill inline in this session from the
+brief: create the destination `SKILL.md` (and any justified `scripts/`, `assets/`, or
+`references/` files), then check it against the Quality Bar below.
 
 ## Quality Bar
 

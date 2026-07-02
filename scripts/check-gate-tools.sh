@@ -9,7 +9,7 @@ set -euo pipefail
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 GATE_FILE="${GATE_FILE:-$REPO/scripts/check-fast.sh}"
 SCRIPTS_DIR="${SCRIPTS_DIR:-$REPO/scripts}"
-REGISTRY_FILE="${REGISTRY_FILE:-$REPO/plugins/foundry/skills/update/references/migrations/README.md}"
+REGISTRY_FILE="${REGISTRY_FILE:-$REPO/src/foundry/materializer/migrations/README.md}"
 MANIFEST_FILE="${MANIFEST_FILE:-$REPO/.foundry/manifest.json}"
 
 fail=0

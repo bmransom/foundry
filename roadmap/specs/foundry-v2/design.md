@@ -245,7 +245,9 @@ scripts that ride them (`code-review-convergence-hook.sh`, `spec-convergence-hoo
 `spec-convergence-posttooluse.sh`); retires the `code`, `handoff`, `spec-review`,
 `code-review`, and `knowledge` skill files (D8 — rubrics + driver stages replace them);
 and reshapes `extract-skill` off the fresh-session runner in the same PR, so no kept
-skill references a deleted script.
+skill references a deleted script. The shared fresh-session runner
+(`spawn-fresh-session.sh`) survives as `harness-deliberation`'s rider until that card
+moves to the driver.
 
 ### D8 — Skill layer: stage rubrics, orchestration stripped
 

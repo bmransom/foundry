@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 # worktree-per-card: guard the "Done = merged" lifecycle wording across the
-# contract docs AND the load-bearing lifecycle skill. The board conventions, the
-# seed ROADMAP, AGENTS.md, the bootstrap generator, the `code` skill, and its
-# worktree reference must state "Done = merged to the default branch" and must
+# contract docs. The board conventions, the seed ROADMAP, and AGENTS.md must
+# state "Done = merged to the default branch" and must
 # NOT regress to the old model — "Commit or push" (ask before every commit) or
 # "Done requires a recorded gate PASS" / "Implemented and verified by a recorded
 # gate PASS" (Done = gate-recorded / shipped).
@@ -20,9 +19,6 @@ DOCS=(
   "$REPO/AGENTS.md"
   "$REPO/roadmap/ROADMAP.md"
   "$REPO/src/foundry/templates/seeds/roadmap/ROADMAP.md"
-  "$REPO/plugins/foundry/skills/bootstrap/references/generate.md"
-  "$REPO/plugins/foundry/skills/code/SKILL.md"
-  "$REPO/plugins/foundry/skills/code/references/worktree.md"
 )
 
 # Old-model regression markers — none may appear in a contract doc. Precise on
