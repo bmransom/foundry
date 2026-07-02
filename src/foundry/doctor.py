@@ -194,7 +194,7 @@ def _check_hooks(repo_root: Path) -> list[Finding]:
     elif _CHECK_FAST_MARKER in content:
         findings.append(Finding(
             "hooks",
-            "pre-push invokes scripts/check-fast.sh (tolerated until T13 migrates it to "
+            "pre-push invokes scripts/check-fast.sh (tolerated for pre-conv-5 repos; foundry update migrates it to "
             "the pinned gate)",
         ))
     else:

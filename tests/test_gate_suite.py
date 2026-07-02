@@ -53,3 +53,14 @@ def test_gate_commands_all_passing_keeps_the_suite_green(tmp_path):
     ok, lines = suite.run(tmp_path)
     assert ok is True
     assert lines[-1] == "gate: PASS"
+
+
+def test_malformed_config_fails_the_suite_with_a_finding_instead_of_a_traceback(tmp_path):
+    write(
+        tmp_path / ".foundry" / "config.toml",
+        "[gate\ncommands = [\n",  # unterminated table header -> tomllib.TOMLDecodeError
+    )
+    ok, lines = suite.run(tmp_path)
+    assert ok is False
+    assert lines[-1] == "gate: FAIL"
+    assert any("config" in line and "malformed" in line for line in lines)

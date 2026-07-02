@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
 # foundry-template: pre-push v1
-# Pre-push gate; bypass once with `git push --no-verify`.
-exec "$(git rev-parse --show-toplevel)/scripts/check-fast.sh"
+# Self-host divergence from m005's pinned uvx form: foundry's own repo gates the CURRENT
+# tree with the CURRENT tools — a pinned `uvx --from git+<repo>@<pin>` fetch would gate
+# stale code. Consumer repos keep m005's pinned form; only foundry itself runs the local
+# tree. Pre-push gate; bypass once with `git push --no-verify`.
+REPO="$(git rev-parse --show-toplevel)"
+exec uv run --project "$REPO" foundry gate

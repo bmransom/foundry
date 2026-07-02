@@ -13,7 +13,7 @@ Run `scripts/board.sh` to render the board; `scripts/board.sh "Epic 0"` filters 
 
 - A **card** is one table row: `Id | Work | Status | Spec | Depends on`. The `Id` is a
   unique, slug-safe (`^[a-z0-9][a-z0-9-]*$`) handle — required on claimable cards (Ready /
-  In progress / Validating), enforced by `scripts/check-board.py` in the gate.
+  In progress / Validating), enforced by the gate suite (`foundry gate`).
 - **Claim a card by creating its `card/<id>` branch** and `wt/<id>` worktree off the
   default branch (`git worktree add -b card/<id> wt/<id> origin/<default>`); the branch's
   existence is the claim — first claim wins, never take an owned card. Don't commit a claim
