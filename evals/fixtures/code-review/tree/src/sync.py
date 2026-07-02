@@ -1,6 +1,7 @@
 """Sync a confirmed Order to the fulfillment partner (AC-1.1, AC-1.2)."""
 
 import json
+import os
 import urllib.request
 
 from .logging import wide_event
@@ -12,9 +13,17 @@ def sync_order(order, endpoint, partner_timeout=30):
     # sync_order should *require* partner_timeout, not re-default it. The same 30 is
     # defaulted again here and in poll_status — the value defaults at two layers below the
     # boundary, scattering the source of truth.
+    # CONFIG: a raw os.environ read buried below the boundary. The partner credential
+    # should arrive in a typed config object built at the CLI boundary and be required
+    # here — reading PARTNER_API_KEY ambiently scatters configuration through the call
+    # graph and hides the dependency from sync_order's signature.
+    api_key = os.environ["PARTNER_API_KEY"]
     payload = json.dumps({"lines": [serialize_line(line) for line in order.lines]})
     request = urllib.request.Request(
-        endpoint, data=payload.encode("utf-8"), method="POST"
+        endpoint,
+        data=payload.encode("utf-8"),
+        method="POST",
+        headers={"Authorization": f"Bearer {api_key}"},
     )
     with urllib.request.urlopen(request, timeout=partner_timeout) as response:
         body = json.loads(response.read())

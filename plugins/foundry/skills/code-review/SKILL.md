@@ -1,6 +1,6 @@
 ---
 name: code-review
-description: Use when reviewing an implementation diff against its spec before Finish — grading lifecycle evidence, complete implementation, docs sync, domain language, logging, simplicity, interfaces, structure, efficiency, defaults, and test discrimination from artifacts, never self-claims.
+description: Use when reviewing an implementation diff against its spec before Finish — grading lifecycle evidence, complete implementation, docs sync, domain language, logging, simplicity, interfaces, structure, efficiency, defaults, config, and test discrimination from artifacts, never self-claims.
 ---
 
 # Code Review
@@ -73,6 +73,7 @@ The full grading table, evidence sources, and size tripwires live in
   cold-path tuning opportunity is advisory (grounded in the `performance` skill).
 - **Dead / duplicate code** — flag a symbol the change orphaned (grep shows zero references — but a public API/entrypoint is not dead, cite the grep), and copy-paste the change introduced past the rule of three (two coincidental occurrences are not DRY-violating). Advisory.
 - **Defaults** — flag footgun/magic-value defaults, and a default not at the boundary (buried deep or scattered, no single source of truth): a value defaults once at the highest layer the caller could supply it, required downstream; a real boundary default (CLI flag, public API) is correct.
+- **Config** — configuration flows through explicit, per-context config objects, not ambient env reads scattered through the call graph; env vars/flags/files *populate* the object at the boundary, code below it takes typed config. Flag a raw env read (`getenv`/`process.env`/`std::env`) below the boundary, a config bag passed whole where one slice is needed, or independent values that must agree but are never validated together. A boundary env read that populates a config default is correct.
 - **Robust tests** — flag a test that does not **discriminate** a seeded defect,
   exercises only a fake or the happy path, or omits failure/edge cases.
 
