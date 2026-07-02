@@ -30,7 +30,7 @@ script, two triggers. Bypass once with `git push --no-verify`.
 - Before coining a canonical name (glossary term, public type or field, config knob),
   search the prior art and record provenance in `knowledge/glossary.md`.
 - Keep foundry's verbatim-template copies byte-identical to
-  `plugins/foundry/templates/verbatim/` (modulo the version marker) — the self-host gate.
+  `src/foundry/templates/verbatim/` (modulo the version marker) — the self-host gate.
 - Ship a convention break (a board, template, or frontmatter structure change) with its migration
   — add the `references/migrations/` playbook, bump the registry head + `conventionVersion`. A new
   **gate tool** carries a `# foundry-gate-tool:` marker, wired into the gate. `check-gate-tools.sh`

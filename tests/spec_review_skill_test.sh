@@ -10,8 +10,8 @@ CODE_SKILL="$REPO/plugins/foundry/skills/code/SKILL.md"
 LEGACY_AGENT="$REPO/plugins/foundry/agents/spec-reviewer.md"
 README="$REPO/README.md"
 SPEC_README="$REPO/roadmap/specs/README.md"
-SEED_SPEC_RULE="$REPO/plugins/foundry/templates/seeds/rules/spec-conventions.md"
-SEED_SPEC_README="$REPO/plugins/foundry/templates/seeds/roadmap/specs/README.md"
+SEED_SPEC_RULE="$REPO/src/foundry/templates/seeds/rules/spec-conventions.md"
+SEED_SPEC_README="$REPO/src/foundry/templates/seeds/roadmap/specs/README.md"
 GITIGNORE="$REPO/.gitignore"
 
 fail() {

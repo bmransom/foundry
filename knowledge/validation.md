@@ -21,7 +21,7 @@ non-bypassable backstop) — the same script both times, so the two can never di
 |---|---|---|---|
 | Quick gate | `scripts/check-fast.sh` | runs all gates below | pre-push + CI |
 | Plugin validate | `claude plugin validate plugins/foundry` (and the marketplace root) | manifest errors | inside the quick gate |
-| Byte identity | `scripts/check-byte-identity.sh` | foundry's own copies drifting from `plugins/foundry/templates/verbatim/` | inside the quick gate |
+| Byte identity | `scripts/check-byte-identity.sh` | foundry's own copies drifting from `src/foundry/templates/verbatim/` | inside the quick gate |
 | Knowledge | `python3 scripts/knowledge.py check` + `python3 scripts/test_knowledge.py` | missing or invalid frontmatter; stale `index.md`; knowledge.py regressions | inside the quick gate |
 | Script tests | `bash tests/*_test.sh` | script and template behavior regressions | inside the quick gate |
 | Context budget | `scripts/check-context-budget.sh` | plugin-resident prose exceeding its line budget | inside the quick gate |

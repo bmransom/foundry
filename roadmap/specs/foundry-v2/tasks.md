@@ -72,7 +72,7 @@ TDD — the test lands red first — and names the gate that proves it. Implemen
 - **T7 — `foundry run` end-to-end.** Wire cli → board resolution (parse the ROADMAP card
   table; unknown id → error listing near matches) → worktree create (`git worktree add -b
   card/<id> wt/<id> origin/<default>`, reuse if present) → machine → ledger. First seed
-  `features/` in this repo from the plugin seed template (`templates/seeds/features/`),
+  `features/` in this repo from the package seed template (`src/foundry/templates/seeds/features/`),
   then write the `features/` Scenario for `foundry run` before the code. Smoke: drive a scripted
   fake-adapter run of a bug-fix path on a pytest repo fixture (design §New vocabulary)
   under `tests/fixtures/repos/`;

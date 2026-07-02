@@ -85,7 +85,7 @@ fresh_repo() {            # $1 = target dir — a clean, empty git repo
 }
 
 install_foundry() {       # $1 = target repo — copy foundry's verbatim templates byte-exact
-  local repo="$1" templates="$REPO/plugins/foundry/templates/verbatim"
+  local repo="$1" templates="$REPO/src/foundry/templates/verbatim"
   while IFS= read -r -d '' tf; do
     local rel="${tf#"$templates/"}"
     mkdir -p "$repo/$(dirname "$rel")"
@@ -94,7 +94,7 @@ install_foundry() {       # $1 = target repo — copy foundry's verbatim templat
 }
 
 verify_install() {        # $1 = target repo — each verbatim template byte-identical (modulo marker)
-  local repo="$1" templates="$REPO/plugins/foundry/templates/verbatim" bad=0
+  local repo="$1" templates="$REPO/src/foundry/templates/verbatim" bad=0
   while IFS= read -r -d '' tf; do
     local rel="${tf#"$templates/"}"
     local copy="$repo/$rel"

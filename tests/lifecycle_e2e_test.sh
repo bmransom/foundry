@@ -21,7 +21,7 @@ grep -q "BYTE-IDENTITY PASS" <<<"$out" || fail "--setup-only must report byte-id
 [ -d "$work/repo/.git" ] || fail "fresh_repo must create a git repo"
 
 # a known verbatim file is installed byte-identical (modulo the version marker).
-T="$REPO/plugins/foundry/templates/verbatim/scripts/knowledge.py"
+T="$REPO/src/foundry/templates/verbatim/scripts/knowledge.py"
 C="$work/repo/scripts/knowledge.py"
 [ -f "$C" ] || fail "install_foundry must copy scripts/knowledge.py"
 diff <(grep -vF 'foundry-template:' "$T") <(grep -vF 'foundry-template:' "$C") >/dev/null \

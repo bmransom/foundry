@@ -19,7 +19,7 @@ fail() { echo "FAIL: $1" >&2; exit 1; }
 DOCS=(
   "$REPO/AGENTS.md"
   "$REPO/roadmap/ROADMAP.md"
-  "$REPO/plugins/foundry/templates/seeds/roadmap/ROADMAP.md"
+  "$REPO/src/foundry/templates/seeds/roadmap/ROADMAP.md"
   "$REPO/plugins/foundry/skills/bootstrap/references/generate.md"
   "$REPO/plugins/foundry/skills/code/SKILL.md"
   "$REPO/plugins/foundry/skills/code/references/worktree.md"
