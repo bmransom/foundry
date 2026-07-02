@@ -1,0 +1,14 @@
+name = "claude-code"
+
+[instruction]
+file = "AGENTS.md"
+pointer = "CLAUDE.md"        # symlink emitted when this harness is selected
+
+[headless]
+command = ["claude", "-p", "@{prompt_file}", "--output-format", "stream-json",
+           "--permission-mode", "acceptEdits", "--model", "{model}"]
+effort_args = ["--effort", "{effort}"]   # appended only when effort is set
+parser = "claude-stream-json"
+
+[interactive]
+command = ["claude", "--model", "{model}"]
