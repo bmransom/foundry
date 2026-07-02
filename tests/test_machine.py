@@ -44,7 +44,8 @@ class FakeAdapter:
     def __call__(self, stage, route, workspace):
         self.calls.append(stage)
         return self._results.get(
-            stage, StageResult(text="", input_tokens=100, output_tokens=10)
+            stage,
+            StageResult(text="", input_tokens=100, output_tokens=10, exit_status=0),
         )
 
 
@@ -101,19 +102,24 @@ def write_hook(tmp_path, stage, phase, code, executable=True):
 # --- gate factories (AC-10.2) -------------------------------------------------
 
 
+def _result(text: str) -> StageResult:
+    """A StageResult where only .text matters to the gate under test."""
+    return StageResult(text=text, input_tokens=0, output_tokens=0, exit_status=0)
+
+
 def test_marker_gate_parses_declared_last_line_marker():
     gate = marker_gate("CODE_REVIEW", "CODE_REVIEW", "PASS")
-    clean = StageResult(text="findings...\nCODE_REVIEW: PASS")
-    dirty = StageResult(text="findings...\nCODE_REVIEW: FAIL")
+    clean = _result("findings...\nCODE_REVIEW: PASS")
+    dirty = _result("findings...\nCODE_REVIEW: FAIL")
     assert gate(GateContext(None, clean)).outcome == "PASS"
     assert gate(GateContext(None, dirty)).outcome == "FAIL"
 
 
 def test_marker_gate_last_marker_wins_and_missing_is_fail():
     gate = marker_gate("SPEC_REVIEW", "SPEC_REVIEW", "CLEAN")
-    multi = StageResult(text="SPEC_REVIEW: DIRTY\ntail\nSPEC_REVIEW: CLEAN")
+    multi = _result("SPEC_REVIEW: DIRTY\ntail\nSPEC_REVIEW: CLEAN")
     assert gate(GateContext(None, multi)).outcome == "PASS"
-    assert gate(GateContext(None, StageResult(text="no marker"))).outcome == "FAIL"
+    assert gate(GateContext(None, _result("no marker"))).outcome == "FAIL"
 
 
 def test_command_gate_passes_on_exit_zero(tmp_path):

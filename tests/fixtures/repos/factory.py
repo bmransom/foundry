@@ -54,13 +54,20 @@ def make_repo(
     default_branch: str = "main",
     gate_test: str = "true",
     gate_commands: list[str] | None = None,
+    tasks_md_for: list[str] | None = None,
 ) -> Path:
     """Build a git repo at `root` with a board card table and .foundry/config.toml,
     committed on `default_branch`. `cards` is a list of (id, work) pairs.
+
+    `tasks_md_for` pre-creates `roadmap/specs/<card_id>/tasks.md` (committed, so it
+    is present in any worktree checked out from this branch) for card ids that need
+    the driver's plan gate (design D1) to PASS — a full `feature`-path run reaches
+    plan and checks it; bug-fix/refactor entry paths skip plan and need nothing here.
     """
     root = Path(root)
     cards = cards or [("wclip-paste", "Paste command")]
     gate_commands = gate_commands or []
+    tasks_md_for = tasks_md_for or []
 
     _git(root, "init", "-b", default_branch)
 
@@ -71,6 +78,11 @@ def make_repo(
     (root / ".foundry" / "config.toml").write_text(
         _config(gate_test, gate_commands), encoding="utf-8"
     )
+
+    for card_id in tasks_md_for:
+        spec_dir = root / "roadmap" / "specs" / card_id
+        spec_dir.mkdir(parents=True, exist_ok=True)
+        (spec_dir / "tasks.md").write_text(f"# {card_id} tasks\n", encoding="utf-8")
 
     _git(root, *_IDENTITY, "add", "-A")
     _git(root, *_IDENTITY, "commit", "-m", "init fixture repo")

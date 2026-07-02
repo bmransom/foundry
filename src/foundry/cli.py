@@ -7,8 +7,8 @@ from pathlib import Path
 from foundry import __version__
 
 # Stub subcommands: later tasks (T11 gate, T12 doctor, T15/T16 bootstrap/update,
-# T17 eval, T18 review) fill these in. `runs` covers AC-4.3/AC-4.4.
-STUB_SUBCOMMANDS = ["gate", "doctor", "runs", "eval", "review", "bootstrap", "update"]
+# T17 eval, T18 review) fill these in. `runs` (AC-4.3/AC-4.4) is wired below.
+STUB_SUBCOMMANDS = ["gate", "doctor", "eval", "review", "bootstrap", "update"]
 
 RUN_PATHS = ("feature", "bug-fix", "refactor", "enhancement")
 
@@ -37,6 +37,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--interactive", action="store_true",
         help="open the routed harness interactively for judgment stages (AC-1.5)",
     )
+
+    runs = subparsers.add_parser("runs", help="inspect the run ledger (AC-4.3/AC-4.4)")
+    runs_sub = runs.add_subparsers(dest="runs_command")
+    runs_sub.add_parser("list", help="list past runs with outcome and cost")
+    show = runs_sub.add_parser("show", help="print one run's stage table")
+    show.add_argument("run_id")
 
     for name in STUB_SUBCOMMANDS:
         subparsers.add_parser(name)
@@ -81,6 +87,27 @@ def _run(args) -> int:
     return 0 if result.outcome == "completed" else 1
 
 
+def _runs(args) -> int:
+    from foundry.runs_command import RunNotFoundError, list_lines, show_lines
+
+    repo_root = Path.cwd()
+    if args.runs_command == "list":
+        for line in list_lines(repo_root):
+            print(line)
+        return 0
+    if args.runs_command == "show":
+        try:
+            lines = show_lines(repo_root, args.run_id)
+        except RunNotFoundError as e:
+            print(f"foundry runs show: {e}", file=sys.stderr)
+            return 2
+        for line in lines:
+            print(line)
+        return 0
+    print("foundry runs: choose a subcommand (list|show)", file=sys.stderr)
+    return 2
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -89,6 +116,8 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     if args.command == "run":
         return _run(args)
+    if args.command == "runs":
+        return _runs(args)
     print(f"foundry {args.command}: not yet implemented", file=sys.stderr)
     return 2
 
