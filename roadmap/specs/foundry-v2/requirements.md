@@ -3,7 +3,7 @@ title: foundry-v2 requirements
 description: Rebuild foundry's chassis as a standalone CLI — deterministic lifecycle driver, harness adapters as data, run ledger, pinned-run distribution.
 ---
 
-> **Status:** In progress (2026-07-02) — tracked on the [board](../../ROADMAP.md).
+> **Status:** Done (2026-07-02) — spec approved and implemented (Epic 8); tracked on the [board](../../ROADMAP.md).
 
 # foundry-v2 — requirements
 
