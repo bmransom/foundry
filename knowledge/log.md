@@ -4,6 +4,19 @@
 
 Changes to the knowledge base, newest first. A reserved OKF file — no frontmatter.
 
+## 2026-07-02
+
+- **New** Landed the eleven **foundry-v2** vocabulary terms deferred by `roadmap/specs/foundry-v2/design.md`
+  §New vocabulary: **Driver**, **Harness adapter**, **Stage prompt**, **Stage rubric**, **Run
+  ledger**, **Routing table**, **Pinned run**, **Materializer**, **Conformance fixture**, **Pytest
+  repo fixture**, **Gate suite** — paying the provenance debt now that Waves 0–3 are code-complete
+  rather than deferring further. **Conformance fixture** and **Pytest repo fixture** are explicit
+  xUnit-family siblings of the existing **Fixture** row, scoped apart from it (adapter transcripts
+  and test-local repos, not eval targets); **Gate suite** extends the existing **Gate** term;
+  **Driver**'s debt term (`orchestrator (for the lifecycle stages)`) is scoped apart from
+  **Broker**'s existing `orchestrator` debt term (harness-deliberation sequencing). No other
+  existing rows changed.
+
 ## 2026-06-29
 
 - **Update** knowledge-listing fidelity (`okf-listing-fidelity`): `knowledge/README.md` is now a
