@@ -42,21 +42,5 @@ class BootstrapExpectationConventionTest(unittest.TestCase):
                 )
 
 
-class BootstrapInstructionPortabilityTest(unittest.TestCase):
-    def test_vocab_lint_generation_requires_bash_32_portability(self):
-        generate = (
-            ROOT
-            / "plugins"
-            / "foundry"
-            / "skills"
-            / "bootstrap"
-            / "references"
-            / "generate.md"
-        ).read_text()
-        self.assertIn("Bash 3.2", generate)
-        self.assertIn("mapfile", generate)
-        self.assertIn("readarray", generate)
-
-
 if __name__ == "__main__":
     unittest.main()

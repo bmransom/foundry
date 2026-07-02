@@ -217,6 +217,10 @@ uvx --from "git+https://github.com/bmransom/foundry@v2.0.0" foundry gate
 URL so the zero-install property holds on first clone; `foundry doctor` and the AC-5.4
 warning catch drift between the two. In this repo, `check-fast.sh` becomes the
 `[gate].commands` entry, so its checks (and its PASS marker) run inside `foundry gate`.
+Self-host divergence: foundry's own `.githooks/pre-push` and CI run the LOCAL tree
+(`uv run --project "$REPO" foundry gate`), not the pinned `uvx` form m005 writes into
+consumers — the repo must gate its current code with its current tools; a pinned fetch
+would gate a stale tag.
 `foundry gate` subsumes the v1
 gate tools — `check-board.py`, `prose-lint.py`, `knowledge.py check` port into
 `src/foundry/gate/` as modules — plus the repo's own `[gate].commands`. The
@@ -246,7 +250,9 @@ scripts that ride them (`code-review-convergence-hook.sh`, `spec-convergence-hoo
 `spec-convergence-posttooluse.sh`); retires the `code`, `handoff`, `spec-review`,
 `code-review`, and `knowledge` skill files (D8 — rubrics + driver stages replace them);
 and reshapes `extract-skill` off the fresh-session runner in the same PR, so no kept
-skill references a deleted script.
+skill references a deleted script. The shared fresh-session runner
+(`spawn-fresh-session.sh`) survives as `harness-deliberation`'s rider until that card
+moves to the driver.
 
 ### D8 — Skill layer: stage rubrics, orchestration stripped
 

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Headless reviewer eval (Layer 3): run the spec-review skill over the
+# Headless reviewer eval (Layer 3): run the spec rubric (src/foundry/rubrics/spec.md,
+# which absorbed the retired spec-review skill in T16) over the
 # seeded fixture N times, then score recall and decoy hits mechanically
 # against the answer key (AC-5.3). Honest framing per design §Evals: at
 # affordable N this is a smoke alarm for large regressions, not statistics.
@@ -22,7 +23,7 @@ FOUNDRY_REPO="$(cd "$HARNESS/../.." && pwd)"
 FIXTURE_DIR="$FOUNDRY_REPO/evals/fixtures/reviewer"
 TREE="$FIXTURE_DIR/tree"
 ANSWER_KEY="$FIXTURE_DIR/answer-key.json"
-REVIEW_SKILL="$FOUNDRY_REPO/plugins/foundry/skills/spec-review/SKILL.md"
+REVIEW_SKILL="$FOUNDRY_REPO/src/foundry/rubrics/spec.md"
 if [ ! -f "$REVIEW_SKILL" ]; then
   echo "reviewer-eval: missing review skill $REVIEW_SKILL" >&2
   exit 1

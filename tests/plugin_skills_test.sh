@@ -6,16 +6,13 @@ REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SKILLS_DIR="$REPO/plugins/foundry/skills"
 
 required_skills=(
-  bootstrap
-  code
+  debug
   design-patterns
   extract-skill
-  handoff
+  harness-deliberation
   modular-structure
   naming-standards
   performance
-  spec-review
-  update
 )
 
 fail() {
@@ -58,11 +55,6 @@ grep -q "main.*feature" "$SKILLS_DIR/performance/SKILL.md" \
   || fail "performance must cover main vs feature baselines"
 grep -q "flag-off.*flag-on" "$SKILLS_DIR/performance/SKILL.md" \
   || fail "performance must cover feature flag baselines"
-
-for lifecycle_skill in performance naming-standards design-patterns modular-structure; do
-  grep -q "$lifecycle_skill" "$SKILLS_DIR/code/SKILL.md" \
-    || fail "code lifecycle must delegate to $lifecycle_skill"
-done
 
 for pattern in Strategy Observer Adapter; do
   grep -q "$pattern" "$SKILLS_DIR/design-patterns/SKILL.md" \

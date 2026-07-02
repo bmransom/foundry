@@ -235,3 +235,10 @@ def test_doctor_cli_exits_nonzero_on_defect_fixture(tmp_path, doctor_fixture):
     )
     assert result.returncode == 1
     assert "finding(s)" in result.stdout.rstrip("\n").splitlines()[-1]
+
+
+def test_config_pin_tolerates_v_prefix(doctor_fixture, tmp_path):
+    repo = doctor_fixture(tmp_path, pin="v" + __version__)
+    ok, lines = doctor.run(repo)
+    assert ok, lines
+    assert not [l for l in lines if "pin" in l and "fix:" in l]

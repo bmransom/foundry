@@ -26,7 +26,7 @@ def load_config():
     if not os.path.exists(CONFIG_PATH):
         sys.exit(
             f"knowledge: config not found at {CONFIG_PATH}\n"
-            "Create it from the seed: cp plugins/foundry/templates/seeds/knowledge/knowledge-config.json knowledge/knowledge-config.json\n"
+            "Create it from the seed: cp src/foundry/templates/seeds/knowledge/knowledge-config.json knowledge/knowledge-config.json\n"
             "Then edit it for this repo."
         )
     with open(CONFIG_PATH, encoding="utf-8") as handle:

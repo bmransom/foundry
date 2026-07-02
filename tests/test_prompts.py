@@ -119,7 +119,7 @@ def test_compile_appends_advisory_skill_body():
 # --- seed marker parity -----------------------------------------------------
 
 def test_seed_markers_match_between_readme_copies():
-    seed = (REPO_ROOT / "plugins" / "foundry" / "templates" / "seeds"
+    seed = (REPO_ROOT / "src" / "foundry" / "templates" / "seeds"
             / "roadmap" / "specs" / "README.md").read_text()
     repo = (REPO_ROOT / "roadmap" / "specs" / "README.md").read_text()
     marker = "<!-- foundry-seed: specs-readme v4 -->"
@@ -129,7 +129,7 @@ def test_seed_markers_match_between_readme_copies():
 
 def test_seed_readmes_require_surface_and_invariants():
     for path in (
-        REPO_ROOT / "plugins" / "foundry" / "templates" / "seeds"
+        REPO_ROOT / "src" / "foundry" / "templates" / "seeds"
         / "roadmap" / "specs" / "README.md",
         REPO_ROOT / "roadmap" / "specs" / "README.md",
     ):

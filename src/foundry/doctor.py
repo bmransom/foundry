@@ -67,7 +67,8 @@ def _check_config(repo_root: Path) -> list[Finding]:
     pin = foundry_section.get("pin")
     if pin is None:
         return [Finding("config", "no [foundry].pin set; shipped defaults apply")]
-    if pin != __version__:
+    # Tags conventionally carry a leading "v" (m005 default); __version__ does not.
+    if (pin[1:] if isinstance(pin, str) and pin.startswith("v") else pin) != __version__:
         return [Finding(
             "config",
             f"[foundry].pin '{pin}' does not match the running CLI version '{__version__}'",
@@ -193,7 +194,7 @@ def _check_hooks(repo_root: Path) -> list[Finding]:
     elif _CHECK_FAST_MARKER in content:
         findings.append(Finding(
             "hooks",
-            "pre-push invokes scripts/check-fast.sh (tolerated until T13 migrates it to "
+            "pre-push invokes scripts/check-fast.sh (tolerated for pre-conv-5 repos; foundry update migrates it to "
             "the pinned gate)",
         ))
     else:

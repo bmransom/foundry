@@ -1,0 +1,7 @@
+[foundry]
+pin = "v2.0.0a0"
+repo_url = "https://github.com/bmransom/foundry"
+
+[gate]
+test = "uv run pytest -q"
+commands = ["scripts/check-fast.sh"]
