@@ -6,9 +6,8 @@ from pathlib import Path
 
 from foundry import __version__
 
-# Stub subcommands: a later task (T17 eval) fills this in.
-# `run`, `runs`, `gate`, `doctor`, `bootstrap`, `update`, and `review` are wired below.
-STUB_SUBCOMMANDS = ["eval"]
+# All subcommands are wired: run, runs, gate, doctor, bootstrap, update, eval, review.
+STUB_SUBCOMMANDS: list[str] = []
 
 RUN_PATHS = ("feature", "bug-fix", "refactor", "enhancement")
 
@@ -85,6 +84,22 @@ def build_parser() -> argparse.ArgumentParser:
     upd.add_argument(
         "--dry-run", action="store_true",
         help="print the update plan without writing",
+    )
+
+    ev = subparsers.add_parser(
+        "eval", help="run eval fixtures across a harness×model matrix (AC-8.1/8.2)"
+    )
+    ev.add_argument(
+        "--matrix", required=True, metavar="SPEC",
+        help="comma-separated cells, harness:model[:effort] (e.g. claude-code:claude-sonnet-5)",
+    )
+    ev.add_argument(
+        "--fixture", default=None, metavar="NAME",
+        help="run only the named fixture pair (default: all under evals/fixtures/matrix)",
+    )
+    ev.add_argument(
+        "--dry-run", action="store_true",
+        help="list the cells×fixtures that would run, without calling a harness",
     )
 
     review = subparsers.add_parser(
@@ -214,6 +229,22 @@ def _update(args) -> int:
     return 0
 
 
+def _eval(args) -> int:
+    from foundry.eval_command import EvalError, run_matrix
+
+    try:
+        ok, lines = run_matrix(
+            matrix=args.matrix, repo_root=Path.cwd(),
+            fixture=args.fixture, dry_run=args.dry_run,
+        )
+    except EvalError as e:
+        print(f"foundry eval: {e}", file=sys.stderr)
+        return 2
+    for line in lines:
+        print(line)
+    return 0 if ok else 1
+
+
 def _review(args) -> int:
     from foundry.review.pr import ReviewError, run_review
 
@@ -247,6 +278,8 @@ def main(argv: list[str] | None = None) -> int:
         return _bootstrap(args)
     if args.command == "update":
         return _update(args)
+    if args.command == "eval":
+        return _eval(args)
     if args.command == "review":
         return _review(args)
     print(f"foundry {args.command}: not yet implemented", file=sys.stderr)
