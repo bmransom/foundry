@@ -269,7 +269,7 @@ and structure rubrics compose over. The spec stage's output contract carries
 `open_questions`: an unresolved invariant or surface decision becomes a question the
 driver raises at the stage boundary per the autonomy dial — supervised and guided ask
 the user; autonomous records the assumption in `design.md` and flags the run. The
-spec-format seed gains the same two sections (specs-readme v3, with a discriminating
+spec-format seed gains the same two sections (specs-readme v4, with a discriminating
 eval case) so human-authored specs carry them too. Rubrics state intent and invariants, not step-by-step procedure: the routed
 model expands them to its own tier, which is what makes per-model skill variants
 unnecessary (Out of scope) until ledger data says otherwise.
