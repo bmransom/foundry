@@ -28,5 +28,16 @@ residue such as a stray `kind:` is a completeness failure, never a trigger.
 | 2 | `okf-knowledge` | `docs/` concepts and a top-level `specs/` → `knowledge/` + `roadmap/`; `kind`→`type` | a manifest `docs`/`test-docs` entry, `scripts/docs.py`, `docs/docs-config.json`, or a top-level `docs/` directory | [okf-knowledge.md](okf-knowledge.md) |
 | 3 | `harness-agnostic` | `.claude/rules/` → `rules/`; `.foundry-manifest.json` → `.foundry/manifest.json`; record the harness set | a top-level `.foundry-manifest.json` (manifest not yet under `.foundry/`) or a `.claude/rules/` directory | [harness-agnostic.md](harness-agnostic.md) |
 | 4 | `card-ids` | board gains a required slug-safe `Id` column (on claimable cards), enforced by `check-board.py` | a `roadmap/ROADMAP.md` card-table header with no `Id` column, or a manifest `conventionVersion < 4` | [card-ids.md](card-ids.md) |
+| _pending →5_ | `pinned-run` | vendored gate scripts retire for the pinned `uvx … foundry gate` command: rewrite `.githooks/pre-push` + CI, delete `check-board.py`/`prose-lint.py`, write `.foundry/config.toml` | a manifest `conventionVersion == 4` with a vendored gate script or a check-fast pre-push | code module `src/foundry/materializer/migrations/m005_pinned_run.py` |
 
 Convention 1 is the pre-OKF `docs/` layout — no row, because nothing migrates *to* it.
+
+**Head still 4, `pinned-run` pending.** Convention 5 was floating between `pinned-run`
+and the Planned `decision-taxonomy` card; `pinned-run` claims it by building first
+(`decision-taxonomy` takes 6). The head bump to a numbered `| 5 |` row lands with the
+migration's *self-host application* — rewriting this repo's own pre-push/CI and stamping
+`conventionVersion 5` in `.foundry/manifest.json` (deferred to the merge PR, once the
+canonical pin resolves). `check-gate-tools.sh` asserts registry head == this repo's
+manifest convention; bumping the head to 5 while the manifest reads 4 would break that
+lint, so the row stays unnumbered until both move together. The migration is code
+(design D6), not a prose playbook, so it carries no `.md` under this directory.
