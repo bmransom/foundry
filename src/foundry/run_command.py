@@ -337,6 +337,9 @@ def resume(
     adapter: Optional[AdapterCallable] = None,
     ask: Optional[Callable[[str], bool]] = None,
     now: Optional[Callable[[], object]] = None,
+    harness: Optional[str] = None,
+    model: Optional[str] = None,
+    effort: Optional[str] = None,
 ) -> RunResult:
     """Reconstruct a run from the ledger alone and continue it (AC-1.6).
 
@@ -346,6 +349,11 @@ def resume(
     raises `RunNotFoundError` listing known run ids; a run already at
     `run_completed` short-circuits with outcome `"already_complete"` and appends
     nothing further to the ledger.
+
+    `harness`/`model`/`effort` are the same CLI flag layer as `run()` (AC-3.1):
+    they wrap `config` in `_FlaggedRouting` for the driver's routing calls only,
+    so a `--resume` invocation can still override the route for the remaining
+    stages — `build_gates`/`autonomy` still read the unwrapped `config`.
     """
     repo_root = Path(repo_root)
     ledger = RunLedger(repo_root)
@@ -368,6 +376,7 @@ def resume(
     autonomy = AutonomyPolicy(config.autonomy.level, config.autonomy.stop_point)
     gates = build_gates(config, spec=card.spec)
     adapter = adapter or _make_adapter(repo_root, card, autonomy)
+    routing = _FlaggedRouting(config, harness, model, effort)
 
     driver = Driver(
         workspace=worktree,
@@ -377,7 +386,7 @@ def resume(
         gates=gates,
         autonomy=autonomy,
         ask=ask,
-        config=config,
+        config=routing,
         path=path,
         now=now,
     )
