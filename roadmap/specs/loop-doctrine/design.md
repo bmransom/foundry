@@ -1,4 +1,4 @@
-**Status:** In progress (2026-06-30) — tracked on the [board](../../ROADMAP.md).
+**Status:** Done (2026-07-02) — tracked on the [board](../../ROADMAP.md).
 
 # Loop-kickoff doctrine — absorb into foundry mechanisms
 
