@@ -348,6 +348,26 @@ def test_parse_codex_jsonl_against_recorded_error_fixture():
     assert result.output_tokens == 0
 
 
+def test_parse_codex_jsonl_lone_error_event_returns_failed_stage_result():
+    # Synthetic: a top-level `error` with no `turn.failed` and no successful
+    # `agent_message` — the docstring says this should still fail cleanly
+    # (exit_status 1, text = the error message), not raise ParseError.
+    raw = "\n".join([
+        '{"type":"thread.started","thread_id":"t1"}',
+        '{"type":"turn.started"}',
+        '{"type":"error","message":"boom: something went wrong"}',
+    ])
+
+    result = parse_codex_jsonl(raw)
+
+    assert result == StageResult(
+        text="boom: something went wrong",
+        input_tokens=0,
+        output_tokens=0,
+        exit_status=1,
+    )
+
+
 def test_parse_codex_jsonl_on_malformed_input_raises_clear_error():
     raw = _codex_fixture_text("malformed.jsonl")
 

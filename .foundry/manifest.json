@@ -1,6 +1,6 @@
 {
   "pluginVersion": "0.1.0",
-  "conventionVersion": 4,
+  "conventionVersion": 5,
   "harnesses": [
     "claude-code",
     "codex"
@@ -9,7 +9,7 @@
     ".githooks/pre-push": {
       "template": "pre-push",
       "version": 1,
-      "sha256": "b670a1a8366b2474637d27b22f44ff21e8ad2519915cfe10efe2275dc5b80409"
+      "sha256": "e40aa62a680c1f135e955aa8bb386a1e6290b8f19b98227f18c90b6badb38587"
     },
     "knowledge/.vitepress/config.ts": {
       "template": "vitepress-config",
@@ -39,7 +39,7 @@
     "scripts/knowledge.py": {
       "template": "knowledge",
       "version": 2,
-      "sha256": "83801d9d1c275fda71ef2b2e5f9d697cadfedd4a1ceb164d7f2dcb4c8294be78"
+      "sha256": "a2bc9f1ff4e8d56cb9bf0209ee991305ac9a9f239a608a23ae2791702ee6829f"
     },
     "scripts/test_knowledge.py": {
       "template": "test-knowledge",
@@ -49,7 +49,7 @@
     "scripts/worktree-retire.sh": {
       "template": "worktree-retire",
       "version": 1,
-      "sha256": "4b9bf74f34988607172dbb903b9dcce0b9e66e992132f930fb7c4a6b598e0943"
+      "sha256": "94bf1f4d2a1b6a01acb0aab8f3b09e8041eedfcf844484ef8f7910370323f82e"
     }
   }
 }

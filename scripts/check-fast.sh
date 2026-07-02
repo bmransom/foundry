@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# The quick gate: lock-free; runs from .githooks/pre-push and CI.
+# Foundry-local gate checks, run as the `[gate].commands` entry inside `foundry gate`
+# (config.toml). The board, prose, and knowledge checks are NOT here — the gate suite
+# (foundry.gate.board/prose/knowledge) runs them natively before this script.
 set -euo pipefail
 
 # Git's pre-push hook exports GIT_DIR/GIT_WORK_TREE/etc. into this gate; left
@@ -21,19 +23,6 @@ echo "== manifest parity"
 echo "== byte identity"
 "$REPO/scripts/check-byte-identity.sh"
 
-echo "== knowledge"
-python3 "$REPO/scripts/knowledge.py" check
-python3 "$REPO/scripts/test_knowledge.py"
-
-echo "== board"
-python3 "$REPO/scripts/check-board.py"
-python3 "$REPO/scripts/test_check_board.py"
-
-echo "== prose"
-find "$REPO/roadmap/specs" "$REPO/knowledge" -name '*.md' ! -name index.md -print0 \
-  | xargs -0 python3 "$REPO/scripts/prose-lint.py"
-python3 "$REPO/scripts/test_prose_lint.py"
-
 echo "== gate tools"
 "$REPO/scripts/check-gate-tools.sh"
 
@@ -42,6 +31,9 @@ echo "== context budget"
 
 echo "== skill references"
 "$REPO/scripts/check-skill-references.sh"
+
+echo "== knowledge tool tests"
+(cd "$REPO" && python3 scripts/test_knowledge.py)
 
 echo "== script tests"
 test_files=("$REPO"/tests/*_test.sh)
