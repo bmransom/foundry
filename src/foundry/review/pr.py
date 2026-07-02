@@ -74,7 +74,7 @@ def _enforce_whitelist(argv: list) -> None:
         and argv[0] == "api"
         and len(argv) >= 2
         and _COMMENTS_ENDPOINT.match(argv[1])
-        and "POST" in argv
+        and any(argv[i] == "--method" and argv[i + 1] == "POST" for i in range(len(argv) - 1))
     ):
         return
     raise GhWhitelistError(

@@ -16,7 +16,6 @@ from pathlib import Path
 
 import pytest
 
-from foundry.adapters.parsers import StageResult
 from foundry.ledger import RunLedger
 from foundry.review import pr as review_pr
 
@@ -304,6 +303,9 @@ def test_whitelist_allows_comments_post():
     ["api", "repos/acme/widget/pulls/1/reviews", "--method", "POST"],
     ["api", "repos/acme/widget/pulls/1/merge", "--method", "PUT"],
     ["api", "repos/acme/widget/pulls/1/comments"],  # comments endpoint but no POST
+    ["api", "repos/acme/widget/pulls/1/comments", "--method", "DELETE", "--field", "POST"],
+    # DELETE with a stray "POST" token elsewhere in argv — membership alone would
+    # wrongly allow this; only an adjacent `--method POST` pair may pass.
 ])
 def test_whitelist_blocks_non_whitelisted_calls(argv):
     gh = RecordingGh()

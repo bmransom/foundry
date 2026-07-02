@@ -180,9 +180,9 @@ As the maintainer, I want `foundry review <pr>` to run the review stage headless
 against a GitHub PR, so review conversations are durable and visible.
 
 - AC-9.1 WHEN `foundry review <pr-number>` runs, THE SYSTEM SHALL check out the PR head
-  in an isolated worktree, run the review stage (reviewer + refuter convergence) via the
-  driver, and post each blocking or advisory finding as a PR review comment anchored to
-  `file:line`.
+  in an isolated worktree, run the review stage (a single review-stage pass; reviewer+refuter
+  convergence is a driver-wide follow-up) via the driver, and post each blocking or advisory
+  finding as a PR review comment anchored to `file:line`.
 - AC-9.2 THE SYSTEM SHALL never approve, merge, or dismiss reviews; posting comments is
   its only write.
 
