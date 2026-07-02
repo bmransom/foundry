@@ -17,8 +17,10 @@ import pytest
 
 from foundry.adapters.parsers import StageResult
 from foundry.board import BoardError
+from foundry.config import Config
+from foundry.driver.machine import GateContext
 from foundry.ledger import RunLedger
-from foundry.run_command import RunNotFoundError, resume, run
+from foundry.run_command import RunNotFoundError, build_gates, resume, run
 
 FIXED = datetime(2026, 7, 2, 17, 0, 0, tzinfo=timezone.utc)
 
@@ -123,7 +125,10 @@ class ResumeAdapter:
 
 
 def test_resume_continues_after_halt_at_the_right_stage(tmp_path, repo_factory):
-    repo = repo_factory(tmp_path, cards=[("wclip-paste", "Paste command")])
+    # feature path reaches plan; the plan gate needs tasks.md in place (design D1).
+    repo = repo_factory(
+        tmp_path, cards=[("wclip-paste", "Paste command")], tasks_md_for=["wclip-paste"]
+    )
 
     halted = run(
         "wclip-paste", repo_root=repo, path="feature",
@@ -227,6 +232,31 @@ def test_interactive_session_exit_does_not_bypass_the_gate(tmp_path, repo_factor
     assert result.outcome == "halted"
     assert result.halted_gate == "tests"
     assert len(interactive_run.calls) == 3  # RETRY_CAP attempts, each launching the session
+
+
+# --- plan gate: tasks.md existence (design D1) ---------------------------------
+
+
+def test_plan_gate_fails_when_tasks_md_missing(tmp_path):
+    gates = build_gates(Config(), spec="roadmap/specs/demo-feature/")
+    outcome = gates["plan"](GateContext(tmp_path, None))
+    assert outcome.outcome == "FAIL"
+
+
+def test_plan_gate_passes_when_tasks_md_present(tmp_path):
+    spec_dir = tmp_path / "roadmap" / "specs" / "demo-feature"
+    spec_dir.mkdir(parents=True)
+    (spec_dir / "tasks.md").write_text("# tasks\n")
+
+    gates = build_gates(Config(), spec="roadmap/specs/demo-feature/")
+    outcome = gates["plan"](GateContext(tmp_path, None))
+    assert outcome.outcome == "PASS"
+
+
+def test_plan_gate_fails_when_spec_cell_blank():
+    gates = build_gates(Config(), spec="")
+    outcome = gates["plan"](GateContext(None, None))
+    assert outcome.outcome == "FAIL"
 
 
 def test_default_interactive_runner_inherits_stdio(monkeypatch):

@@ -58,6 +58,10 @@ only its enforcement changes. Stage kinds:
 | review | judgment | reviewer + refuter convergence loop, driver-owned | `CODE_REVIEW: PASS`; ≤ 20 rounds then halt |
 | finish | mechanical | commit in worktree (explicit paths), board status staged in the diff | committed; nothing pushed |
 
+Plan's tasks.md check is live (`run_command.build_gates`, `_plan_gate`); finish's worktree
+commit and knowledge's mechanical check remain unwired and land in later waves (knowledge
+check: Wave 3 T11).
+
 Gates are **preconditions evaluated by code** — the driver runs a command or greps a
 marker; it never asks the model whether the gate passed. Command-shaped gates (build's
 `[gate].test`, verify's canonical gate command) pass on exit 0, marker-agnostic — so

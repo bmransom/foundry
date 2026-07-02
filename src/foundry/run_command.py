@@ -132,13 +132,44 @@ def _marker_gate(stage_name: str) -> GateCheck:
     return marker_gate(stage.gate_name, contract.marker, contract.pass_value)
 
 
-def build_gates(config: Config) -> dict[str, GateCheck]:
+def _spec_dir(spec_cell: str) -> Path:
+    """Resolve a board Spec cell to its spec directory.
+
+    The board convention is a directory (`roadmap/specs/<feature>/`, trailing
+    slash); a cell that instead names a file resolves to that file's parent dir.
+    """
+    path = Path(spec_cell.strip())
+    return path.parent if path.suffix else path
+
+
+def _plan_gate(spec_cell: str) -> GateCheck:
+    """Plan gate (design D1): PASS when `<spec_dir>/tasks.md` exists in the
+    stage's workspace — the plan stage's job is writing that file, so its
+    presence is the mechanical proxy for "plan done" until autonomy-level
+    approval (also required by the driver's boundary check) is itself gated in
+    code. A blank Spec cell always FAILs: there is no spec directory to check.
+    """
+    cell = (spec_cell or "").strip()
+    spec_dir = _spec_dir(cell) if cell else None
+
+    def check(ctx: GateContext) -> GateOutcome:
+        if spec_dir is None or ctx.workspace is None:
+            return GateOutcome("plan", "FAIL")
+        tasks_path = Path(ctx.workspace) / spec_dir / "tasks.md"
+        return GateOutcome("plan", "PASS" if tasks_path.is_file() else "FAIL")
+
+    return check
+
+
+def build_gates(config: Config, spec: str = "") -> dict[str, GateCheck]:
     """Map stage → GateCheck: command gates for build/verify, marker gates for
-    spec/review (per stages.py output contracts). Other stages keep the no-op
-    default (PASS) until later waves wire their checks.
+    spec/review (per stages.py output contracts), a tasks.md existence check for
+    plan (design D1). `spec` is the resolved card's board Spec cell. Other
+    stages keep the no-op default (PASS) until later waves wire their checks.
     """
     gates: dict[str, GateCheck] = {
         "spec": _marker_gate("spec"),
+        "plan": _plan_gate(spec),
         "review": _marker_gate("review"),
         "verify": _commands_gate("gate", config.gate_commands),
     }
@@ -250,7 +281,7 @@ def run(
 
     autonomy = AutonomyPolicy(config.autonomy.level, config.autonomy.stop_point)
     ledger = RunLedger(repo_root)
-    gates = build_gates(config)
+    gates = build_gates(config, spec=card.spec)
     adapter = adapter or _make_adapter(
         repo_root, card, autonomy, interactive=interactive, interactive_run=interactive_run
     )
@@ -306,7 +337,7 @@ def resume(
     worktree = ensure_worktree(repo_root, card.id)
 
     autonomy = AutonomyPolicy(config.autonomy.level, config.autonomy.stop_point)
-    gates = build_gates(config)
+    gates = build_gates(config, spec=card.spec)
     adapter = adapter or _make_adapter(repo_root, card, autonomy)
 
     driver = Driver(

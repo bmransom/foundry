@@ -19,6 +19,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable, Mapping, Optional, Protocol
 
+from foundry.adapters.parsers import StageResult
 from foundry.config import Config, Route
 from foundry.ledger import RunEvent, RunLedger, compute_cost, new_run_id
 from foundry.driver.stages import (
@@ -44,6 +45,8 @@ class AutonomyPolicy:
     """Autonomy level + stop-point, validated (config.py defers this to the driver)."""
 
     level: str = "guided"
+    # stop_point is validated but not yet consumed: a single run() never chains
+    # past one card; it takes effect once multi-card chaining lands.
     stop_point: str = "card"
 
     def __post_init__(self):
@@ -57,17 +60,9 @@ class AutonomyPolicy:
             )
 
 
-# --- adapter / gate protocols (minimal; T4 owns the real StageResult/adapter) -
-
-
-@dataclass
-class StageResult:
-    """Normalized judgment-stage output. Mirrors T4's adapter contract."""
-
-    text: str = ""
-    input_tokens: Optional[int] = None
-    output_tokens: Optional[int] = None
-    exit_status: int = 0
+# --- adapter / gate protocols ---------------------------------------------
+# StageResult is `foundry.adapters.parsers.StageResult` (design D2) — one shape,
+# not two; the driver only reads it by attribute (text, input_tokens, output_tokens).
 
 
 @dataclass(frozen=True)
