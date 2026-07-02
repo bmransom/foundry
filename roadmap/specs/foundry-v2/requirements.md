@@ -3,7 +3,7 @@ title: foundry-v2 requirements
 description: Rebuild foundry's chassis as a standalone CLI — deterministic lifecycle driver, harness adapters as data, run ledger, pinned-run distribution.
 ---
 
-> **Status:** In progress (2026-07-02) — tracked on the [board](../../ROADMAP.md).
+> **Status:** Done (2026-07-02) — spec approved and implemented (Epic 8); tracked on the [board](../../ROADMAP.md).
 
 # foundry-v2 — requirements
 
@@ -203,6 +203,15 @@ the driver's work, and gates read declared output.
   (`naming-standards`, `design-patterns`, `modular-structure`, `performance`, `debug`,
   `extract-skill`) SHALL stay interactively invocable in their current home and be
   composable into stage prompts.
+- AC-10.4 WHEN the spec stage runs, THE SYSTEM SHALL require `design.md` to declare the
+  feature's **public surface** (new or changed types, signatures, wire formats, config
+  keys) and its **invariants** (properties that must always hold); a missing section is
+  a spec-stage gate failure.
+- AC-10.5 WHERE the spec stage cannot resolve an invariant or public-surface decision,
+  THE SYSTEM SHALL emit it as `open_questions` in the stage's output contract; the
+  driver SHALL surface each at the stage boundary per the autonomy level — supervised
+  and guided ask the user, autonomous records it as a stated assumption in `design.md`
+  and flags it in the run summary.
 
 ## Transition requirements
 

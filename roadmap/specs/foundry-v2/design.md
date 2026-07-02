@@ -3,7 +3,7 @@ title: foundry-v2 design
 description: Decisions, architecture, and schemas for the v2 chassis — driver, adapters, ledger, gate suite, materializer.
 ---
 
-> **Status:** In progress (2026-07-02) — tracked on the [board](../../ROADMAP.md).
+> **Status:** Done (2026-07-02) — spec approved and implemented (Epic 8); tracked on the [board](../../ROADMAP.md).
 
 # foundry-v2 — design
 
@@ -260,7 +260,17 @@ must fail. And every rubric whose stage gate reads harness output ends with its 
 contract** — the last-line marker or JSON verdict its stage's GateCheck parses
 (`SPEC_REVIEW: CLEAN`, `CODE_REVIEW: PASS|FAIL`, a findings array) — so those gates
 read declared output, never free text; build's and plan's command-shaped gates pass on
-exit status (D1). Rubrics state intent and invariants, not step-by-step procedure: the routed
+exit status (D1).
+
+**Public surface and invariants (AC-10.4/10.5).** The spec rubric requires `design.md`
+to declare the feature's public surface (types, signatures, wire formats, config keys)
+and its invariants (what must always hold) — the artifacts the naming, design-pattern,
+and structure rubrics compose over. The spec stage's output contract carries
+`open_questions`: an unresolved invariant or surface decision becomes a question the
+driver raises at the stage boundary per the autonomy dial — supervised and guided ask
+the user; autonomous records the assumption in `design.md` and flags the run. The
+spec-format seed gains the same two sections (specs-readme v3, with a discriminating
+eval case) so human-authored specs carry them too. Rubrics state intent and invariants, not step-by-step procedure: the routed
 model expands them to its own tier, which is what makes per-model skill variants
 unnecessary (Out of scope) until ledger data says otherwise.
 

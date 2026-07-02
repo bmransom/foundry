@@ -3,7 +3,7 @@ title: foundry-v2 tasks
 description: Implementation plan in waves — skeleton, driver, routing + codex, gate + doctor + pinned run, materializer, eval + review surfaces.
 ---
 
-> **Status:** In progress (2026-07-02) — tracked on the [board](../../ROADMAP.md).
+> **Status:** Done (2026-07-02) — spec approved and implemented (Epic 8); tracked on the [board](../../ROADMAP.md).
 
 # foundry-v2 — tasks
 
@@ -55,9 +55,13 @@ TDD — the test lands red first — and names the gate that proves it. Implemen
   card context (id, spec paths, autonomy level) per the stage→rubric map in `stages.py`
   (advisory skills composed by reference; when wiring the map, audit each advisory
   skill for session/orchestration assumptions that read wrong in a headless stage
-  prompt — flag them, method content unchanged per Out of scope). Tests: golden-file
-  prompts under `tests/fixtures/prompts/`, including a seeded orchestration-verb rubric
-  that must fail. Gate: pytest green.
+  prompt — flag them, method content unchanged per Out of scope). The spec rubric
+  requires design.md's **Public surface** and **Invariants** sections and declares
+  `open_questions` in its output contract (AC-10.4/10.5); bump the specs-readme seed to
+  v3 with the same two sections, mirror this repo's `roadmap/specs/README.md` copy, and
+  add a discriminating eval case (a spec missing either section must be flagged).
+  Tests: golden-file prompts under `tests/fixtures/prompts/`, including a seeded
+  orchestration-verb rubric that must fail. Gate: pytest green.
 - **T7 — `foundry run` end-to-end.** Wire cli → board resolution (parse the ROADMAP card
   table; unknown id → error listing near matches) → worktree create (`git worktree add -b
   card/<id> wt/<id> origin/<default>`, reuse if present) → machine → ledger. First seed
