@@ -3,7 +3,7 @@ title: foundry-v2 tasks
 description: Implementation plan in waves — skeleton, driver, routing + codex, gate + doctor + pinned run, materializer, eval + review surfaces.
 ---
 
-> **Status:** In progress (2026-07-02) — tracked on the [board](../../ROADMAP.md).
+> **Status:** Done (2026-07-02) — spec approved and implemented (Epic 8); tracked on the [board](../../ROADMAP.md).
 
 # foundry-v2 — tasks
 
