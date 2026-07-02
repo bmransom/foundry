@@ -8,7 +8,7 @@ per-feature detail in `roadmap/specs/<feature>/`, vocabulary in `knowledge/gloss
 ## Commands
 
 ```bash
-scripts/check-fast.sh                      # the quick gate: plugin validate + byte-identity + script tests
+uv run foundry gate                        # the quick gate: board/prose/knowledge checks + check-fast.sh
 scripts/install-hooks.sh                   # once per clone: route git hooks through .githooks/
 claude plugin validate plugins/foundry     # manifest check only (runs inside the gate)
 ```
@@ -32,9 +32,9 @@ script, two triggers. Bypass once with `git push --no-verify`.
 - Keep foundry's verbatim-template copies byte-identical to
   `src/foundry/templates/verbatim/` (modulo the version marker) — the self-host gate.
 - Ship a convention break (a board, template, or frontmatter structure change) with its migration
-  — add the `references/migrations/` playbook, bump the registry head + `conventionVersion`. A new
-  **gate tool** carries a `# foundry-gate-tool:` marker, wired into the gate. `check-gate-tools.sh`
-  enforces both mechanically; `code-review` flags a convention break with no migration.
+  — add a module under `src/foundry/materializer/migrations/`, bump the registry head +
+  `conventionVersion`. `check-gate-tools.sh` enforces the head==manifest match mechanically;
+  `code-review` flags a convention break with no migration.
 - Give a behavior-changing template or skill an eval case before it ships.
 - Close a COE only with a mechanical change (gate, lint, rule, or eval fixture), never
   prose.

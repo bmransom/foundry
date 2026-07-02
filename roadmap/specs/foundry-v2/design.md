@@ -216,6 +216,10 @@ uvx --from "git+https://github.com/bmransom/foundry@v2.0.0" foundry gate
 URL so the zero-install property holds on first clone; `foundry doctor` and the AC-5.4
 warning catch drift between the two. In this repo, `check-fast.sh` becomes the
 `[gate].commands` entry, so its checks (and its PASS marker) run inside `foundry gate`.
+Self-host divergence: foundry's own `.githooks/pre-push` and CI run the LOCAL tree
+(`uv run --project "$REPO" foundry gate`), not the pinned `uvx` form m005 writes into
+consumers — the repo must gate its current code with its current tools; a pinned fetch
+would gate a stale tag.
 `foundry gate` subsumes the v1
 gate tools — `check-board.py`, `prose-lint.py`, `knowledge.py check` port into
 `src/foundry/gate/` as modules — plus the repo's own `[gate].commands`. The
