@@ -58,6 +58,10 @@ only its enforcement changes. Stage kinds:
 | review | judgment | reviewer + refuter convergence loop, driver-owned | `CODE_REVIEW: PASS`; ≤ 20 rounds then halt |
 | finish | mechanical | commit in worktree (explicit paths), board status staged in the diff | committed; nothing pushed |
 
+Plan's tasks.md check is live (`run_command.build_gates`, `_plan_gate`); finish's worktree
+commit and knowledge's mechanical check remain unwired and land in later waves (knowledge
+check: Wave 3 T11).
+
 Gates are **preconditions evaluated by code** — the driver runs a command or greps a
 marker; it never asks the model whether the gate passed. Command-shaped gates (build's
 `[gate].test`, verify's canonical gate command) pass on exit 0, marker-agnostic — so
@@ -269,7 +273,7 @@ and structure rubrics compose over. The spec stage's output contract carries
 `open_questions`: an unresolved invariant or surface decision becomes a question the
 driver raises at the stage boundary per the autonomy dial — supervised and guided ask
 the user; autonomous records the assumption in `design.md` and flags the run. The
-spec-format seed gains the same two sections (specs-readme v3, with a discriminating
+spec-format seed gains the same two sections (specs-readme v4, with a discriminating
 eval case) so human-authored specs carry them too. Rubrics state intent and invariants, not step-by-step procedure: the routed
 model expands them to its own tier, which is what makes per-model skill variants
 unnecessary (Out of scope) until ledger data says otherwise.
@@ -286,6 +290,8 @@ src/foundry/
   cli.py                     # argparse dispatch: run, gate, doctor, runs, eval, review, bootstrap, update
   config.py                  # config.toml + manifest.json load; precedence; shipped defaults
   ledger.py                  # event dataclasses, append/read, run ids, price table
+  board.py                   # run-time card resolver: ROADMAP table parse, near-match errors (distinct from gate/board.py)
+  run_command.py             # `foundry run` wiring: worktree create/reuse, gate construction, adapter callable
   driver/
     machine.py               # stage graph, preconditions, retry caps, halt/resume
     stages.py                # stage definitions: kind, gate, stage→rubric map, entry map per path

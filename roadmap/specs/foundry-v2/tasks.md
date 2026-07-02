@@ -58,10 +58,17 @@ TDD — the test lands red first — and names the gate that proves it. Implemen
   prompt — flag them, method content unchanged per Out of scope). The spec rubric
   requires design.md's **Public surface** and **Invariants** sections and declares
   `open_questions` in its output contract (AC-10.4/10.5); bump the specs-readme seed to
-  v3 with the same two sections, mirror this repo's `roadmap/specs/README.md` copy, and
+  v4 with the same two sections, mirror this repo's `roadmap/specs/README.md` copy, and
   add a discriminating eval case (a spec missing either section must be flagged).
   Tests: golden-file prompts under `tests/fixtures/prompts/`, including a seeded
   orchestration-verb rubric that must fail. Gate: pytest green.
+  T6 audit results (2026-07-02): `extract-skill` rides the fresh-session/tmux runner and
+  says "this session" / "ask the user" (Wave-4 reshape confirmed); `performance`
+  sequences lifecycle stages and presumes its own workspace setup; `debug`'s relative
+  `references/` links break when composed; naming/design/structure carry only mild
+  "during spec review, ask…" framing — acceptable as method content. The seed eval case
+  needs a live-LLM reviewer run (no deterministic slot in `evals/`); the requirement is
+  pinned mechanically in `tests/test_prompts.py` meanwhile.
 - **T7 — `foundry run` end-to-end.** Wire cli → board resolution (parse the ROADMAP card
   table; unknown id → error listing near matches) → worktree create (`git worktree add -b
   card/<id> wt/<id> origin/<default>`, reuse if present) → machine → ledger. First seed
@@ -144,3 +151,9 @@ TDD — the test lands red first — and names the gate that proves it. Implemen
 
 Per-model skill compilation variants; harness-deliberation on the driver; third-harness
 adapter; external telemetry. Each waits on ledger/eval data showing the need.
+
+Interactive marker capture (found in T8): under `--interactive`, stdio is inherited, so
+spec/review marker gates cannot see their `SPEC_REVIEW:`/`CODE_REVIEW:` last line and
+FAIL deterministically (never auto-pass). Candidate fixes when scheduled: tee/PTY
+capture, or a headless grading call over the worktree after the session exits.
+Command-shaped gates work fully interactive.

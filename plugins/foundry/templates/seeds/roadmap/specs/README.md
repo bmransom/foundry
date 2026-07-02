@@ -3,7 +3,7 @@ title: Spec format
 description: How specs are written — requirements, design, and tasks per feature.
 ---
 
-<!-- foundry-seed: specs-readme v3 -->
+<!-- foundry-seed: specs-readme v4 -->
 
 # Specs
 
@@ -35,6 +35,19 @@ one testable behavior per criterion:
 
 Order `tasks.md` as waves: tasks within a wave are independent and can land in
 parallel; each wave builds on the last. Every task names the gate that proves it.
+
+## Public surface
+
+`design.md` MUST declare the feature's **public surface** — every new or changed type,
+signature, wire format, and config key. This is the contract the naming and structure
+reviews grade against; a missing section is a spec-stage gate failure.
+
+## Invariants
+
+`design.md` MUST declare the feature's **invariants** — the properties that must always
+hold (a gate that cannot be rationalized past, an append-only log, a value that defaults
+once). State each so a reviewer can check the code against it; a missing section is a
+spec-stage gate failure.
 
 ## Metrics
 
