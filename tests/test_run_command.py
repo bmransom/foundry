@@ -152,6 +152,50 @@ def test_resume_continues_after_halt_at_the_right_stage(tmp_path, repo_factory):
     assert len(completed_stages) == len(set(completed_stages))  # no stage completes twice
 
 
+class RouteRecordingAdapter:
+    """Passes every stage's marker gate; records (stage, route) per call so a
+    test can assert what route resume() threaded through for each stage."""
+
+    def __init__(self):
+        self.calls = []
+
+    def __call__(self, stage, route, workspace):
+        self.calls.append((stage, route))
+        text = ""
+        if stage == "spec":
+            text = "SPEC_REVIEW: CLEAN"
+        elif stage == "review":
+            text = "CODE_REVIEW: PASS"
+        return StageResult(text=text, input_tokens=10, output_tokens=1, exit_status=0)
+
+
+def test_resume_with_flag_override_routes_the_overridden_model(tmp_path, repo_factory):
+    # Same setup as test_resume_continues_after_halt_at_the_right_stage, but the
+    # --resume call itself carries a --harness/--model/--effort override (AC-3.1)
+    # that run() never saw — resume() must thread it into routing just like run().
+    repo = repo_factory(
+        tmp_path, cards=[("wclip-paste", "Paste command")], tasks_md_for=["wclip-paste"]
+    )
+
+    halted = run(
+        "wclip-paste", repo_root=repo, path="feature",
+        adapter=SpecFailingAdapter(), now=lambda: FIXED,
+    )
+    assert halted.outcome == "halted"
+
+    resumed_adapter = RouteRecordingAdapter()
+    resumed = resume(
+        halted.run_id, repo_root=repo, adapter=resumed_adapter, now=lambda: FIXED,
+        harness="codex", model="gpt-5.5", effort="high",
+    )
+    assert resumed.outcome == "completed"
+
+    spec_route = next(route for stage, route in resumed_adapter.calls if stage == "spec")
+    assert spec_route.harness == "codex"
+    assert spec_route.model == "gpt-5.5"
+    assert spec_route.effort == "high"
+
+
 def test_resume_unknown_run_id_errors_listing_known_runs(tmp_path, repo_factory):
     repo = repo_factory(tmp_path, cards=[("wclip-paste", "Paste command")])
     known = run(
@@ -232,6 +276,48 @@ def test_interactive_session_exit_does_not_bypass_the_gate(tmp_path, repo_factor
     assert result.outcome == "halted"
     assert result.halted_gate == "tests"
     assert len(interactive_run.calls) == 3  # RETRY_CAP attempts, each launching the session
+
+
+# --- T10: CLI flag layer (AC-3.1/AC-3.2) ---------------------------------------
+
+
+def test_cli_flags_override_route_and_ledger_records_resolved_route(tmp_path, repo_factory):
+    # no [routing] table in the fixture config: shipped defaults would otherwise
+    # route build -> claude-code/claude-sonnet-5 (AC-3.1's lower layers).
+    repo = repo_factory(tmp_path, cards=[("wclip-paste", "Paste command")])
+
+    result = run(
+        "wclip-paste", repo_root=repo, path="bug-fix",
+        adapter=FakeAdapter(), now=lambda: FIXED,
+        harness="codex", model="gpt-5.5", effort="high",
+    )
+    assert result.outcome == "completed"
+
+    events = RunLedger(repo).events(result.run_id)
+    build_completed = next(
+        e for e in events if e.event == "stage_completed" and e.stage == "build"
+    )
+    assert build_completed.harness == "codex"
+    assert build_completed.model == "gpt-5.5"
+    assert build_completed.effort == "high"
+
+
+def test_no_cli_flags_falls_back_to_shipped_default_route(tmp_path, repo_factory):
+    repo = repo_factory(tmp_path, cards=[("wclip-paste", "Paste command")])
+
+    result = run(
+        "wclip-paste", repo_root=repo, path="bug-fix",
+        adapter=FakeAdapter(), now=lambda: FIXED,
+    )
+    assert result.outcome == "completed"
+
+    events = RunLedger(repo).events(result.run_id)
+    build_completed = next(
+        e for e in events if e.event == "stage_completed" and e.stage == "build"
+    )
+    assert build_completed.harness == "claude-code"
+    assert build_completed.model == "claude-sonnet-5"
+    assert build_completed.effort is None
 
 
 # --- plan gate: tasks.md existence (design D1) ---------------------------------

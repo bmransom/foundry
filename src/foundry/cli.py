@@ -37,6 +37,18 @@ def build_parser() -> argparse.ArgumentParser:
         "--interactive", action="store_true",
         help="open the routed harness interactively for judgment stages (AC-1.5)",
     )
+    run.add_argument(
+        "--harness", default=None,
+        help="override the routed harness for every judgment stage (AC-3.1)",
+    )
+    run.add_argument(
+        "--model", default=None,
+        help="override the routed model for every judgment stage (AC-3.1)",
+    )
+    run.add_argument(
+        "--effort", default=None,
+        help="override the routed reasoning effort for every judgment stage (AC-3.1)",
+    )
 
     runs = subparsers.add_parser("runs", help="inspect the run ledger (AC-4.3/AC-4.4)")
     runs_sub = runs.add_subparsers(dest="runs_command")
@@ -56,7 +68,10 @@ def _run(args) -> int:
 
     if args.resume:
         try:
-            result = resume(args.resume, repo_root=Path.cwd())
+            result = resume(
+                args.resume, repo_root=Path.cwd(),
+                harness=args.harness, model=args.model, effort=args.effort,
+            )
         except (BoardError, AutonomyError, RunNotFoundError) as e:
             print(f"foundry run --resume: {e}", file=sys.stderr)
             return 2
@@ -75,7 +90,8 @@ def _run(args) -> int:
 
     try:
         result = run(
-            args.card_id, repo_root=Path.cwd(), path=args.path, interactive=args.interactive
+            args.card_id, repo_root=Path.cwd(), path=args.path, interactive=args.interactive,
+            harness=args.harness, model=args.model, effort=args.effort,
         )
     except (BoardError, AutonomyError) as e:
         print(f"foundry run: {e}", file=sys.stderr)

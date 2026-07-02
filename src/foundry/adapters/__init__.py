@@ -14,6 +14,7 @@ import subprocess
 import tomllib
 from dataclasses import dataclass
 from importlib import resources
+from pathlib import Path
 from typing import Callable
 
 from foundry.adapters.parsers import PARSERS, StageResult
@@ -32,7 +33,7 @@ class AdapterError(Exception):
 class Adapter:
     name: str
     instruction_file: str
-    instruction_pointer: str
+    instruction_pointer: str | None
     headless_command: tuple
     effort_args: tuple
     parser_name: str
@@ -56,6 +57,14 @@ def _str(table: dict, key: str, qualified_name: str) -> str:
     if not isinstance(value, str):
         raise AdapterError(f"{qualified_name}.{key}: must be a string")
     return value
+
+
+def _str_optional(table: dict, key: str, qualified_name: str) -> str | None:
+    """Like _str, but a missing key is None rather than an error (e.g. codex has
+    no CLAUDE.md-style pointer -- it reads AGENTS.md natively)."""
+    if key not in table:
+        return None
+    return _str(table, key, qualified_name)
 
 
 def _str_list(table: dict, key: str, qualified_name: str) -> tuple:
@@ -82,7 +91,7 @@ def load(name: str) -> Adapter:
     return Adapter(
         name=adapter_name,
         instruction_file=_str(instruction, "file", f"{adapter_name}.instruction"),
-        instruction_pointer=_str(instruction, "pointer", f"{adapter_name}.instruction"),
+        instruction_pointer=_str_optional(instruction, "pointer", f"{adapter_name}.instruction"),
         headless_command=_str_list(headless, "command", f"{adapter_name}.headless"),
         effort_args=_str_list(headless, "effort_args", f"{adapter_name}.headless")
         if "effort_args" in headless
@@ -127,9 +136,9 @@ def available(adapter: Adapter) -> bool:
     return adapter.available()
 
 
-def _run_subprocess(argv: list, workspace: str) -> str:
+def _run_subprocess(argv: list, workspace: str, stdin: str | None = None) -> str:
     completed = subprocess.run(
-        argv, cwd=workspace, capture_output=True, text=True, check=False,
+        argv, cwd=workspace, input=stdin, capture_output=True, text=True, check=False,
     )
     return completed.stdout
 
@@ -140,12 +149,18 @@ def headless(
     route: Route,
     workspace: str,
     *,
-    run: Callable[[list, str], str] | None = None,
+    run: Callable[..., str] | None = None,
 ) -> StageResult:
     """Run the adapter's headless command for one stage, capture stdout, and parse it.
 
-    `run` is injectable (argv, workspace) -> str, so tests can supply a fake
-    subprocess runner instead of spawning the real harness CLI.
+    `run` is injectable (argv, workspace, stdin=None) -> str, so tests can supply
+    a fake subprocess runner instead of spawning the real harness CLI.
+
+    codex exec has no @file expansion (T9's flagged gap): its adapter TOML uses a
+    bare "-" (codex's stdin marker) where claude's uses `@{prompt_file}`. When the
+    expanded argv contains that bare "-", the prompt file's content is read and
+    piped over stdin; claude's argv never contains a bare "-" element, so its
+    stdin stays None and behavior is unchanged.
     """
     run = run or _run_subprocess
 
@@ -165,7 +180,8 @@ def headless(
             workspace=workspace,
         )
 
-    raw_stdout = run(argv, workspace)
+    stdin = Path(prompt_file).read_text(encoding="utf-8") if "-" in argv else None
+    raw_stdout = run(argv, workspace, stdin=stdin)
 
     if adapter.parser_name not in PARSERS:
         raise AdapterError(f"no parser registered for '{adapter.parser_name}'")

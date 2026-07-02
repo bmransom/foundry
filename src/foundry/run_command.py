@@ -26,6 +26,7 @@ from __future__ import annotations
 import shlex
 import subprocess
 import tempfile
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Optional
 
@@ -57,6 +58,25 @@ InteractiveRunner = Callable[[list, str], int]
 
 class RunNotFoundError(Exception):
     """`--resume` named a run id with no events in the ledger."""
+
+
+@dataclass(frozen=True)
+class _FlaggedRouting:
+    """Bakes CLI `--harness/--model/--effort` flags into `Config.route_for` as the
+    flag layer (AC-3.1's highest precedence), without changing the driver — which
+    calls `config.route_for(stage.name)` with no arguments (`Driver._route`). Duck-
+    types as a `Config` for that one call site.
+    """
+
+    config: Config
+    harness: Optional[str] = None
+    model: Optional[str] = None
+    effort: Optional[str] = None
+
+    def route_for(self, stage: str) -> Route:
+        return self.config.route_for(
+            stage, harness=self.harness, model=self.model, effort=self.effort
+        )
 
 
 # --- worktree (the only git write; AC-1.8 bounds it) --------------------------
@@ -266,6 +286,9 @@ def run(
     now: Optional[Callable[[], object]] = None,
     interactive: bool = False,
     interactive_run: Optional[InteractiveRunner] = None,
+    harness: Optional[str] = None,
+    model: Optional[str] = None,
+    effort: Optional[str] = None,
 ) -> RunResult:
     """Resolve the card, create/reuse its worktree, and drive the lifecycle.
 
@@ -273,6 +296,11 @@ def run(
     routed harness adapter, headless unless `interactive=True` (AC-1.5), in which
     case `interactive_run` is the injectable seam for the subprocess call itself
     (defaults to inheriting stdio). The ledger is rooted at the repo.
+
+    `harness`/`model`/`effort` are the CLI flag layer (AC-3.1's highest
+    precedence): they override the resolved route for every judgment stage of
+    this run, via `_FlaggedRouting` wrapping `config` for the driver's routing
+    calls only — `build_gates`/`autonomy` still read the unwrapped `config`.
     """
     repo_root = Path(repo_root)
     config = Config.load(repo_root)
@@ -285,6 +313,7 @@ def run(
     adapter = adapter or _make_adapter(
         repo_root, card, autonomy, interactive=interactive, interactive_run=interactive_run
     )
+    routing = _FlaggedRouting(config, harness, model, effort)
 
     driver = Driver(
         workspace=worktree,
@@ -294,7 +323,7 @@ def run(
         gates=gates,
         autonomy=autonomy,
         ask=ask,
-        config=config,
+        config=routing,
         path=path,
         now=now,
     )
@@ -308,6 +337,9 @@ def resume(
     adapter: Optional[AdapterCallable] = None,
     ask: Optional[Callable[[str], bool]] = None,
     now: Optional[Callable[[], object]] = None,
+    harness: Optional[str] = None,
+    model: Optional[str] = None,
+    effort: Optional[str] = None,
 ) -> RunResult:
     """Reconstruct a run from the ledger alone and continue it (AC-1.6).
 
@@ -317,6 +349,11 @@ def resume(
     raises `RunNotFoundError` listing known run ids; a run already at
     `run_completed` short-circuits with outcome `"already_complete"` and appends
     nothing further to the ledger.
+
+    `harness`/`model`/`effort` are the same CLI flag layer as `run()` (AC-3.1):
+    they wrap `config` in `_FlaggedRouting` for the driver's routing calls only,
+    so a `--resume` invocation can still override the route for the remaining
+    stages — `build_gates`/`autonomy` still read the unwrapped `config`.
     """
     repo_root = Path(repo_root)
     ledger = RunLedger(repo_root)
@@ -339,6 +376,7 @@ def resume(
     autonomy = AutonomyPolicy(config.autonomy.level, config.autonomy.stop_point)
     gates = build_gates(config, spec=card.spec)
     adapter = adapter or _make_adapter(repo_root, card, autonomy)
+    routing = _FlaggedRouting(config, harness, model, effort)
 
     driver = Driver(
         workspace=worktree,
@@ -348,7 +386,7 @@ def resume(
         gates=gates,
         autonomy=autonomy,
         ask=ask,
-        config=config,
+        config=routing,
         path=path,
         now=now,
     )
