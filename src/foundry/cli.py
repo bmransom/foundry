@@ -6,9 +6,9 @@ from pathlib import Path
 
 from foundry import __version__
 
-# Stub subcommands: later tasks (T16 update, T17 eval, T18 review) fill these in.
-# `run`, `runs`, `gate`, `doctor`, and `bootstrap` are wired below.
-STUB_SUBCOMMANDS = ["eval", "review", "update"]
+# Stub subcommands: later tasks (T17 eval, T18 review) fill these in.
+# `run`, `runs`, `gate`, `doctor`, `bootstrap`, and `update` are wired below.
+STUB_SUBCOMMANDS = ["eval", "review"]
 
 RUN_PATHS = ("feature", "bug-fix", "refactor", "enhancement")
 
@@ -77,6 +77,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     boot.add_argument(
         "--model", default=None, help="model override for the interview",
+    )
+
+    upd = subparsers.add_parser(
+        "update", help="re-sync templates and cross convention breaks (AC-7.3)"
+    )
+    upd.add_argument(
+        "--dry-run", action="store_true",
+        help="print the update plan without writing",
     )
 
     for name in STUB_SUBCOMMANDS:
@@ -186,6 +194,14 @@ def _bootstrap(args) -> int:
     return 0 if ok else 1
 
 
+def _update(args) -> int:
+    from foundry.materializer.update import run as run_update
+
+    for line in run_update(Path.cwd(), dry_run=args.dry_run):
+        print(line)
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -202,6 +218,8 @@ def main(argv: list[str] | None = None) -> int:
         return _doctor(args)
     if args.command == "bootstrap":
         return _bootstrap(args)
+    if args.command == "update":
+        return _update(args)
     print(f"foundry {args.command}: not yet implemented", file=sys.stderr)
     return 2
 

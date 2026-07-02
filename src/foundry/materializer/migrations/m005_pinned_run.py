@@ -21,6 +21,7 @@ from pathlib import Path
 from foundry import __version__
 
 CONVENTION = 5
+ID = "pinned-run"
 DEFAULT_REPO_URL = "https://github.com/bmransom/foundry"
 
 # Scripts the gate suite (foundry.gate.board / .prose) fully replaces — safe to delete.
