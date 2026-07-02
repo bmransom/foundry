@@ -50,4 +50,7 @@ for test_file in "${test_files[@]}"; do
   bash "$test_file"
 done
 
+echo "== pytest"
+(cd "$REPO" && uv run pytest -q)
+
 echo "check-fast: PASS"

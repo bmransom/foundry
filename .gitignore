@@ -3,6 +3,7 @@ knowledge/.vitepress/cache/
 knowledge/.vitepress/dist/
 __pycache__/
 .pytest_cache/
+.venv/
 knowledge/.vitepress/sidebar.generated.json
 evals/results/
 evals/fixtures/navigation/tree/
