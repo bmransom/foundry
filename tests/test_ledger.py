@@ -2,6 +2,7 @@
 
 import json
 import re
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
@@ -105,8 +106,11 @@ def test_run_id_format():
     assert RUN_ID_RE.match(run_id), run_id
 
 
-def test_run_id_unique_suffix():
-    ids = {new_run_id() for _ in range(50)}
+def test_run_id_unique_across_timestamps():
+    # Same-second draws are only entropy-unique (16 bits — collisions allowed);
+    # the guaranteed axis is the timestamp.
+    base = datetime(2026, 7, 2, 12, 0, 0, tzinfo=timezone.utc)
+    ids = {new_run_id(now=base + timedelta(seconds=i)) for i in range(50)}
     assert len(ids) == 50
 
 
