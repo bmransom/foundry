@@ -172,7 +172,9 @@ class Driver:
     def run(self) -> RunResult:
         run_id = new_run_id(self._now())
         self._started: list = []
-        self._append(self._event(run_id, "run_started"))
+        # Persist the entry path on run_started's stage field so resume (T8) can
+        # reconstruct the same machine without reading Driver config.
+        self._append(self._event(run_id, "run_started", stage=self._path))
         return self._walk(run_id, start_idx=0)
 
     def resume(self, run_id: str) -> RunResult:

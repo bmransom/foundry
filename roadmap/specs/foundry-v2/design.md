@@ -286,6 +286,8 @@ src/foundry/
   cli.py                     # argparse dispatch: run, gate, doctor, runs, eval, review, bootstrap, update
   config.py                  # config.toml + manifest.json load; precedence; shipped defaults
   ledger.py                  # event dataclasses, append/read, run ids, price table
+  board.py                   # run-time card resolver: ROADMAP table parse, near-match errors (distinct from gate/board.py)
+  run_command.py             # `foundry run` wiring: worktree create/reuse, gate construction, adapter callable
   driver/
     machine.py               # stage graph, preconditions, retry caps, halt/resume
     stages.py                # stage definitions: kind, gate, stage→rubric map, entry map per path
