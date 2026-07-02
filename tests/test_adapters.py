@@ -37,7 +37,7 @@ def test_load_claude_code_adapter():
     assert adapter.instruction_file == "AGENTS.md"
     assert adapter.instruction_pointer == "CLAUDE.md"
     assert adapter.headless_command == (
-        "claude", "-p", "@{prompt_file}", "--output-format", "stream-json",
+        "claude", "-p", "@{prompt_file}", "--output-format", "stream-json", "--verbose",
         "--permission-mode", "acceptEdits", "--model", "{model}",
     )
     assert adapter.effort_args == ("--effort", "{effort}")
@@ -117,9 +117,11 @@ class RecordingRunner:
     def __init__(self, stdout: str):
         self.stdout = stdout
         self.calls = []
+        self.stdins = []
 
-    def __call__(self, argv, workspace):
+    def __call__(self, argv, workspace, stdin=None):
         self.calls.append((list(argv), workspace))
+        self.stdins.append(stdin)
         return self.stdout
 
 
@@ -255,7 +257,7 @@ def test_load_codex_adapter():
     assert adapter.instruction_file == "AGENTS.md"
     assert adapter.headless_command == (
         "codex", "exec", "--json", "--sandbox", "workspace-write",
-        "-m", "{model}", "@{prompt_file}",
+        "-m", "{model}", "-",
     )
     assert adapter.effort_args == ("-c", "model_reasoning_effort={effort}")
     assert adapter.parser_name == "codex-jsonl"
@@ -276,12 +278,14 @@ def _codex_fixture_text(name: str) -> str:
     return (CODEX_FIXTURES / name).read_text()
 
 
-def test_codex_headless_omits_effort_args_when_effort_unset():
+def test_codex_headless_omits_effort_args_when_effort_unset(tmp_path):
     adapter = load("codex")
     runner = RecordingRunner(_codex_fixture_text("hello.jsonl"))
+    prompt_file = tmp_path / "prompt.md"
+    prompt_file.write_text("hi", encoding="utf-8")
     route = Route(harness="codex", model="gpt-5.5", effort=None)
 
-    headless(adapter, "/tmp/prompt.md", route, "/tmp/ws", run=runner)
+    headless(adapter, str(prompt_file), route, "/tmp/ws", run=runner)
 
     argv, workspace = runner.calls[0]
     assert "-c" not in argv
@@ -289,23 +293,27 @@ def test_codex_headless_omits_effort_args_when_effort_unset():
     assert workspace == "/tmp/ws"
 
 
-def test_codex_headless_appends_effort_args_when_effort_set():
+def test_codex_headless_appends_effort_args_when_effort_set(tmp_path):
     adapter = load("codex")
     runner = RecordingRunner(_codex_fixture_text("hello.jsonl"))
+    prompt_file = tmp_path / "prompt.md"
+    prompt_file.write_text("hi", encoding="utf-8")
     route = Route(harness="codex", model="gpt-5.5", effort="high")
 
-    headless(adapter, "/tmp/prompt.md", route, "/tmp/ws", run=runner)
+    headless(adapter, str(prompt_file), route, "/tmp/ws", run=runner)
 
     argv, _ = runner.calls[0]
     assert argv[-2:] == ["-c", "model_reasoning_effort=high"]
 
 
-def test_codex_headless_returns_parsed_stage_result():
+def test_codex_headless_returns_parsed_stage_result(tmp_path):
     adapter = load("codex")
     runner = RecordingRunner(_codex_fixture_text("hello.jsonl"))
+    prompt_file = tmp_path / "prompt.md"
+    prompt_file.write_text("hi", encoding="utf-8")
     route = Route(harness="codex", model="gpt-5.5", effort=None)
 
-    result = headless(adapter, "/tmp/prompt.md", route, "/tmp/ws", run=runner)
+    result = headless(adapter, str(prompt_file), route, "/tmp/ws", run=runner)
 
     assert isinstance(result, StageResult)
     assert result.text == "ok"
@@ -361,3 +369,76 @@ def test_parse_codex_jsonl_missing_agent_message_raises():
 def test_parse_codex_jsonl_on_empty_input_raises():
     with pytest.raises(ParseError):
         parse_codex_jsonl("")
+
+
+# --- prompt delivery: codex has no @file expansion, so a bare "-" in the
+# expanded argv means "pipe prompt_file's content over stdin" (T9's flagged
+# gap); claude keeps @{prompt_file} and gets no stdin. -------------------------
+
+
+def test_headless_pipes_prompt_file_content_via_stdin_when_argv_has_bare_dash(tmp_path):
+    adapter = load("codex")
+    runner = RecordingRunner(_codex_fixture_text("hello.jsonl"))
+    prompt_file = tmp_path / "prompt.md"
+    prompt_file.write_text("do the thing", encoding="utf-8")
+    route = Route(harness="codex", model="gpt-5.5", effort=None)
+
+    headless(adapter, str(prompt_file), route, "/tmp/ws", run=runner)
+
+    argv, _ = runner.calls[0]
+    assert argv[-1] == "-"
+    assert runner.stdins[0] == "do the thing"
+
+
+def test_headless_claude_path_gets_no_stdin(tmp_path):
+    adapter = load("claude-code")
+    runner = RecordingRunner(_fixture_text("hello.stream-json.jsonl"))
+    prompt_file = tmp_path / "prompt.md"
+    prompt_file.write_text("do the thing", encoding="utf-8")
+    route = Route(harness="claude-code", model="claude-sonnet-5", effort=None)
+
+    headless(adapter, str(prompt_file), route, "/tmp/ws", run=runner)
+
+    argv, _ = runner.calls[0]
+    assert f"@{prompt_file}" in argv
+    assert runner.stdins[0] is None
+
+
+# --- AC-3.3: effort omitted where unsupported, per-harness shape when set ----
+
+
+@pytest.mark.parametrize("adapter_name,model,fixture_text", [
+    ("claude-code", "claude-sonnet-5", "hello.stream-json.jsonl"),
+    ("codex", "gpt-5.5", "hello.jsonl"),
+])
+def test_effort_omitted_for_both_adapters_when_unset(adapter_name, model, fixture_text, tmp_path):
+    adapter = load(adapter_name)
+    fixture = _fixture_text(fixture_text) if adapter_name == "claude-code" else _codex_fixture_text(fixture_text)
+    runner = RecordingRunner(fixture)
+    prompt_file = tmp_path / "prompt.md"
+    prompt_file.write_text("hi", encoding="utf-8")
+    route = Route(harness=adapter_name, model=model, effort=None)
+
+    headless(adapter, str(prompt_file), route, "/tmp/ws", run=runner)
+
+    argv, _ = runner.calls[0]
+    assert "--effort" not in argv
+    assert not any("model_reasoning_effort" in a for a in argv)
+
+
+@pytest.mark.parametrize("adapter_name,model,fixture_text,expected_tail", [
+    ("claude-code", "claude-sonnet-5", "hello.stream-json.jsonl", ["--effort", "high"]),
+    ("codex", "gpt-5.5", "hello.jsonl", ["-c", "model_reasoning_effort=high"]),
+])
+def test_effort_shape_is_per_harness_when_set(adapter_name, model, fixture_text, expected_tail, tmp_path):
+    adapter = load(adapter_name)
+    fixture = _fixture_text(fixture_text) if adapter_name == "claude-code" else _codex_fixture_text(fixture_text)
+    runner = RecordingRunner(fixture)
+    prompt_file = tmp_path / "prompt.md"
+    prompt_file.write_text("hi", encoding="utf-8")
+    route = Route(harness=adapter_name, model=model, effort="high")
+
+    headless(adapter, str(prompt_file), route, "/tmp/ws", run=runner)
+
+    argv, _ = runner.calls[0]
+    assert argv[-len(expected_tail):] == expected_tail

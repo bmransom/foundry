@@ -4,8 +4,10 @@ name = "codex"
 file = "AGENTS.md"      # codex reads AGENTS.md natively -- no pointer symlink needed
 
 [headless]
+# codex exec has no @file expansion; "-" is codex's own stdin marker (the
+# runner pipes prompt_file's content over stdin when it sees a bare "-").
 command = ["codex", "exec", "--json", "--sandbox", "workspace-write",
-           "-m", "{model}", "@{prompt_file}"]
+           "-m", "{model}", "-"]
 effort_args = ["-c", "model_reasoning_effort={effort}"]   # appended only when effort is set
 parser = "codex-jsonl"
 

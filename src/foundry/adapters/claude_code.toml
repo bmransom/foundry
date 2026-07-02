@@ -5,7 +5,7 @@ file = "AGENTS.md"
 pointer = "CLAUDE.md"        # symlink emitted when this harness is selected
 
 [headless]
-command = ["claude", "-p", "@{prompt_file}", "--output-format", "stream-json",
+command = ["claude", "-p", "@{prompt_file}", "--output-format", "stream-json", "--verbose",
            "--permission-mode", "acceptEdits", "--model", "{model}"]
 effort_args = ["--effort", "{effort}"]   # appended only when effort is set
 parser = "claude-stream-json"

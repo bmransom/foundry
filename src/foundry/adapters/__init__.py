@@ -14,6 +14,7 @@ import subprocess
 import tomllib
 from dataclasses import dataclass
 from importlib import resources
+from pathlib import Path
 from typing import Callable
 
 from foundry.adapters.parsers import PARSERS, StageResult
@@ -135,9 +136,9 @@ def available(adapter: Adapter) -> bool:
     return adapter.available()
 
 
-def _run_subprocess(argv: list, workspace: str) -> str:
+def _run_subprocess(argv: list, workspace: str, stdin: str | None = None) -> str:
     completed = subprocess.run(
-        argv, cwd=workspace, capture_output=True, text=True, check=False,
+        argv, cwd=workspace, input=stdin, capture_output=True, text=True, check=False,
     )
     return completed.stdout
 
@@ -148,12 +149,18 @@ def headless(
     route: Route,
     workspace: str,
     *,
-    run: Callable[[list, str], str] | None = None,
+    run: Callable[..., str] | None = None,
 ) -> StageResult:
     """Run the adapter's headless command for one stage, capture stdout, and parse it.
 
-    `run` is injectable (argv, workspace) -> str, so tests can supply a fake
-    subprocess runner instead of spawning the real harness CLI.
+    `run` is injectable (argv, workspace, stdin=None) -> str, so tests can supply
+    a fake subprocess runner instead of spawning the real harness CLI.
+
+    codex exec has no @file expansion (T9's flagged gap): its adapter TOML uses a
+    bare "-" (codex's stdin marker) where claude's uses `@{prompt_file}`. When the
+    expanded argv contains that bare "-", the prompt file's content is read and
+    piped over stdin; claude's argv never contains a bare "-" element, so its
+    stdin stays None and behavior is unchanged.
     """
     run = run or _run_subprocess
 
@@ -173,7 +180,8 @@ def headless(
             workspace=workspace,
         )
 
-    raw_stdout = run(argv, workspace)
+    stdin = Path(prompt_file).read_text(encoding="utf-8") if "-" in argv else None
+    raw_stdout = run(argv, workspace, stdin=stdin)
 
     if adapter.parser_name not in PARSERS:
         raise AdapterError(f"no parser registered for '{adapter.parser_name}'")

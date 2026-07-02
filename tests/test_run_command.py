@@ -234,6 +234,48 @@ def test_interactive_session_exit_does_not_bypass_the_gate(tmp_path, repo_factor
     assert len(interactive_run.calls) == 3  # RETRY_CAP attempts, each launching the session
 
 
+# --- T10: CLI flag layer (AC-3.1/AC-3.2) ---------------------------------------
+
+
+def test_cli_flags_override_route_and_ledger_records_resolved_route(tmp_path, repo_factory):
+    # no [routing] table in the fixture config: shipped defaults would otherwise
+    # route build -> claude-code/claude-sonnet-5 (AC-3.1's lower layers).
+    repo = repo_factory(tmp_path, cards=[("wclip-paste", "Paste command")])
+
+    result = run(
+        "wclip-paste", repo_root=repo, path="bug-fix",
+        adapter=FakeAdapter(), now=lambda: FIXED,
+        harness="codex", model="gpt-5.5", effort="high",
+    )
+    assert result.outcome == "completed"
+
+    events = RunLedger(repo).events(result.run_id)
+    build_completed = next(
+        e for e in events if e.event == "stage_completed" and e.stage == "build"
+    )
+    assert build_completed.harness == "codex"
+    assert build_completed.model == "gpt-5.5"
+    assert build_completed.effort == "high"
+
+
+def test_no_cli_flags_falls_back_to_shipped_default_route(tmp_path, repo_factory):
+    repo = repo_factory(tmp_path, cards=[("wclip-paste", "Paste command")])
+
+    result = run(
+        "wclip-paste", repo_root=repo, path="bug-fix",
+        adapter=FakeAdapter(), now=lambda: FIXED,
+    )
+    assert result.outcome == "completed"
+
+    events = RunLedger(repo).events(result.run_id)
+    build_completed = next(
+        e for e in events if e.event == "stage_completed" and e.stage == "build"
+    )
+    assert build_completed.harness == "claude-code"
+    assert build_completed.model == "claude-sonnet-5"
+    assert build_completed.effort is None
+
+
 # --- plan gate: tasks.md existence (design D1) ---------------------------------
 
 

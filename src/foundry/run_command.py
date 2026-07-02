@@ -26,6 +26,7 @@ from __future__ import annotations
 import shlex
 import subprocess
 import tempfile
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Optional
 
@@ -57,6 +58,25 @@ InteractiveRunner = Callable[[list, str], int]
 
 class RunNotFoundError(Exception):
     """`--resume` named a run id with no events in the ledger."""
+
+
+@dataclass(frozen=True)
+class _FlaggedRouting:
+    """Bakes CLI `--harness/--model/--effort` flags into `Config.route_for` as the
+    flag layer (AC-3.1's highest precedence), without changing the driver — which
+    calls `config.route_for(stage.name)` with no arguments (`Driver._route`). Duck-
+    types as a `Config` for that one call site.
+    """
+
+    config: Config
+    harness: Optional[str] = None
+    model: Optional[str] = None
+    effort: Optional[str] = None
+
+    def route_for(self, stage: str) -> Route:
+        return self.config.route_for(
+            stage, harness=self.harness, model=self.model, effort=self.effort
+        )
 
 
 # --- worktree (the only git write; AC-1.8 bounds it) --------------------------
@@ -266,6 +286,9 @@ def run(
     now: Optional[Callable[[], object]] = None,
     interactive: bool = False,
     interactive_run: Optional[InteractiveRunner] = None,
+    harness: Optional[str] = None,
+    model: Optional[str] = None,
+    effort: Optional[str] = None,
 ) -> RunResult:
     """Resolve the card, create/reuse its worktree, and drive the lifecycle.
 
@@ -273,6 +296,11 @@ def run(
     routed harness adapter, headless unless `interactive=True` (AC-1.5), in which
     case `interactive_run` is the injectable seam for the subprocess call itself
     (defaults to inheriting stdio). The ledger is rooted at the repo.
+
+    `harness`/`model`/`effort` are the CLI flag layer (AC-3.1's highest
+    precedence): they override the resolved route for every judgment stage of
+    this run, via `_FlaggedRouting` wrapping `config` for the driver's routing
+    calls only — `build_gates`/`autonomy` still read the unwrapped `config`.
     """
     repo_root = Path(repo_root)
     config = Config.load(repo_root)
@@ -285,6 +313,7 @@ def run(
     adapter = adapter or _make_adapter(
         repo_root, card, autonomy, interactive=interactive, interactive_run=interactive_run
     )
+    routing = _FlaggedRouting(config, harness, model, effort)
 
     driver = Driver(
         workspace=worktree,
@@ -294,7 +323,7 @@ def run(
         gates=gates,
         autonomy=autonomy,
         ask=ask,
-        config=config,
+        config=routing,
         path=path,
         now=now,
     )
