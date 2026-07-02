@@ -1,5 +1,6 @@
 """Tests for foundry.cli."""
 
+import json
 import subprocess
 import sys
 
@@ -92,6 +93,31 @@ def test_run_cli_threads_flags_into_run_command(monkeypatch, tmp_path):
 
     assert rc == 0
     assert captured == {"harness": "codex", "model": "gpt-5.5", "effort": "high"}
+
+
+# --- bootstrap --answers wiring (AC-7.1) ------------------------------------------
+
+
+def test_bootstrap_answers_materializes_and_ends_gate_pass(tmp_path):
+    answers = tmp_path / "answers.json"
+    answers.write_text(json.dumps({"repo_name": "scratchrepo"}), encoding="utf-8")
+
+    result = subprocess.run(
+        [sys.executable, "-m", "foundry.cli", "bootstrap", "--answers", str(answers)],
+        cwd=str(tmp_path), capture_output=True, text=True,
+    )
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.strip().splitlines()[-1] == "gate: PASS"
+    assert (tmp_path / "AGENTS.md").is_file()
+    assert (tmp_path / ".foundry" / "manifest.json").is_file()
+
+
+def test_bootstrap_requires_an_intake_flag(tmp_path):
+    result = subprocess.run(
+        [sys.executable, "-m", "foundry.cli", "bootstrap"],
+        cwd=str(tmp_path), capture_output=True, text=True,
+    )
+    assert result.returncode == 2  # argparse: one of --answers/--interview required
 
 
 def test_runs_show_unknown_id_exits_2_listing_known_ids(tmp_path):

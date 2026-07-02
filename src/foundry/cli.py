@@ -6,9 +6,9 @@ from pathlib import Path
 
 from foundry import __version__
 
-# Stub subcommands: later tasks (T15/T16 bootstrap/update, T17 eval, T18 review) fill
-# these in. `run`, `runs`, `gate`, and `doctor` are wired below.
-STUB_SUBCOMMANDS = ["eval", "review", "bootstrap", "update"]
+# Stub subcommands: later tasks (T16 update, T17 eval, T18 review) fill these in.
+# `run`, `runs`, `gate`, `doctor`, and `bootstrap` are wired below.
+STUB_SUBCOMMANDS = ["eval", "review", "update"]
 
 RUN_PATHS = ("feature", "bug-fix", "refactor", "enhancement")
 
@@ -58,6 +58,26 @@ def build_parser() -> argparse.ArgumentParser:
 
     subparsers.add_parser("gate", help="run the gate suite (AC-5.2)")
     subparsers.add_parser("doctor", help="verify the repo's foundry state (AC-6.1)")
+
+    boot = subparsers.add_parser(
+        "bootstrap", help="materialize the foundry setup into this repo (AC-7.1)"
+    )
+    intake = boot.add_mutually_exclusive_group(required=True)
+    intake.add_argument(
+        "--answers", metavar="JSON_FILE", default=None,
+        help="materialize from a JSON answers file (deterministic path)",
+    )
+    intake.add_argument(
+        "--interview", action="store_true",
+        help="gather answers by interviewing through the routed harness (AC-7.2)",
+    )
+    boot.add_argument(
+        "--harness", default=None,
+        help="harness to run the interview through (default: shipped routing)",
+    )
+    boot.add_argument(
+        "--model", default=None, help="model override for the interview",
+    )
 
     for name in STUB_SUBCOMMANDS:
         subparsers.add_parser(name)
@@ -142,6 +162,30 @@ def _doctor(args) -> int:
     return 0 if ok else 1
 
 
+def _bootstrap(args) -> int:
+    from foundry import adapters
+    from foundry.config import Config
+    from foundry.materializer.bootstrap import Answers, BootstrapError, bootstrap, interview
+
+    repo_root = Path.cwd()
+    try:
+        if args.answers:
+            answers = Answers.from_json_file(args.answers)
+        else:
+            config = Config.load(repo_root)
+            route = config.route_for("spec", harness=args.harness, model=args.model)
+            adapter = adapters.load(route.harness or "claude-code")
+            answers = interview(adapter, route, str(repo_root))
+    except (BootstrapError, adapters.AdapterError) as e:
+        print(f"foundry bootstrap: {e}", file=sys.stderr)
+        return 2
+
+    ok, lines = bootstrap(repo_root, answers)
+    for line in lines:
+        print(line)
+    return 0 if ok else 1
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -156,6 +200,8 @@ def main(argv: list[str] | None = None) -> int:
         return _gate(args)
     if args.command == "doctor":
         return _doctor(args)
+    if args.command == "bootstrap":
+        return _bootstrap(args)
     print(f"foundry {args.command}: not yet implemented", file=sys.stderr)
     return 2
 
