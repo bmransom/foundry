@@ -21,10 +21,21 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="command")
 
     run = subparsers.add_parser("run", help="drive a card through the lifecycle")
-    run.add_argument("card_id", help="board card id to run")
+    run.add_argument(
+        "card_id", nargs="?", default=None,
+        help="board card id to run (omit with --resume)",
+    )
     run.add_argument(
         "--path", choices=RUN_PATHS, default="feature",
         help="entry path (default: feature)",
+    )
+    run.add_argument(
+        "--resume", metavar="RUN_ID", default=None,
+        help="resume an interrupted run from its last ledger boundary (AC-1.6)",
+    )
+    run.add_argument(
+        "--interactive", action="store_true",
+        help="open the routed harness interactively for judgment stages (AC-1.5)",
     )
 
     for name in STUB_SUBCOMMANDS:
@@ -35,10 +46,31 @@ def build_parser() -> argparse.ArgumentParser:
 def _run(args) -> int:
     from foundry.board import BoardError
     from foundry.driver.machine import AutonomyError
-    from foundry.run_command import run
+    from foundry.run_command import RunNotFoundError, resume, run
+
+    if args.resume:
+        try:
+            result = resume(args.resume, repo_root=Path.cwd())
+        except (BoardError, AutonomyError, RunNotFoundError) as e:
+            print(f"foundry run --resume: {e}", file=sys.stderr)
+            return 2
+        if result.outcome == "already_complete":
+            print(f"foundry run --resume {args.resume}: already complete")
+            return 0
+        print(
+            f"foundry run --resume {args.resume}: {result.outcome} "
+            f"({result.run_id}); stages: {', '.join(result.stages_started)}"
+        )
+        return 0 if result.outcome == "completed" else 1
+
+    if not args.card_id:
+        print("foundry run: card_id is required unless --resume is given", file=sys.stderr)
+        return 2
 
     try:
-        result = run(args.card_id, repo_root=Path.cwd(), path=args.path)
+        result = run(
+            args.card_id, repo_root=Path.cwd(), path=args.path, interactive=args.interactive
+        )
     except (BoardError, AutonomyError) as e:
         print(f"foundry run: {e}", file=sys.stderr)
         return 2

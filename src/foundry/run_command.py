@@ -1,4 +1,4 @@
-"""`foundry run <card-id>` wiring (T7, AC-1.1/1.3/1.8, AC-10.1).
+"""`foundry run <card-id>` wiring (T7, AC-1.1/1.3/1.8, AC-10.1; T8, AC-1.5/1.6).
 
 Ties the pieces together: Config.load → board resolve → worktree create/reuse →
 Driver.run with a real harness adapter (routed via Config.route_for), stage prompts
@@ -10,6 +10,15 @@ The two StageResult shapes (adapters.parsers vs the driver's local protocol) are
 reconciled by an adapter-callable wrapper (`_make_adapter`): it returns the
 adapters.parsers.StageResult, which the machine reads by attribute (text,
 input_tokens, output_tokens) — no rewrite of machine.py.
+
+T8 adds two entrypoints on top of the same wiring:
+- `resume()` reconstructs a halted run from the ledger alone (no Driver config is
+  re-derived from anything but the events file) and calls `Driver.resume`, which
+  T7/T5 already implemented — this module only wires it.
+- `run(..., interactive=True)` switches `_make_adapter`'s callable to launch the
+  routed harness's `[interactive]` command instead of the headless one; the
+  machine is untouched; it already only calls the adapter for judgment/mixed
+  stages and always gates on the returned result the same way.
 """
 
 from __future__ import annotations
@@ -21,6 +30,7 @@ from pathlib import Path
 from typing import Callable, Optional
 
 from foundry import adapters
+from foundry.adapters.parsers import StageResult
 from foundry.board import Card, resolve_card
 from foundry.config import Config, Route
 from foundry.driver.machine import (
@@ -39,6 +49,14 @@ from foundry.ledger import RunLedger
 
 # Adapter-callable type: (stage_name, route, workspace) -> StageResult-shaped object.
 AdapterCallable = Callable[[str, Optional[Route], Path], object]
+
+# Interactive-runner type: (argv, workspace) -> exit status. Injectable so tests
+# supply a stub instead of spawning a real interactive session (T8).
+InteractiveRunner = Callable[[list, str], int]
+
+
+class RunNotFoundError(Exception):
+    """`--resume` named a run id with no events in the ledger."""
 
 
 # --- worktree (the only git write; AC-1.8 bounds it) --------------------------
@@ -132,12 +150,58 @@ def build_gates(config: Config) -> dict[str, GateCheck]:
 # --- real adapter callable (StageResult reconciliation) -----------------------
 
 
-def _make_adapter(repo_root: Path, card: Card, autonomy: AutonomyPolicy) -> AdapterCallable:
-    """Wrap the harness adapter as a machine-callable: compile the stage prompt,
-    run the routed harness headlessly, return its StageResult (AC-1.3, AC-10.1).
+def _interactive_subprocess(argv: list, workspace: str) -> int:
+    """Default interactive runner: inherit stdio (no capture) so the session
+    drives the real terminal (AC-1.5) — never `_run_subprocess`'s captured mode.
+    """
+    return subprocess.run(argv, cwd=workspace).returncode
+
+
+def _run_interactive(
+    harness: adapters.Adapter,
+    route: Optional[Route],
+    workspace: Path,
+    *,
+    run: Optional[InteractiveRunner] = None,
+) -> StageResult:
+    """Launch the adapter's `[interactive]` command in `workspace`; the session's
+    own output is not captured (there is no headless text to parse), so the
+    stage's gate evaluates on whatever it checks independent of StageResult.text
+    (a command gate) — a marker gate would FAIL on the empty text, which is the
+    honest outcome for a stage whose contract needs captured text.
+    """
+    run = run or _interactive_subprocess
+    argv = adapters.expand_argv(
+        harness.interactive_command,
+        model=route.model if route else None,
+        effort=route.effort if route else None,
+        workspace=str(workspace),
+    )
+    returncode = run(argv, str(workspace))
+    return StageResult(text="", input_tokens=None, output_tokens=None, exit_status=returncode)
+
+
+def _make_adapter(
+    repo_root: Path,
+    card: Card,
+    autonomy: AutonomyPolicy,
+    *,
+    interactive: bool = False,
+    interactive_run: Optional[InteractiveRunner] = None,
+) -> AdapterCallable:
+    """Wrap the harness adapter as a machine-callable.
+
+    Headless (default): compile the stage prompt, run the routed harness
+    headlessly, return its StageResult (AC-1.3, AC-10.1). Interactive: skip
+    prompt compilation and launch the harness's `[interactive]` command in the
+    stage's worktree instead (AC-1.5); the machine calls this callable exactly
+    the same way in both cases and gates on its result identically.
     """
 
     def adapter(stage_name: str, route: Optional[Route], workspace: Path):
+        harness = adapters.load(route.harness)
+        if interactive:
+            return _run_interactive(harness, route, workspace, run=interactive_run)
         stage = STAGES[stage_name]
         card_context = CardContext(
             card_id=card.id,
@@ -153,7 +217,6 @@ def _make_adapter(repo_root: Path, card: Card, autonomy: AutonomyPolicy) -> Adap
         ) as fh:
             fh.write(prompt)
             prompt_file = fh.name
-        harness = adapters.load(route.harness)
         return adapters.headless(harness, prompt_file, route, str(workspace))
 
     return adapter
@@ -170,11 +233,15 @@ def run(
     adapter: Optional[AdapterCallable] = None,
     ask: Optional[Callable[[str], bool]] = None,
     now: Optional[Callable[[], object]] = None,
+    interactive: bool = False,
+    interactive_run: Optional[InteractiveRunner] = None,
 ) -> RunResult:
     """Resolve the card, create/reuse its worktree, and drive the lifecycle.
 
     `adapter` is injectable (a scripted fake in tests); it defaults to the real
-    routed harness adapter. The ledger is rooted at the repo.
+    routed harness adapter, headless unless `interactive=True` (AC-1.5), in which
+    case `interactive_run` is the injectable seam for the subprocess call itself
+    (defaults to inheriting stdio). The ledger is rooted at the repo.
     """
     repo_root = Path(repo_root)
     config = Config.load(repo_root)
@@ -183,6 +250,62 @@ def run(
 
     autonomy = AutonomyPolicy(config.autonomy.level, config.autonomy.stop_point)
     ledger = RunLedger(repo_root)
+    gates = build_gates(config)
+    adapter = adapter or _make_adapter(
+        repo_root, card, autonomy, interactive=interactive, interactive_run=interactive_run
+    )
+
+    driver = Driver(
+        workspace=worktree,
+        ledger=ledger,
+        card_id=card.id,
+        adapter=adapter,
+        gates=gates,
+        autonomy=autonomy,
+        ask=ask,
+        config=config,
+        path=path,
+        now=now,
+    )
+    return driver.run()
+
+
+def resume(
+    run_id: str,
+    *,
+    repo_root: Path | str,
+    adapter: Optional[AdapterCallable] = None,
+    ask: Optional[Callable[[str], bool]] = None,
+    now: Optional[Callable[[], object]] = None,
+) -> RunResult:
+    """Reconstruct a run from the ledger alone and continue it (AC-1.6).
+
+    The entry path comes from `run_started`'s persisted `stage` field (T7's
+    encoding), the card id from any event, and the resume point from
+    `RunLedger.last_boundary` (read inside `Driver.resume`, T5). Unknown run id
+    raises `RunNotFoundError` listing known run ids; a run already at
+    `run_completed` short-circuits with outcome `"already_complete"` and appends
+    nothing further to the ledger.
+    """
+    repo_root = Path(repo_root)
+    ledger = RunLedger(repo_root)
+    events = ledger.events(run_id)
+    if not events:
+        known = sorted(s.run_id for s in ledger.list_runs())
+        listing = f"known runs: {', '.join(known)}" if known else "no runs recorded"
+        raise RunNotFoundError(f"unknown run id '{run_id}'; {listing}")
+    if events[-1].event == "run_completed":
+        return RunResult(run_id, "already_complete", None, [])
+
+    run_started = next(e for e in events if e.event == "run_started")
+    path = run_started.stage
+    card_id = events[0].card_id
+
+    config = Config.load(repo_root)
+    card = resolve_card(repo_root, card_id)
+    worktree = ensure_worktree(repo_root, card.id)
+
+    autonomy = AutonomyPolicy(config.autonomy.level, config.autonomy.stop_point)
     gates = build_gates(config)
     adapter = adapter or _make_adapter(repo_root, card, autonomy)
 
@@ -198,4 +321,4 @@ def run(
         path=path,
         now=now,
     )
-    return driver.run()
+    return driver.resume(run_id)

@@ -151,3 +151,9 @@ TDD — the test lands red first — and names the gate that proves it. Implemen
 
 Per-model skill compilation variants; harness-deliberation on the driver; third-harness
 adapter; external telemetry. Each waits on ledger/eval data showing the need.
+
+Interactive marker capture (found in T8): under `--interactive`, stdio is inherited, so
+spec/review marker gates cannot see their `SPEC_REVIEW:`/`CODE_REVIEW:` last line and
+FAIL deterministically (never auto-pass). Candidate fixes when scheduled: tee/PTY
+capture, or a headless grading call over the worktree after the session exits.
+Command-shaped gates work fully interactive.

@@ -95,7 +95,7 @@ class GateCheck(Protocol):
 @dataclass
 class RunResult:
     run_id: str
-    outcome: str  # "completed" | "halted" | "stopped"
+    outcome: str  # "completed" | "halted" | "stopped" | "already_complete" (T8, run_command.resume)
     halted_gate: Optional[str] = None
     stages_started: list = field(default_factory=list)
 
