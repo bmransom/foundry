@@ -14,7 +14,7 @@ import shlex
 import subprocess
 from pathlib import Path
 
-from foundry.config import Config
+from foundry.config import Config, ConfigError
 from foundry.gate import board, knowledge, prose
 
 CHECKS = (board.check, prose.check, knowledge.check)
@@ -34,13 +34,18 @@ def run(repo_root: Path | str) -> tuple[bool, list[str]]:
         if not ok:
             failed = True
 
-    config = Config.load(repo_root)
-    for command in config.gate_commands:
-        argv = shlex.split(command)
-        result = subprocess.run(argv, cwd=repo_root)
-        if result.returncode != 0:
-            failed = True
-            lines.append(f"gate: command failed ({command}): exit {result.returncode}")
+    try:
+        config = Config.load(repo_root)
+    except ConfigError as e:
+        lines.append(f"gate: config: {e}")
+        failed = True
+    else:
+        for command in config.gate_commands:
+            argv = shlex.split(command)
+            result = subprocess.run(argv, cwd=repo_root)
+            if result.returncode != 0:
+                failed = True
+                lines.append(f"gate: command failed ({command}): exit {result.returncode}")
 
     lines.append("gate: FAIL" if failed else "gate: PASS")
     return not failed, lines

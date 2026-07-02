@@ -115,6 +115,15 @@ def parse_codex_jsonl(raw: str) -> StageResult:
         )
 
     if text is None:
+        if error_message is not None:
+            # A lone top-level `error` (no `turn.failed`, no successful
+            # `agent_message`) is still a failure per the docstring above.
+            return StageResult(
+                text=error_message,
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                exit_status=1,
+            )
         raise ParseError("no 'agent_message' item found in codex jsonl output")
 
     return StageResult(

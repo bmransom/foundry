@@ -99,7 +99,10 @@ def _run(args) -> int:
 
     if args.resume:
         try:
-            result = resume(args.resume, repo_root=Path.cwd())
+            result = resume(
+                args.resume, repo_root=Path.cwd(),
+                harness=args.harness, model=args.model, effort=args.effort,
+            )
         except (BoardError, AutonomyError, RunNotFoundError) as e:
             print(f"foundry run --resume: {e}", file=sys.stderr)
             return 2

@@ -29,3 +29,16 @@ def test_gate_fails_on_a_defect_fixture_and_exits_nonzero(tmp_path, gate_fixture
     )
     assert result.returncode == 1
     assert result.stdout.rstrip("\n").splitlines()[-1] == "gate: FAIL"
+
+
+def test_gate_on_malformed_config_prints_fail_last_instead_of_a_traceback(tmp_path):
+    config_dir = tmp_path / ".foundry"
+    config_dir.mkdir(parents=True)
+    (config_dir / "config.toml").write_text("[gate\ncommands = [\n", encoding="utf-8")
+    result = subprocess.run(
+        [sys.executable, "-m", "foundry.cli", "gate"],
+        cwd=str(tmp_path), capture_output=True, text=True,
+    )
+    assert result.returncode == 1
+    assert result.stderr == ""
+    assert result.stdout.rstrip("\n").splitlines()[-1] == "gate: FAIL"
