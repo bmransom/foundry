@@ -9,6 +9,8 @@ gate under test, not a stand-in (AGENTS.md: never let a gate grade itself).
 """
 
 import json
+import shutil
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -17,6 +19,7 @@ from foundry.adapters.parsers import StageResult
 from foundry.eval_command import (
     Cell,
     EvalError,
+    _materialize_twin,
     discover_fixtures,
     evaluate_matrix,
     is_discriminating,
@@ -134,6 +137,43 @@ def test_real_review_defect_fixture_is_wellformed():
     # the seeded diff deletes the length test that would catch the off-by-one
     assert not (pair.seeded / "head" / "test_calc.py").exists()
     assert (pair.clean / "head" / "test_calc.py").exists()
+
+
+# --- twin materialization -------------------------------------------------------
+
+
+def test_materialize_twin_diff_has_defect_and_deletion():
+    """_materialize_twin is the git twin builder the whole eval rests on: commit
+    base/, replace with head/, stage it, so `git diff HEAD` is the reviewable
+    change. Assert the review-defect seeded twin's diff carries both halves of
+    its seeded defect: the off-by-one edit and the test-file deletion that would
+    have caught it.
+    """
+    twin = REAL_MATRIX / "review-defect" / "seeded"
+    repo = _materialize_twin(twin)
+    try:
+        diff = subprocess.run(
+            ["git", "-C", str(repo), "diff", "HEAD"],
+            check=True, capture_output=True, text=True,
+        ).stdout
+        assert diff.strip() != ""
+        assert "values[1:]" in diff  # the off-by-one edit
+        assert "deleted file mode" in diff and "test_calc.py" in diff  # the deleted test
+
+        # `git diff HEAD` compares the working tree to HEAD directly, so it shows
+        # tracked-file edits/deletions whether or not they're staged — it would
+        # pass even if _materialize_twin's final `git add -A` were dropped. Pin
+        # staged status too, via `git status --porcelain`'s index column, so this
+        # test actually discriminates on that step (verified by hand: commenting
+        # out the final `git add -A` keeps the diff assertions above green but
+        # turns this one red).
+        status = subprocess.run(
+            ["git", "-C", str(repo), "status", "--porcelain"],
+            check=True, capture_output=True, text=True,
+        ).stdout
+        assert status == "M  calc.py\nD  test_calc.py\n"
+    finally:
+        shutil.rmtree(repo.parent, ignore_errors=True)
 
 
 # --- grading logic -------------------------------------------------------------

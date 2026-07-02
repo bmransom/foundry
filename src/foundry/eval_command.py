@@ -156,10 +156,16 @@ def evaluate_matrix(
     *,
     fixture: Optional[str] = None,
     adapter: Optional[Adapter] = None,
+    pairs: Optional[list[FixturePair]] = None,
 ) -> list[Row]:
-    """Run every cell × pair through `adapter`, grading discrimination and cost."""
+    """Run every cell × pair through `adapter`, grading discrimination and cost.
+
+    `pairs` lets a caller that already discovered fixtures (e.g. `run_matrix`) pass
+    them through instead of triggering a second `discover_fixtures` pass.
+    """
     adapter = adapter or headless_review_adapter
-    pairs = discover_fixtures(fixtures_root, fixture)
+    if pairs is None:
+        pairs = discover_fixtures(fixtures_root, fixture)
     rows = []
     for cell in cells:
         for pair in pairs:
@@ -295,7 +301,7 @@ def run_matrix(
         lines.append(f"eval: dry-run ({len(cells)} cells × {len(pairs)} fixtures)")
         return True, lines
 
-    rows = evaluate_matrix(cells, fixtures_root, fixture=fixture, adapter=adapter)
+    rows = evaluate_matrix(cells, fixtures_root, adapter=adapter, pairs=pairs)
     discriminating = sum(1 for r in rows if r.discriminating)
     ok = discriminating == len(rows)
     lines = _render_table(rows)
