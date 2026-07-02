@@ -6,9 +6,9 @@ from pathlib import Path
 
 from foundry import __version__
 
-# Stub subcommands: later tasks (T11 gate, T12 doctor, T15/T16 bootstrap/update,
-# T17 eval, T18 review) fill these in. `runs` (AC-4.3/AC-4.4) is wired below.
-STUB_SUBCOMMANDS = ["gate", "doctor", "eval", "review", "bootstrap", "update"]
+# Stub subcommands: later tasks (T15/T16 bootstrap/update, T17 eval, T18 review) fill
+# these in. `run`, `runs`, `gate`, and `doctor` are wired below.
+STUB_SUBCOMMANDS = ["eval", "review", "bootstrap", "update"]
 
 RUN_PATHS = ("feature", "bug-fix", "refactor", "enhancement")
 
@@ -55,6 +55,9 @@ def build_parser() -> argparse.ArgumentParser:
     runs_sub.add_parser("list", help="list past runs with outcome and cost")
     show = runs_sub.add_parser("show", help="print one run's stage table")
     show.add_argument("run_id")
+
+    subparsers.add_parser("gate", help="run the gate suite (AC-5.2)")
+    subparsers.add_parser("doctor", help="verify the repo's foundry state (AC-6.1)")
 
     for name in STUB_SUBCOMMANDS:
         subparsers.add_parser(name)
@@ -124,6 +127,24 @@ def _runs(args) -> int:
     return 2
 
 
+def _gate(args) -> int:
+    from foundry.gate.suite import run as run_suite
+
+    ok, lines = run_suite(Path.cwd())
+    for line in lines:
+        print(line)
+    return 0 if ok else 1
+
+
+def _doctor(args) -> int:
+    from foundry.doctor import run as run_doctor
+
+    ok, lines = run_doctor(Path.cwd())
+    for line in lines:
+        print(line)
+    return 0 if ok else 1
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -134,6 +155,10 @@ def main(argv: list[str] | None = None) -> int:
         return _run(args)
     if args.command == "runs":
         return _runs(args)
+    if args.command == "gate":
+        return _gate(args)
+    if args.command == "doctor":
+        return _doctor(args)
     print(f"foundry {args.command}: not yet implemented", file=sys.stderr)
     return 2
 
