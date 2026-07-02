@@ -53,9 +53,11 @@ TDD — the test lands red first — and names the gate that proves it. Implemen
   Sources: spec ← `code` §1 + `spec-review`; plan ← `code` §2; build ← `code` §3;
   knowledge ← `knowledge`; review ← `code-review`. `prompts.py` composes rubric(s) +
   card context (id, spec paths, autonomy level) per the stage→rubric map in `stages.py`
-  (advisory skills composed by reference). Tests: golden-file prompts under
-  `tests/fixtures/prompts/`, including a seeded orchestration-verb rubric that must
-  fail. Gate: pytest green.
+  (advisory skills composed by reference; when wiring the map, audit each advisory
+  skill for session/orchestration assumptions that read wrong in a headless stage
+  prompt — flag them, method content unchanged per Out of scope). Tests: golden-file
+  prompts under `tests/fixtures/prompts/`, including a seeded orchestration-verb rubric
+  that must fail. Gate: pytest green.
 - **T7 — `foundry run` end-to-end.** Wire cli → board resolution (parse the ROADMAP card
   table; unknown id → error listing near matches) → worktree create (`git worktree add -b
   card/<id> wt/<id> origin/<default>`, reuse if present) → machine → ledger. First seed
