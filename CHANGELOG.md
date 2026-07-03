@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.2.0](https://github.com/bmransom/foundry/compare/v0.1.11...v0.2.0) (2026-07-03)
+
+
+### Features
+
+* **cli:** foundry v2 package skeleton — pyproject, config, run ledger (Wave 0) ([#66](https://github.com/bmransom/foundry/issues/66)) ([aa56fcd](https://github.com/bmransom/foundry/commit/aa56fcd836b9b7c1840e3efdd4ad87aa7a0c3770))
+* **driver:** stage state machine, adapters, rubrics, foundry run e2e (Wave 1) ([#73](https://github.com/bmransom/foundry/issues/73)) ([01c8dde](https://github.com/bmransom/foundry/commit/01c8dde914688c82608b4725ed4c145fb775d9d7))
+* **eval:** harness×model eval matrix, discrimination-graded, live-proven (Wave 5a) ([#71](https://github.com/bmransom/foundry/issues/71)) ([b5ac112](https://github.com/bmransom/foundry/commit/b5ac11279f5621996cc624454fbee693e3ca171c))
+* **gate:** gate suite + doctor + pinned-run migration (Wave 3) ([#69](https://github.com/bmransom/foundry/issues/69)) ([87ca714](https://github.com/bmransom/foundry/commit/87ca7146d2779c7edc9aa2b845d0e8fd63d0b272))
+* **knowledge:** lifecycle-aware listings, okf_version in index, README dead-link fix ([#61](https://github.com/bmransom/foundry/issues/61)) ([fc9399c](https://github.com/bmransom/foundry/commit/fc9399c589e513f668e39bd6b68e4b70fba843b4))
+* **loop-doctrine:** absorb loop-kickoff doctrine into foundry mechanisms ([#64](https://github.com/bmransom/foundry/issues/64)) ([e1dbb1b](https://github.com/bmransom/foundry/commit/e1dbb1bafd35325ddf315fa2dce1f00bc1292b05))
+* **materializer:** bootstrap + update as code; the v1 chassis deleted (Wave 4) ([#70](https://github.com/bmransom/foundry/issues/70)) ([46b6784](https://github.com/bmransom/foundry/commit/46b678450bed844fd3cc16c86f19bdc621c72cb3))
+* **review:** foundry review &lt;pr&gt; — anchored PR comments, gh whitelist (Wave 5b) ([#72](https://github.com/bmransom/foundry/issues/72)) ([6e82727](https://github.com/bmransom/foundry/commit/6e82727640c7a5e5823c81816efb24c5518769eb))
+* **routing:** codex adapter + per-stage routing, live-proven on both harnesses (Wave 2) ([#68](https://github.com/bmransom/foundry/issues/68)) ([18b597d](https://github.com/bmransom/foundry/commit/18b597d4fd9541b87c73e7d0c672d1da0cd4e86a))
+
+
+### Miscellaneous
+
+* kick the 0.2.0 release ([#75](https://github.com/bmransom/foundry/issues/75)) ([f9c7b2c](https://github.com/bmransom/foundry/commit/f9c7b2cd1bfe619323fd6e3ea4dc1a18055d6128))
+
 ## [0.1.11](https://github.com/bmransom/foundry/compare/v0.1.10...v0.1.11) (2026-06-29)
 
 
