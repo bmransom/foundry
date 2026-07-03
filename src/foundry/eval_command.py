@@ -29,8 +29,9 @@ from foundry.driver.stages import STAGES
 from foundry.ledger import compute_cost
 from foundry.config import Route
 
-# Adapter callable, the driver's shape: (stage, route, workspace) -> StageResult.
-Adapter = Callable[[str, Route, Path], StageResult]
+# Adapter callable, the driver's shape: (stage, route, workspace, feedback=None)
+# -> StageResult (feedback: gate-feedback AC-1.1; the matrix always passes None).
+Adapter = Callable[..., StageResult]
 
 # The review stage's output-contract gate — the gate under test (AC-10.2).
 _REVIEW_GATE = marker_gate("review", "CODE_REVIEW", "PASS")
@@ -230,7 +231,9 @@ def _materialize_twin(twin: Path) -> Path:
     return repo
 
 
-def headless_review_adapter(stage: str, route: Route, workspace: Path) -> StageResult:
+def headless_review_adapter(
+    stage: str, route: Route, workspace: Path, feedback=None
+) -> StageResult:
     """Run the review stage headlessly over a twin's diff (the driver's headless path).
 
     `workspace` is a fixture twin dir (base/ + head/); it is materialized into a temp

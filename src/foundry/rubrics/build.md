@@ -25,3 +25,7 @@ the test proves the behavior rather than trailing it.
 The build gate is command-shaped: it passes when the repo's test command
 (`[gate].test`) exits 0. This rubric states what good implementation holds; the driver
 runs the gate on exit status, with no marker to emit.
+
+Run the repo's test command yourself and finish only when it exits 0 — the driver
+re-runs it as the gate, so an exit that leaves it failing is a failed attempt, not
+done work.

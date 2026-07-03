@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import os
 import subprocess
+import sys
 import time
 from dataclasses import dataclass, field, replace
 from datetime import datetime, timezone
@@ -65,10 +66,34 @@ class AutonomyPolicy:
 # not two; the driver only reads it by attribute (text, input_tokens, output_tokens).
 
 
+# Tail caps: bound what a failed gate feeds a retry prompt and what a stage's
+# returned text costs the ledger (gate-feedback design D1/D4).
+FEEDBACK_DETAIL_CAP = 4000
+RESULT_TEXT_CAP = 4000
+
+
+def _tail(text: str, cap: int) -> str:
+    return text if len(text) <= cap else text[-cap:]
+
+
 @dataclass(frozen=True)
 class GateOutcome:
     name: str
     outcome: str  # "PASS" | "FAIL"
+    detail: str = ""  # evidence on FAIL — capped output tail or explanation (D2)
+
+
+@dataclass(frozen=True)
+class GateFeedback:
+    """A failed gate's evidence, fed into the retried stage's prompt (design D1).
+
+    `attempt` is the 1-based number of the attempt that FAILED. One slot, latest
+    evidence wins: a fresh FAIL replaces prior feedback, never accumulates.
+    """
+
+    gate: str
+    attempt: int
+    detail: str
 
 
 @dataclass(frozen=True)
@@ -78,7 +103,13 @@ class GateContext:
 
 
 class Adapter(Protocol):
-    def __call__(self, stage: str, route: Optional[Route], workspace: Path) -> StageResult:
+    def __call__(
+        self,
+        stage: str,
+        route: Optional[Route],
+        workspace: Path,
+        feedback: Optional[GateFeedback] = None,
+    ) -> StageResult:
         ...
 
 
@@ -99,11 +130,33 @@ class RunResult:
 
 
 def command_gate(name: str, argv: list) -> GateCheck:
-    """A command-shaped gate: PASS on exit 0, marker-agnostic (design D1)."""
+    """A command-shaped gate: PASS on exit 0, marker-agnostic (design D1).
+
+    Output is captured for the FAIL detail (stdout+stderr merged, capped tail;
+    AC-2.1) and written through to stdout, so the driver's log keeps showing
+    gate output.
+    """
 
     def check(ctx: GateContext) -> GateOutcome:
-        proc = subprocess.run(argv, cwd=str(ctx.workspace) if ctx.workspace else None)
-        return GateOutcome(name, "PASS" if proc.returncode == 0 else "FAIL")
+        proc = subprocess.run(
+            argv,
+            cwd=str(ctx.workspace) if ctx.workspace else None,
+            capture_output=True,
+        )
+        raw = (proc.stdout or b"") + (proc.stderr or b"")
+        if raw:
+            # Write through as bytes: the driver's stdout codec never re-encodes
+            # untrusted gate output, so it can never crash the run.
+            buffer = getattr(sys.stdout, "buffer", None)
+            if buffer is not None:
+                buffer.write(raw)
+                sys.stdout.flush()
+            else:  # a replaced stdout (e.g. capture layers) — decode lossily
+                print(raw.decode("utf-8", errors="replace"), end="", flush=True)
+        if proc.returncode == 0:
+            return GateOutcome(name, "PASS")
+        output = raw.decode("utf-8", errors="replace")
+        return GateOutcome(name, "FAIL", detail=_tail(output, FEEDBACK_DETAIL_CAP))
 
     return check
 
@@ -120,7 +173,14 @@ def marker_gate(name: str, marker: str, pass_value: str) -> GateCheck:
             line = line.strip()
             if line.startswith(prefix):
                 value = line[len(prefix):].strip()
-        return GateOutcome(name, "PASS" if value == pass_value else "FAIL")
+        if value == pass_value:
+            return GateOutcome(name, "PASS")
+        detail = (
+            f"no '{marker}:' line in the stage output"
+            if value is None
+            else f"last '{marker}:' value was '{value}', expected '{pass_value}'"
+        )
+        return GateOutcome(name, "FAIL", detail=detail)
 
     return check
 
@@ -188,6 +248,7 @@ class Driver:
     def _walk(self, run_id: str, start_idx: int) -> RunResult:
         idx = start_idx
         review_rounds = 0
+        carry: Optional[GateFeedback] = None  # review findings for build re-entry (D3)
         while idx < len(self._order):
             stage = self._order[idx]
             route = self._route(stage)
@@ -204,7 +265,8 @@ class Driver:
             self._stage_start = time.monotonic()
 
             if stage.name == "review":
-                outcome, result = self._run_body(run_id, stage, route)
+                outcome, result = self._run_body(run_id, stage, route, feedback=carry)
+                carry = None
                 if outcome.outcome == "PASS":
                     self._complete(run_id, stage, route, result, outcome)
                 else:
@@ -212,10 +274,20 @@ class Driver:
                     if review_rounds >= REVIEW_ROUND_CEILING:
                         self._halt(run_id, stage, outcome.name)
                         return RunResult(run_id, "halted", outcome.name, self._started)
+                    # The findings live in the review's returned text; the gate's
+                    # own detail (marker verdict / failed hook) leads so a hook
+                    # FAIL never feeds evidence that contradicts the failure (D3).
+                    parts = [p for p in (outcome.detail, result.text if result else "") if p]
+                    carry = GateFeedback(
+                        outcome.name,
+                        review_rounds,
+                        _tail("\n".join(parts), FEEDBACK_DETAIL_CAP),
+                    )
                     idx = self._build_idx  # loop back to build
                     continue
             else:
-                halt = self._run_with_retry(run_id, stage, route)
+                halt = self._run_with_retry(run_id, stage, route, feedback=carry)
+                carry = None
                 if halt is not None:
                     return halt
 
@@ -229,27 +301,38 @@ class Driver:
         self._append(self._event(run_id, "run_completed"))
         return RunResult(run_id, "completed", None, self._started)
 
-    def _run_with_retry(self, run_id, stage, route) -> Optional[RunResult]:
-        """Run a non-review stage; None on PASS, a halted RunResult on RETRY_CAP."""
+    def _run_with_retry(self, run_id, stage, route, feedback=None) -> Optional[RunResult]:
+        """Run a non-review stage; None on PASS, a halted RunResult on RETRY_CAP.
+
+        Each FAIL becomes the next attempt's GateFeedback (AC-1.1) — the retry is
+        a correction, not a blind replay of the same prompt.
+        """
         attempts = 0
         while True:
             attempts += 1
-            outcome, result = self._run_body(run_id, stage, route)
+            outcome, result = self._run_body(run_id, stage, route, feedback=feedback)
             if outcome.outcome == "PASS":
                 self._complete(run_id, stage, route, result, outcome)
                 return None
             if attempts >= RETRY_CAP:
                 self._halt(run_id, stage, outcome.name)
                 return RunResult(run_id, "halted", outcome.name, self._started)
+            feedback = GateFeedback(outcome.name, attempts, outcome.detail)
 
-    def _run_body(self, run_id, stage, route) -> tuple[GateOutcome, Optional[StageResult]]:
+    def _run_body(
+        self, run_id, stage, route, feedback=None
+    ) -> tuple[GateOutcome, Optional[StageResult]]:
         """Adapter (judgment/mixed) + post hook + gate, emitting gate_evaluated."""
         result = None
         if stage.kind in (JUDGMENT, MIXED):
-            result = self._adapter(stage.name, route, self.workspace)
+            result = self._adapter(stage.name, route, self.workspace, feedback=feedback)
         post = self._run_hook(run_id, stage, "post")
         if post not in (None, 0):
-            outcome = GateOutcome(stage.gate_name, "FAIL")  # post hook fails the gate
+            # Post hook fails the gate — with evidence, so the retry isn't blind.
+            outcome = GateOutcome(
+                stage.gate_name, "FAIL",
+                detail=f"{stage.name}.post hook exited {post}",
+            )
         elif stage.gate is None:
             outcome = GateOutcome(stage.gate_name, "PASS")
         else:
@@ -258,6 +341,11 @@ class Driver:
             self._event(
                 run_id, "gate_evaluated", stage=stage, route=route, result=result,
                 gate={"name": outcome.name, "outcome": outcome.outcome},
+                result_text=(
+                    _tail(result.text, RESULT_TEXT_CAP)
+                    if result is not None and result.text
+                    else None
+                ),
             )
         )
         return outcome, result
@@ -330,7 +418,7 @@ class Driver:
         )
 
     def _event(self, run_id, event, *, stage=None, route=None, result=None,
-               gate=None, duration_s=None) -> RunEvent:
+               gate=None, duration_s=None, result_text=None) -> RunEvent:
         harness = route.harness if route else None
         model = route.model if route else None
         effort = route.effort if route else None
@@ -350,6 +438,7 @@ class Driver:
             cost_usd=compute_cost(model, in_tok, out_tok),
             duration_s=duration_s,
             gate=gate,
+            result_text=result_text,
         )
 
     def _append(self, event: RunEvent):

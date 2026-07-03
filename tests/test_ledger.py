@@ -178,3 +178,23 @@ def test_runs_listing_sums_cost(tmp_path):
     assert summaries[run_a].total_cost_usd == pytest.approx(2.0)
     assert summaries[run_b].outcome == "run_halted"
     assert summaries[run_b].total_cost_usd == pytest.approx(0.0)
+
+
+# --- gate feedback (gate-feedback spec: US-3) --------------------------------
+
+def test_pre_result_text_event_lines_still_parse(tmp_path):
+    # AC-3.2: an events.jsonl written before result_text existed parses unchanged.
+    run_id = "r-20260702171004-a1b2"
+    path = tmp_path / ".foundry" / "runs" / run_id / "events.jsonl"
+    path.parent.mkdir(parents=True)
+    legacy = {
+        "run_id": run_id, "card_id": "v2-driver", "stage": "build",
+        "event": "gate_evaluated", "ts": "2026-07-02T17:10:04Z",
+        "harness": None, "model": None, "effort": None,
+        "input_tokens": None, "output_tokens": None, "cost_usd": None,
+        "duration_s": None, "gate": {"name": "tests", "outcome": "FAIL"},
+    }
+    path.write_text(json.dumps(legacy) + "\n", encoding="utf-8")
+
+    [parsed] = RunLedger(tmp_path).events(run_id)
+    assert parsed.result_text is None

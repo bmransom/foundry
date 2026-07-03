@@ -14,10 +14,13 @@ import pytest
 from foundry.config import Config
 from foundry.ledger import RunLedger
 from foundry.driver.machine import (
+    FEEDBACK_DETAIL_CAP,
+    RESULT_TEXT_CAP,
     AutonomyError,
     AutonomyPolicy,
     Driver,
     GateContext,
+    GateFeedback,
     GateOutcome,
     StageResult,
     command_gate,
@@ -35,14 +38,16 @@ FIXED = datetime(2026, 7, 2, 17, 0, 0, tzinfo=timezone.utc)
 
 
 class FakeAdapter:
-    """Records judgment-stage calls; returns a StageResult per stage."""
+    """Records judgment-stage calls (+ feedback per call); returns a StageResult per stage."""
 
     def __init__(self, results=None):
         self.calls = []
+        self.feedbacks = []
         self._results = results or {}
 
-    def __call__(self, stage, route, workspace):
+    def __call__(self, stage, route, workspace, feedback=None):
         self.calls.append(stage)
+        self.feedbacks.append((stage, feedback))
         return self._results.get(
             stage,
             StageResult(text="", input_tokens=100, output_tokens=10, exit_status=0),
@@ -380,3 +385,189 @@ def test_invalid_autonomy_level_raises():
 def test_invalid_stop_point_raises():
     with pytest.raises(AutonomyError):
         AutonomyPolicy("guided", "bogus")
+
+
+# --- gate feedback (gate-feedback spec: US-1, US-2, US-3) ---------------------
+
+
+def test_command_gate_fail_detail_is_output_tail_and_writes_through(tmp_path, capfd):
+    gate = command_gate("tests", ["sh", "-c", "echo unit A failed; echo boom >&2; exit 1"])
+    outcome = gate(GateContext(tmp_path, None))
+    assert outcome.outcome == "FAIL"
+    assert "unit A failed" in outcome.detail
+    assert "boom" in outcome.detail
+    # The gate's output still reaches the driver's stdout (AC-2.1).
+    assert "unit A failed" in capfd.readouterr().out
+
+
+def test_command_gate_pass_has_empty_detail(tmp_path):
+    gate = command_gate("tests", ["true"])
+    outcome = gate(GateContext(tmp_path, None))
+    assert outcome.outcome == "PASS"
+    assert outcome.detail == ""
+
+
+def test_command_gate_detail_is_capped_to_the_tail(tmp_path):
+    filler = "x" * (FEEDBACK_DETAIL_CAP + 100)
+    gate = command_gate(
+        "tests", ["sh", "-c", f"printf '%s' '{filler}TAIL-MARKER'; exit 1"]
+    )
+    outcome = gate(GateContext(tmp_path, None))
+    assert len(outcome.detail) <= FEEDBACK_DETAIL_CAP
+    assert outcome.detail.endswith("TAIL-MARKER")
+
+
+def test_marker_gate_fail_detail_names_the_seen_value():
+    gate = marker_gate("SPEC_REVIEW", "SPEC_REVIEW", "CLEAN")
+    outcome = gate(GateContext(None, _result("findings above\nSPEC_REVIEW: FINDINGS")))
+    assert outcome.outcome == "FAIL"
+    assert "FINDINGS" in outcome.detail
+    assert "CLEAN" in outcome.detail
+
+
+def test_marker_gate_fail_detail_reports_missing_marker():
+    gate = marker_gate("CODE_REVIEW", "CODE_REVIEW", "PASS")
+    outcome = gate(GateContext(None, _result("no verdict line at all")))
+    assert outcome.outcome == "FAIL"
+    assert "CODE_REVIEW" in outcome.detail
+    assert "no" in outcome.detail.lower()
+
+
+def test_retry_carries_prior_fail_detail_to_the_next_attempt(tmp_path):
+    class FlakyGate:
+        calls = 0
+
+        def __call__(self, ctx):
+            FlakyGate.calls += 1
+            if FlakyGate.calls == 1:
+                return GateOutcome("tests", "FAIL", detail="2 failed: index stale")
+            return GateOutcome("tests", "PASS")
+
+    gates = all_pass_gates()
+    gates["build"] = FlakyGate()
+    adapter = FakeAdapter()
+    driver, ledger, _ = make_driver(tmp_path, adapter=adapter, gates=gates, path="bug-fix")
+    result = driver.run()
+
+    assert result.outcome == "completed"
+    build_feedbacks = [fb for (s, fb) in adapter.feedbacks if s == "build"]
+    assert build_feedbacks[0] is None  # AC-1.2: first attempt is feedback-free
+    fb = build_feedbacks[1]
+    assert fb.gate == "tests"
+    assert fb.attempt == 1  # the 1-based number of the attempt that FAILED
+    assert "index stale" in fb.detail
+
+
+def test_first_attempts_receive_no_feedback_on_the_happy_path(tmp_path):
+    adapter = FakeAdapter()
+    driver, ledger, _ = make_driver(tmp_path, adapter=adapter)
+    driver.run()
+    assert all(fb is None for (_, fb) in adapter.feedbacks)
+
+
+def test_review_fail_feeds_review_text_into_build_reentry(tmp_path):
+    class ReviewOnceFails:
+        def __init__(self):
+            self.review_calls = 0
+            self.feedbacks = {}
+
+        def __call__(self, stage, route, workspace, feedback=None):
+            self.feedbacks.setdefault(stage, []).append(feedback)
+            if stage == "review":
+                self.review_calls += 1
+                text = (
+                    "Blocking: verbatim copy not synced\nCODE_REVIEW: FAIL"
+                    if self.review_calls == 1
+                    else "CODE_REVIEW: PASS"
+                )
+                return StageResult(text=text, input_tokens=1, output_tokens=1, exit_status=0)
+            return StageResult(text="built", input_tokens=1, output_tokens=1, exit_status=0)
+
+    adapter = ReviewOnceFails()
+    gates = all_pass_gates()
+    gates["review"] = marker_gate("CODE_REVIEW", "CODE_REVIEW", "PASS")
+    driver, ledger, _ = make_driver(tmp_path, adapter=adapter, gates=gates, path="bug-fix")
+    result = driver.run()
+
+    assert result.outcome == "completed"
+    build_fbs = adapter.feedbacks["build"]
+    assert build_fbs[0] is None
+    fb = build_fbs[1]  # the re-entry after review FAIL (design D3)
+    assert fb.gate == "CODE_REVIEW"
+    assert "verbatim copy not synced" in fb.detail
+
+
+def test_gate_evaluated_records_capped_result_text(tmp_path):
+    long_text = "y" * (RESULT_TEXT_CAP + 50) + "THE-END"
+    adapter = FakeAdapter(
+        results={"build": StageResult(text=long_text, input_tokens=1, output_tokens=1, exit_status=0)}
+    )
+    driver, ledger, _ = make_driver(tmp_path, adapter=adapter, path="bug-fix")
+    result = driver.run()
+
+    evs = events_named(ledger, result.run_id, "gate_evaluated")
+    build_ev = next(e for e in evs if e.stage == "build")
+    assert build_ev.result_text is not None
+    assert len(build_ev.result_text) <= RESULT_TEXT_CAP
+    assert build_ev.result_text.endswith("THE-END")
+    # A mechanical stage runs no adapter: nothing to persist.
+    verify_ev = next(e for e in evs if e.stage == "verify")
+    assert verify_ev.result_text is None
+
+
+def test_command_gate_survives_non_utf8_output(tmp_path):
+    # A gate command's output is untrusted bytes: decoding must never crash the
+    # run (review finding: strict decode raised UnicodeDecodeError).
+    gate = command_gate("tests", ["sh", "-c", "printf '\\xff\\xfebad bytes'; exit 1"])
+    outcome = gate(GateContext(tmp_path, None))
+    assert outcome.outcome == "FAIL"
+    assert "bad bytes" in outcome.detail
+
+
+def test_failing_post_hook_feedback_names_the_hook(tmp_path):
+    # A post-hook FAIL must not produce a blind retry (empty detail).
+    write_hook(tmp_path, "build", "post", 3)
+    adapter = FakeAdapter()
+    driver, ledger, _ = make_driver(tmp_path, adapter=adapter, path="bug-fix")
+    driver.run()
+    build_feedbacks = [fb for (s, fb) in adapter.feedbacks if s == "build"]
+    assert build_feedbacks[1] is not None
+    assert "post hook" in build_feedbacks[1].detail
+    assert "3" in build_feedbacks[1].detail
+
+
+def test_command_gate_write_through_survives_ascii_stdout(tmp_path):
+    # Round-2 advisory: the write-through must not re-encode through a strict
+    # stdout codec — bytes pass through even under PYTHONIOENCODING=ascii.
+    import subprocess as sp
+    import sys
+
+    code = (
+        "from foundry.driver.machine import command_gate, GateContext\n"
+        "g = command_gate('tests', ['sh', '-c', \"printf '\\\\xff\\\\xfe raw'; exit 1\"])\n"
+        "o = g(GateContext(None, None))\n"
+        "assert o.outcome == 'FAIL'\n"
+    )
+    proc = sp.run(
+        [sys.executable, "-c", code],
+        env={**os.environ, "PYTHONIOENCODING": "ascii"},
+        capture_output=True,
+    )
+    assert proc.returncode == 0, proc.stderr
+
+
+def test_review_hook_fail_loopback_evidence_names_the_hook(tmp_path):
+    # A review post-hook FAIL must not feed build evidence that contradicts the
+    # failure (the review text may end CODE_REVIEW: PASS).
+    write_hook(tmp_path, "review", "post", 5)
+    adapter = FakeAdapter(
+        results={"review": StageResult(text="CODE_REVIEW: PASS", input_tokens=1,
+                                       output_tokens=1, exit_status=0)}
+    )
+    gates = all_pass_gates()
+    gates["review"] = marker_gate("CODE_REVIEW", "CODE_REVIEW", "PASS")
+    driver, ledger, _ = make_driver(tmp_path, adapter=adapter, path="bug-fix", gates=gates)
+    driver.run()  # halts at the review round ceiling; the loop-backs are the point
+    build_fbs = [fb for (s, fb) in adapter.feedbacks if s == "build"]
+    assert len(build_fbs) >= 2
+    assert "post hook exited 5" in build_fbs[1].detail

@@ -136,3 +136,36 @@ def test_seed_readmes_require_surface_and_invariants():
         text = path.read_text()
         assert "Public surface" in text
         assert "Invariants" in text
+
+
+# --- gate feedback (gate-feedback spec: US-1, US-4) --------------------------
+
+def test_compile_with_feedback_inserts_section_between_rubrics_and_card():
+    from foundry.driver.machine import GateFeedback
+
+    fb = GateFeedback(gate="tests", attempt=1, detail="2 failed — index stale")
+    out = prompts.compile_stage_prompt(STAGES["build"], SAMPLE_CARD, feedback=fb)
+    assert "Previous attempt failed its gate" in out
+    assert "tests" in out
+    assert "2 failed — index stale" in out
+    assert (
+        out.index("Build stage rubric")
+        < out.index("Previous attempt failed its gate")
+        < out.index("Card context")
+    )
+
+
+def test_compile_without_feedback_is_byte_identical_to_feedback_none():
+    # AC-1.2: a first attempt compiles the pre-feature prompt (goldens above pin
+    # the exact bytes); feedback=None must not alter assembly.
+    plain = prompts.compile_stage_prompt(STAGES["build"], SAMPLE_CARD)
+    explicit = prompts.compile_stage_prompt(STAGES["build"], SAMPLE_CARD, feedback=None)
+    assert plain == explicit
+    assert "Previous attempt" not in plain
+
+
+def test_build_rubric_instructs_running_the_test_command():
+    # AC-4.1 — load_rubric also re-runs the orchestration-verb validator.
+    text = prompts.load_rubric("build")
+    assert "[gate].test" in text
+    assert "exits 0" in text

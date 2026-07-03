@@ -59,6 +59,9 @@ class RunEvent:
     cost_usd: float | None = None
     duration_s: float | None = None
     gate: dict | None = field(default=None)
+    # Capped tail of the stage's returned text, recorded on gate_evaluated
+    # (gate-feedback D4); None on older event lines and text-less stages.
+    result_text: str | None = None
 
 
 @dataclass
