@@ -128,20 +128,42 @@ def _card_context_block(card: CardContext) -> str:
     )
 
 
+def _feedback_block(feedback) -> str:
+    """The failed prior attempt's evidence (gate-feedback D1). Driver-supplied
+    context like the card block — not a rubric, so `validate_rubric` never runs
+    on it (the evidence may legitimately quote driver vocabulary)."""
+    return (
+        "## Previous attempt failed its gate\n\n"
+        f"- Gate: {feedback.gate}\n"
+        f"- Failed attempt: {feedback.attempt}\n"
+        "- Evidence (output tail):\n\n"
+        "```\n"
+        f"{feedback.detail}\n"
+        "```\n\n"
+        "Diagnose this failure and fix its cause before anything else."
+    )
+
+
 def compile_stage_prompt(
     stage: Stage,
     card_context: CardContext,
     *,
     skills_root: Path | None = None,
+    feedback=None,
 ) -> str:
-    """Compile a judgment stage's prompt: its rubric(s) plus the card context.
+    """Compile a judgment stage's prompt: its rubric(s), the prior attempt's gate
+    feedback when there is one, and the card context.
 
-    Deterministic — a pure function of the stage, the rubrics/skills on disk, and the
-    card. `skills_root` overrides the advisory-skill lookup for tests; it defaults to the
-    repo's `plugins/foundry/skills/` tree (design D8 "composed by reference").
+    Deterministic — a pure function of the stage, the rubrics/skills on disk, the
+    card, and the feedback; with `feedback=None` the output is byte-identical to
+    the pre-feedback assembly (AC-1.2). `skills_root` overrides the advisory-skill
+    lookup for tests; it defaults to the repo's `plugins/foundry/skills/` tree
+    (design D8 "composed by reference").
     """
     if skills_root is None:
         skills_root = _repo_root() / "plugins" / "foundry" / "skills"
     sections = [_resolve_section(name, skills_root) for name in stage.rubrics]
+    if feedback is not None:
+        sections.append(_feedback_block(feedback))
     sections.append(_card_context_block(card_context))
     return _SEPARATOR.join(sections) + "\n"

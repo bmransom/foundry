@@ -48,8 +48,10 @@ from foundry.driver.prompts import CardContext, compile_stage_prompt
 from foundry.driver.stages import STAGES
 from foundry.ledger import RunLedger
 
-# Adapter-callable type: (stage_name, route, workspace) -> StageResult-shaped object.
-AdapterCallable = Callable[[str, Optional[Route], Path], object]
+# Adapter-callable type: (stage_name, route, workspace, feedback=None) ->
+# StageResult-shaped object. `feedback` is the prior attempt's GateFeedback on a
+# retry, None on a first attempt (gate-feedback AC-1.1/1.2).
+AdapterCallable = Callable[..., object]
 
 # Interactive-runner type: (argv, workspace) -> exit status. Injectable so tests
 # supply a stub instead of spawning a real interactive session (T8).
@@ -173,10 +175,19 @@ def _plan_gate(spec_cell: str) -> GateCheck:
     spec_dir = _spec_dir(cell) if cell else None
 
     def check(ctx: GateContext) -> GateOutcome:
-        if spec_dir is None or ctx.workspace is None:
-            return GateOutcome("plan", "FAIL")
+        if spec_dir is None:
+            return GateOutcome(
+                "plan", "FAIL",
+                detail="the card has no Spec cell — no spec directory to check",
+            )
+        if ctx.workspace is None:
+            return GateOutcome("plan", "FAIL", detail="no workspace to check")
         tasks_path = Path(ctx.workspace) / spec_dir / "tasks.md"
-        return GateOutcome("plan", "PASS" if tasks_path.is_file() else "FAIL")
+        if tasks_path.is_file():
+            return GateOutcome("plan", "PASS")
+        return GateOutcome(
+            "plan", "FAIL", detail=f"{spec_dir / 'tasks.md'} not found in the workspace"
+        )
 
     return check
 
@@ -249,9 +260,10 @@ def _make_adapter(
     the same way in both cases and gates on its result identically.
     """
 
-    def adapter(stage_name: str, route: Optional[Route], workspace: Path):
+    def adapter(stage_name: str, route: Optional[Route], workspace: Path, feedback=None):
         harness = adapters.load(route.harness)
         if interactive:
+            # An interactive session has no compiled prompt to carry feedback.
             return _run_interactive(harness, route, workspace, run=interactive_run)
         stage = STAGES[stage_name]
         card_context = CardContext(
@@ -260,7 +272,7 @@ def _make_adapter(
             worktree=str(workspace),
             autonomy=autonomy.level,
         )
-        prompt = compile_stage_prompt(stage, card_context)
+        prompt = compile_stage_prompt(stage, card_context, feedback=feedback)
         tmp_dir = Path(workspace) / ".foundry" / "tmp"
         tmp_dir.mkdir(parents=True, exist_ok=True)
         with tempfile.NamedTemporaryFile(

@@ -45,3 +45,11 @@ Feature: foundry run drives a card through the lifecycle
     When I run "foundry run wclip-paste --path bug-fix --interactive"
     Then the routed harness's interactive command runs inside "wt/wclip-paste" with stdio inherited
     And the stage gate — not the session's exit code alone — decides the transition
+
+  Scenario: A failed gate's evidence reaches the retried attempt
+    Given a repository whose board lists card "wclip-paste"
+    And the build gate fails on the first attempt and passes on the second
+    When I run "foundry run wclip-paste --path bug-fix"
+    Then the first build attempt receives no feedback
+    And the second build attempt's feedback names the failed gate, the failed attempt, and its evidence
+    And each "gate_evaluated" event records a capped tail of the attempt's returned text

@@ -230,7 +230,9 @@ def _materialize_twin(twin: Path) -> Path:
     return repo
 
 
-def headless_review_adapter(stage: str, route: Route, workspace: Path) -> StageResult:
+def headless_review_adapter(
+    stage: str, route: Route, workspace: Path, feedback=None
+) -> StageResult:
     """Run the review stage headlessly over a twin's diff (the driver's headless path).
 
     `workspace` is a fixture twin dir (base/ + head/); it is materialized into a temp

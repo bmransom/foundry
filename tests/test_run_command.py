@@ -31,7 +31,7 @@ class FakeAdapter:
     def __init__(self):
         self.calls = []
 
-    def __call__(self, stage, route, workspace):
+    def __call__(self, stage, route, workspace, feedback=None):
         self.calls.append(stage)
         text = ""
         if stage == "spec":
@@ -102,7 +102,7 @@ class SpecFailingAdapter:
     def __init__(self):
         self.calls = []
 
-    def __call__(self, stage, route, workspace):
+    def __call__(self, stage, route, workspace, feedback=None):
         self.calls.append(stage)
         text = "SPEC_REVIEW: FAIL" if stage == "spec" else ""
         return StageResult(text=text, input_tokens=10, output_tokens=1, exit_status=0)
@@ -114,7 +114,7 @@ class ResumeAdapter:
     def __init__(self):
         self.calls = []
 
-    def __call__(self, stage, route, workspace):
+    def __call__(self, stage, route, workspace, feedback=None):
         self.calls.append(stage)
         text = ""
         if stage == "spec":
@@ -159,7 +159,7 @@ class RouteRecordingAdapter:
     def __init__(self):
         self.calls = []
 
-    def __call__(self, stage, route, workspace):
+    def __call__(self, stage, route, workspace, feedback=None):
         self.calls.append((stage, route))
         text = ""
         if stage == "spec":
@@ -363,3 +363,20 @@ def test_default_interactive_runner_inherits_stdio(monkeypatch):
     assert "capture_output" not in calls[0]
     assert "stdout" not in calls[0]
     assert "stderr" not in calls[0]
+
+
+# --- gate feedback (gate-feedback spec: AC-2.3) -------------------------------
+
+
+def test_plan_gate_fail_detail_names_the_missing_tasks_path(tmp_path):
+    gates = build_gates(Config(), spec="roadmap/specs/demo-feature/")
+    outcome = gates["plan"](GateContext(tmp_path, None))
+    assert outcome.outcome == "FAIL"
+    assert "tasks.md" in outcome.detail
+
+
+def test_plan_gate_fail_detail_names_the_blank_spec_cell():
+    gates = build_gates(Config(), spec="")
+    outcome = gates["plan"](GateContext(Path("."), None))
+    assert outcome.outcome == "FAIL"
+    assert "Spec cell" in outcome.detail
