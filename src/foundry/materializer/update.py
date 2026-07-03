@@ -231,9 +231,58 @@ def update(repo_root: Path | str, *, dry_run: bool = False) -> UpdateResult:
     manifest = _load_manifest(repo_root) or manifest
     _compare_verbatim(repo_root, manifest, result, dry_run=dry_run)
     _regenerate_index(repo_root, result, dry_run=dry_run)
+    _sync_pin(repo_root, manifest, result, dry_run=dry_run)
 
     _restamp(repo_root, manifest, result, dry_run=dry_run)
     return result
+
+
+# The pinned gate command a conv-5 hook or CI step carries (m005's shape).
+_UVX_GATE_RE = re.compile(r'uvx --from "git\+[^"]+@([^"]+)" foundry gate')
+_PRE_PUSH_REL = ".githooks/pre-push"
+
+
+def _sync_pin(repo_root: Path, manifest: dict, result: UpdateResult, *, dry_run: bool) -> None:
+    """The config pin (`[foundry] pin`) is the single source: a pristine pre-push
+    hook (and any CI gate line) carrying a different tag is rewritten to it, hash
+    re-recorded so pristine stays pristine. A customized hook is never touched —
+    flagged when its pin drifts."""
+    pin, repo_url = _config_pin(repo_root)
+    if not pin or not repo_url:
+        return
+    desired = f'uvx --from "git+{repo_url}@{pin}" foundry gate'
+
+    hook = repo_root / _PRE_PUSH_REL
+    entry = manifest.get("files", {}).get(_PRE_PUSH_REL)
+    if hook.is_file() and entry is not None:
+        raw = hook.read_bytes()
+        text = raw.decode("utf-8", "replace")
+        match = _UVX_GATE_RE.search(text)
+        if match and match.group(0) != desired:
+            if hashlib.sha256(raw).hexdigest() != entry.get("sha256"):
+                result.actions.append("customized .githooks/pre-push — pin left as-is")
+            else:
+                result.actions.append(
+                    f"{_p(dry_run)}repin {_PRE_PUSH_REL} (@{match.group(1)} → @{pin})"
+                )
+                if not dry_run:
+                    new = text.replace(match.group(0), desired)
+                    hook.write_bytes(new.encode("utf-8"))
+                    entry["sha256"] = hashlib.sha256(new.encode("utf-8")).hexdigest()
+                    _write_manifest(repo_root, manifest)
+
+    wf_dir = repo_root / ".github" / "workflows"
+    if wf_dir.is_dir():
+        for wf in sorted(wf_dir.glob("*.yml")) + sorted(wf_dir.glob("*.yaml")):
+            text = wf.read_text(encoding="utf-8")
+            new, n = _UVX_GATE_RE.subn(
+                lambda m: desired if m.group(0) != desired else m.group(0), text
+            )
+            if new != text:
+                rel = wf.relative_to(repo_root)
+                result.actions.append(f"{_p(dry_run)}repin {rel} (→ @{pin})")
+                if not dry_run:
+                    wf.write_text(new, encoding="utf-8")
 
 
 _KNOWLEDGE_SCRIPT = "scripts/knowledge.py"

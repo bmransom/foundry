@@ -242,3 +242,90 @@ def test_no_knowledge_refresh_means_no_regeneration(tmp_path):
     result = u.update(repo)
     assert not any("regenerate" in a for a in result.actions)
     assert (repo / "knowledge" / "index.md").read_text(encoding="utf-8") == "STALE-INDEX\n"
+
+
+# --- pin sync: the config pin is the single source (pin-sync) -------------------------
+
+
+def _pinned_repo(tmp_path, *, hook_pin="v0.2.2", config_pin="v0.2.3", pristine=True):
+    """A conv-5 repo whose pre-push hook carries `hook_pin` while the config pins
+    `config_pin`; the hook is manifest-tracked (pristine unless stated)."""
+    repo = tmp_path / "r"
+    hook = repo / ".githooks" / "pre-push"
+    hook.parent.mkdir(parents=True)
+    command = f'uvx --from "git+https://github.com/bmransom/foundry@{hook_pin}" foundry gate'
+    hook.write_text(
+        "#!/usr/bin/env bash\n"
+        "# Pre-push gate; bypass once with `git push --no-verify`.\n"
+        f"exec {command}\n",
+        encoding="utf-8",
+    )
+    (repo / ".foundry").mkdir()
+    (repo / ".foundry" / "config.toml").write_text(
+        "[foundry]\n"
+        f'pin = "{config_pin}"\n'
+        'repo_url = "https://github.com/bmransom/foundry"\n\n'
+        "[gate]\ncommands = []\n",
+        encoding="utf-8",
+    )
+    recorded = hook.read_bytes() if pristine else b"other bytes entirely"
+    manifest = {
+        "pluginVersion": "0.2.2",
+        "conventionVersion": u.HEAD,
+        "harnesses": ["claude-code"],
+        "files": {
+            ".githooks/pre-push": {
+                "template": "pre-push",
+                "version": 1,
+                "sha256": hashlib.sha256(recorded).hexdigest(),
+            }
+        },
+    }
+    (repo / ".foundry" / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
+    return repo
+
+
+def test_pin_drift_repins_the_pristine_hook_and_rerecords_the_hash(tmp_path):
+    repo = _pinned_repo(tmp_path)
+    result = u.update(repo)
+    hook = (repo / ".githooks" / "pre-push").read_text(encoding="utf-8")
+    assert "@v0.2.3" in hook and "@v0.2.2" not in hook
+    assert any("repin .githooks/pre-push (@v0.2.2 → @v0.2.3)" in a for a in result.actions)
+    entry = _manifest(repo)["files"][".githooks/pre-push"]
+    assert entry["sha256"] == hashlib.sha256((repo / ".githooks" / "pre-push").read_bytes()).hexdigest()
+
+
+def test_matching_pin_is_a_no_op(tmp_path):
+    repo = _pinned_repo(tmp_path, hook_pin="v0.2.3", config_pin="v0.2.3")
+    result = u.update(repo)
+    assert not any("repin" in a for a in result.actions)
+
+
+def test_customized_hook_is_never_repinned(tmp_path):
+    repo = _pinned_repo(tmp_path, pristine=False)
+    before = (repo / ".githooks" / "pre-push").read_bytes()
+    result = u.update(repo)
+    assert (repo / ".githooks" / "pre-push").read_bytes() == before
+    assert any("customized .githooks/pre-push — pin left as-is" in a for a in result.actions)
+
+
+def test_dry_run_would_repin_without_writing(tmp_path):
+    repo = _pinned_repo(tmp_path)
+    before = (repo / ".githooks" / "pre-push").read_bytes()
+    result = u.update(repo, dry_run=True)
+    assert any("would repin .githooks/pre-push" in a for a in result.actions)
+    assert (repo / ".githooks" / "pre-push").read_bytes() == before
+
+
+def test_ci_gate_lines_follow_the_pin(tmp_path):
+    repo = _pinned_repo(tmp_path)
+    wf = repo / ".github" / "workflows" / "gate.yml"
+    wf.parent.mkdir(parents=True)
+    wf.write_text(
+        "jobs:\n  gate:\n    steps:\n"
+        '      - run: uvx --from "git+https://github.com/bmransom/foundry@v0.2.2" foundry gate\n',
+        encoding="utf-8",
+    )
+    u.update(repo)
+    text = wf.read_text(encoding="utf-8")
+    assert "@v0.2.3" in text and "@v0.2.2" not in text
