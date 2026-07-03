@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/bmransom/foundry/compare/v0.2.0...v0.2.1) (2026-07-03)
+
+
+### Features
+
+* **driver:** gate feedback — failed gates feed evidence into retried stage prompts ([#76](https://github.com/bmransom/foundry/issues/76)) ([92f6b93](https://github.com/bmransom/foundry/commit/92f6b932dbbdd1c8e6f2e5eabd186438c6551082))
+
 ## [0.2.0](https://github.com/bmransom/foundry/compare/v0.1.11...v0.2.0) (2026-07-03)
 
 
