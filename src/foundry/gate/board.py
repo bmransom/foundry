@@ -12,16 +12,16 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from foundry.board import split_cells
+
 SLUG = re.compile(r"^[a-z0-9][a-z0-9-]*$")
 CLAIMABLE = ("ready", "in progress", "validating")
 
 
 def _split_row(line: str) -> list[str] | None:
-    """`| a | b | c |` -> ['a', 'b', 'c']; None when the line is not a table row."""
-    s = line.strip()
-    if not s.startswith("|"):
-        return None
-    return [cell.strip() for cell in s.strip("|").split("|")]
+    """`| a | b | c |` -> ['a', 'b', 'c']; None when the line is not a table row.
+    Delegates to the board parser's splitter so both honor GFM `\|` escapes."""
+    return split_cells(line)
 
 
 def _is_separator(line: str) -> bool:
