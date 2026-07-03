@@ -1,6 +1,6 @@
 [project]
 name = "foundry"
-version = "2.0.0a0"
+version = "0.2.0"
 description = "Foundry v2 — deterministic lifecycle driver, harness adapters, run ledger, materializer."
 requires-python = ">=3.11"
 dependencies = []
