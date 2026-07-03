@@ -10,7 +10,10 @@ Flow over a repo root:
 3. Hash-compare every **tracked** verbatim file: pristine-but-outdated (package version
    bumped) refreshes byte-exact and restamps; a hash mismatch is flagged customized and
    never overwritten.
-4. Restamp `pluginVersion` + `conventionVersion`.
+4. A refreshed `scripts/knowledge.py` regenerates `knowledge/index.md` — the index is
+   that script's generated output, so a generator refresh otherwise leaves it stale and
+   the repo's gate red. No prompt: generated files carry no user content to protect.
+5. Restamp `pluginVersion` + `conventionVersion`.
 
 Idempotent: a second run over a current repo reports nothing to do. `--dry-run` prints the
 plan without writing. Stdlib only.
@@ -22,6 +25,8 @@ import hashlib
 import json
 import re
 import stat
+import subprocess
+import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -225,9 +230,39 @@ def update(repo_root: Path | str, *, dry_run: bool = False) -> UpdateResult:
     # Re-read: a migration may have moved or restamped the manifest.
     manifest = _load_manifest(repo_root) or manifest
     _compare_verbatim(repo_root, manifest, result, dry_run=dry_run)
+    _regenerate_index(repo_root, result, dry_run=dry_run)
 
     _restamp(repo_root, manifest, result, dry_run=dry_run)
     return result
+
+
+_KNOWLEDGE_SCRIPT = "scripts/knowledge.py"
+
+
+def _regenerate_index(repo_root: Path, result: UpdateResult, *, dry_run: bool) -> None:
+    """Regenerate `knowledge/index.md` when the knowledge script was refreshed.
+
+    The index is the script's generated output; hand-edits are already forbidden by
+    its staleness check, so regeneration is the mechanical consequence of the refresh
+    — never a prompt. The script is stdlib-only by contract, so foundry's own
+    interpreter runs it."""
+    if _KNOWLEDGE_SCRIPT not in result.refreshed:
+        return
+    script = repo_root / _KNOWLEDGE_SCRIPT
+    if not script.is_file() or not (repo_root / "knowledge").is_dir():
+        return
+    result.actions.append(f"{_p(dry_run)}regenerate knowledge/index.md")
+    if dry_run:
+        return
+    proc = subprocess.run(
+        [sys.executable, str(script), "index"],
+        cwd=repo_root, capture_output=True, text=True,
+    )
+    if proc.returncode != 0:
+        result.actions.append(
+            f"knowledge index regeneration failed (exit {proc.returncode}) — "
+            f"run: python3 {_KNOWLEDGE_SCRIPT} index"
+        )
 
 
 def _run_migrations(repo_root: Path, result: UpdateResult, convention: int, *, dry_run: bool) -> None:

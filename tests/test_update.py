@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from pathlib import Path
 
 from foundry import __version__
 from foundry.materializer import update as u
@@ -169,3 +170,75 @@ def test_cli_dry_run(tmp_path, conv1_chain_fixture, monkeypatch, capsys):
     assert rc == 0
     assert (repo / "docs").exists()  # nothing written
     assert "would" in out.lower()
+
+
+# --- knowledge index regeneration on template refresh (update-index-regen) ------------
+
+
+def _knowledge_repo_with_stale_index(tmp_path):
+    """A repo whose knowledge.py is manifest-tracked one version behind (pristine
+    bytes) with a knowledge base whose index.md the refreshed script must regenerate."""
+    repo = tmp_path / "r"
+    vroot = verbatim_root()
+    rel = "scripts/knowledge.py"
+    content = (vroot / rel).read_bytes()
+    (repo / "scripts").mkdir(parents=True)
+    (repo / rel).write_bytes(content)
+    marker_version = _marker_version(content.decode())
+
+    seeds = Path(str(vroot)).parent / "seeds"
+    (repo / "knowledge").mkdir()
+    (repo / "knowledge" / "knowledge-config.json").write_bytes(
+        (seeds / "knowledge" / "knowledge-config.json").read_bytes()
+    )
+    (repo / "knowledge" / "demo.md").write_text(
+        "---\ntitle: Demo concept\ndescription: A demo.\ntype: reference\n---\n\n# Demo\n",
+        encoding="utf-8",
+    )
+    (repo / "knowledge" / "index.md").write_text("STALE-INDEX\n", encoding="utf-8")
+
+    (repo / ".foundry").mkdir()
+    manifest = {
+        "pluginVersion": "0.0.1",
+        "conventionVersion": u.HEAD,
+        "harnesses": ["claude-code"],
+        "files": {
+            rel: {
+                "template": "knowledge",
+                "version": marker_version - 1,
+                "sha256": hashlib.sha256(content).hexdigest(),
+            }
+        },
+    }
+    (repo / ".foundry" / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
+    return repo
+
+
+def test_refreshing_knowledge_template_regenerates_the_index(tmp_path):
+    repo = _knowledge_repo_with_stale_index(tmp_path)
+    result = u.update(repo)
+    assert "scripts/knowledge.py" in result.refreshed
+    assert any("regenerate knowledge/index.md" in a and not a.startswith("would") for a in result.actions)
+    index = (repo / "knowledge" / "index.md").read_text(encoding="utf-8")
+    assert "STALE-INDEX" not in index
+    assert "Demo concept" in index
+
+
+def test_dry_run_would_regenerate_without_writing(tmp_path):
+    repo = _knowledge_repo_with_stale_index(tmp_path)
+    result = u.update(repo, dry_run=True)
+    assert any(a == "would regenerate knowledge/index.md" for a in result.actions)
+    assert (repo / "knowledge" / "index.md").read_text(encoding="utf-8") == "STALE-INDEX\n"
+
+
+def test_no_knowledge_refresh_means_no_regeneration(tmp_path):
+    repo = _knowledge_repo_with_stale_index(tmp_path)
+    # Bring the manifest up to the current version: nothing to refresh.
+    manifest = _manifest(repo)
+    manifest["files"]["scripts/knowledge.py"]["version"] = _marker_version(
+        (verbatim_root() / "scripts/knowledge.py").read_text()
+    )
+    (repo / ".foundry" / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
+    result = u.update(repo)
+    assert not any("regenerate" in a for a in result.actions)
+    assert (repo / "knowledge" / "index.md").read_text(encoding="utf-8") == "STALE-INDEX\n"
