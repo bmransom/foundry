@@ -4,6 +4,12 @@
 
 Changes to the knowledge base, newest first. A reserved OKF file — no frontmatter.
 
+## 2026-07-03
+
+- **New** Added **Gate feedback** (closed-loop-control / CI failure-reporting prior art; extends
+  **Gate**) for `roadmap/specs/gate-feedback/` — the driver's first production run halted on three
+  blind, identically-prompted build retries; retries now carry the failed gate's evidence.
+
 ## 2026-07-02
 
 - **New** Landed the eleven **foundry-v2** vocabulary terms deferred by `roadmap/specs/foundry-v2/design.md`
