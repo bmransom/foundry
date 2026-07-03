@@ -15,6 +15,7 @@ import subprocess
 from pathlib import Path
 
 from foundry.config import Config, ConfigError
+from foundry.env import consumer_env
 from foundry.gate import board, knowledge, prose
 
 CHECKS = (board.check, prose.check, knowledge.check)
@@ -42,7 +43,9 @@ def run(repo_root: Path | str) -> tuple[bool, list[str]]:
     else:
         for command in config.gate_commands:
             argv = shlex.split(command)
-            result = subprocess.run(argv, cwd=repo_root)
+            # The repo's env, not foundry's: under `uvx foundry gate` the venv
+            # would otherwise shadow the consumer's python3 (foundry.env).
+            result = subprocess.run(argv, cwd=repo_root, env=consumer_env())
             if result.returncode != 0:
                 failed = True
                 lines.append(f"gate: command failed ({command}): exit {result.returncode}")

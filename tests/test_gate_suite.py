@@ -64,3 +64,25 @@ def test_malformed_config_fails_the_suite_with_a_finding_instead_of_a_traceback(
     assert ok is False
     assert lines[-1] == "gate: FAIL"
     assert any("config" in line and "malformed" in line for line in lines)
+
+
+# --- consumer env (gate commands run in the repo's environment, not foundry's) --
+
+
+def test_gate_commands_run_with_the_consumer_env(tmp_path):
+    # Under `uvx foundry gate`, foundry's venv leads PATH and VIRTUAL_ENV points
+    # at it, so a gate command's `python3` resolves to foundry's interpreter
+    # (octant's ruff/pytest sections break). Commands must see the repo's env:
+    # no VIRTUAL_ENV, and no foundry-interpreter bin dir on PATH.
+    write(
+        tmp_path / ".foundry" / "config.toml",
+        '[gate]\ncommands = ["sh -c \\"echo ${VIRTUAL_ENV:-unset} > env.txt; echo $PATH > path.txt\\""]\n',
+    )
+    ok, lines = suite.run(tmp_path)
+    assert ok is True, lines
+    assert (tmp_path / "env.txt").read_text().strip() == "unset"
+    import os
+    import sys
+    exe_dir = os.path.dirname(sys.executable)
+    path_entries = (tmp_path / "path.txt").read_text().strip().split(os.pathsep)
+    assert exe_dir not in path_entries
