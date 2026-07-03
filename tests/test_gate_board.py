@@ -103,3 +103,32 @@ def test_no_card_tables_fails(tmp_path):
     ok, findings = board.check(tmp_path)
     assert ok is False
     assert any("no card tables found" in f for f in findings)
+
+
+# --- GFM escaped pipes (board-pipe-escapes) -----------------------------------
+
+
+def test_escaped_pipes_are_not_cell_delimiters(tmp_path):
+    write_board(
+        tmp_path,
+        "# Roadmap\n\n"
+        "| Id | Work | Status | Spec | Depends on |\n"
+        "|---|---|---|---|---|\n"
+        "| tol-honesty | math `\\|x\\| <= tol` in prose | Ready | `s/` | — |\n",
+    )
+    ok, findings = board.check(tmp_path)
+    assert ok is True, findings
+    assert not any("malformed" in f for f in findings)
+
+
+def test_raw_pipes_still_malform_the_row(tmp_path):
+    write_board(
+        tmp_path,
+        "# Roadmap\n\n"
+        "| Id | Work | Status | Spec | Depends on |\n"
+        "|---|---|---|---|---|\n"
+        "| tol-honesty | math | x | <= tol in prose | Ready | `s/` | — |\n",
+    )
+    ok, findings = board.check(tmp_path)
+    assert ok is False
+    assert any("malformed" in f for f in findings)

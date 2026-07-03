@@ -9,6 +9,7 @@ unknown id raises BoardError listing near matches (difflib). Stdlib only.
 from __future__ import annotations
 
 import difflib
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -28,14 +29,25 @@ class Card:
     depends_on: str
 
 
-def _cells(line: str) -> list[str] | None:
-    """Split a markdown table row into stripped cells, or None if not a table row."""
+# GFM: `\|` is a literal pipe inside a cell, never a delimiter.
+_UNESCAPED_PIPE = re.compile(r"(?<!\\)\|")
+
+
+def split_cells(line: str) -> list[str] | None:
+    """Split a markdown table row into stripped cells, honoring `\|` escapes;
+    None when the line is not a table row."""
     stripped = line.strip()
     if not stripped.startswith("|"):
         return None
-    parts = stripped.split("|")
-    # A leading and trailing '|' produce empty edge fields; drop them.
-    return [p.strip() for p in parts[1:-1]]
+    parts = _UNESCAPED_PIPE.split(stripped)
+    parts = parts[1:]  # the leading '|' yields an empty first field
+    if parts and parts[-1].strip() == "":
+        parts = parts[:-1]  # the conventional trailing '|'
+    return [p.replace("\\|", "|").strip() for p in parts]
+
+
+def _cells(line: str) -> list[str] | None:
+    return split_cells(line)
 
 
 def _is_separator(cells: list[str]) -> bool:

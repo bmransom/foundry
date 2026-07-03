@@ -65,3 +65,20 @@ def test_resolve_unknown_card_lists_near_matches(tmp_path):
 def test_resolve_missing_board_raises(tmp_path):
     with pytest.raises(BoardError):
         resolve_card(tmp_path, "alpha")
+
+
+# --- GFM escaped pipes (board-pipe-escapes) -----------------------------------
+
+
+def test_escaped_pipes_stay_inside_their_cell():
+    # GFM: `\|` is a literal pipe, not a cell delimiter — octant's board carried
+    # math like `|x|` written as `\|x\|` and the parser split the row apart.
+    board = (
+        "| Id | Work | Status | Spec | Depends on |\n"
+        "|---|---|---|---|---|\n"
+        "| tol-honesty | scaled tolerance: `\\|d_j\\| <= tol / C_j` bound | Ready | `s/` | — |\n"
+    )
+    [card] = parse_board(board)
+    assert card.id == "tol-honesty"
+    assert "|d_j| <= tol / C_j" in card.work  # unescaped in the parsed cell
+    assert card.status == "Ready"
