@@ -22,6 +22,7 @@ from typing import Callable, Mapping, Optional, Protocol
 
 from foundry.adapters.parsers import StageResult
 from foundry.config import Config, Route
+from foundry.env import consumer_env
 from foundry.ledger import RunEvent, RunLedger, compute_cost, new_run_id
 from foundry.driver.stages import (
     ENTRY_PATHS,
@@ -142,6 +143,7 @@ def command_gate(name: str, argv: list) -> GateCheck:
             argv,
             cwd=str(ctx.workspace) if ctx.workspace else None,
             capture_output=True,
+            env=consumer_env(),  # the repo's env, never foundry's venv
         )
         raw = (proc.stdout or b"") + (proc.stderr or b"")
         if raw:
@@ -361,7 +363,9 @@ class Driver:
         path = self.workspace / ".foundry" / "hooks" / f"{stage.name}.{phase}.sh"
         if not path.is_file() or not os.access(path, os.X_OK):
             return None
-        proc = subprocess.run([str(path)], cwd=str(self.workspace))
+        proc = subprocess.run(
+            [str(path)], cwd=str(self.workspace), env=consumer_env()
+        )
         outcome = "PASS" if proc.returncode == 0 else "FAIL"
         self._append(
             self._event(

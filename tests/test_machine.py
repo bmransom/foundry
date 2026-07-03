@@ -571,3 +571,25 @@ def test_review_hook_fail_loopback_evidence_names_the_hook(tmp_path):
     build_fbs = [fb for (s, fb) in adapter.feedbacks if s == "build"]
     assert len(build_fbs) >= 2
     assert "post hook exited 5" in build_fbs[1].detail
+
+
+def test_command_gate_runs_in_the_consumer_env(tmp_path):
+    # Under `uv run foundry`, VIRTUAL_ENV and the venv bin dir leak into gate
+    # commands, shadowing the consumer repo's python3 (foundry.env).
+    gate = command_gate(
+        "tests", ["sh", "-c", 'echo "${VIRTUAL_ENV:-unset}" > env.txt; exit 0']
+    )
+    outcome = gate(GateContext(tmp_path, None))
+    assert outcome.outcome == "PASS"
+    assert (tmp_path / "env.txt").read_text().strip() == "unset"
+
+
+def test_hooks_run_in_the_consumer_env(tmp_path):
+    hooks = tmp_path / ".foundry" / "hooks"
+    hooks.mkdir(parents=True)
+    hook = hooks / "build.pre.sh"
+    hook.write_text('#!/bin/sh\necho "${VIRTUAL_ENV:-unset}" > hookenv.txt\nexit 0\n')
+    hook.chmod(0o755)
+    driver, ledger, _ = make_driver(tmp_path, path="bug-fix")
+    driver.run()
+    assert (tmp_path / "hookenv.txt").read_text().strip() == "unset"
