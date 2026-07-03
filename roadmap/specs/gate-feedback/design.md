@@ -1,4 +1,4 @@
-> **Status:** In progress (2026-07-03) — tracked on the [board](../../ROADMAP.md).
+> **Status:** Done (2026-07-03) — tracked on the [board](../../ROADMAP.md).
 
 # gate-feedback — design
 
