@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.3](https://github.com/bmransom/foundry/compare/v0.2.2...v0.2.3) (2026-07-03)
+
+
+### Bug Fixes
+
+* **gate:** board parsers honor GFM escaped pipes ([#81](https://github.com/bmransom/foundry/issues/81)) ([e63713f](https://github.com/bmransom/foundry/commit/e63713fa91d6f623402202adf16d1c53c636193c))
+* **update:** regenerate knowledge/index.md when the knowledge template refreshes ([#80](https://github.com/bmransom/foundry/issues/80)) ([a6538cb](https://github.com/bmransom/foundry/commit/a6538cbdf1aaa6f6247e9223e25419ad8a81ff73))
+
 ## [0.2.2](https://github.com/bmransom/foundry/compare/v0.2.1...v0.2.2) (2026-07-03)
 
 
