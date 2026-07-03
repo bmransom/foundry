@@ -29,8 +29,9 @@ from foundry.driver.stages import STAGES
 from foundry.ledger import compute_cost
 from foundry.config import Route
 
-# Adapter callable, the driver's shape: (stage, route, workspace) -> StageResult.
-Adapter = Callable[[str, Route, Path], StageResult]
+# Adapter callable, the driver's shape: (stage, route, workspace, feedback=None)
+# -> StageResult (feedback: gate-feedback AC-1.1; the matrix always passes None).
+Adapter = Callable[..., StageResult]
 
 # The review stage's output-contract gate — the gate under test (AC-10.2).
 _REVIEW_GATE = marker_gate("review", "CODE_REVIEW", "PASS")

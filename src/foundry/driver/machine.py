@@ -142,6 +142,7 @@ def command_gate(name: str, argv: list) -> GateCheck:
             cwd=str(ctx.workspace) if ctx.workspace else None,
             capture_output=True,
             text=True,
+            errors="replace",  # gate output is untrusted bytes; never crash the run
         )
         output = (proc.stdout or "") + (proc.stderr or "")
         if output:
@@ -318,7 +319,11 @@ class Driver:
             result = self._adapter(stage.name, route, self.workspace, feedback=feedback)
         post = self._run_hook(run_id, stage, "post")
         if post not in (None, 0):
-            outcome = GateOutcome(stage.gate_name, "FAIL")  # post hook fails the gate
+            # Post hook fails the gate — with evidence, so the retry isn't blind.
+            outcome = GateOutcome(
+                stage.gate_name, "FAIL",
+                detail=f"{stage.name}.post hook exited {post}",
+            )
         elif stage.gate is None:
             outcome = GateOutcome(stage.gate_name, "PASS")
         else:

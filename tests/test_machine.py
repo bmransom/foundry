@@ -513,3 +513,24 @@ def test_gate_evaluated_records_capped_result_text(tmp_path):
     # A mechanical stage runs no adapter: nothing to persist.
     verify_ev = next(e for e in evs if e.stage == "verify")
     assert verify_ev.result_text is None
+
+
+def test_command_gate_survives_non_utf8_output(tmp_path):
+    # A gate command's output is untrusted bytes: decoding must never crash the
+    # run (review finding: strict decode raised UnicodeDecodeError).
+    gate = command_gate("tests", ["sh", "-c", "printf '\\xff\\xfebad bytes'; exit 1"])
+    outcome = gate(GateContext(tmp_path, None))
+    assert outcome.outcome == "FAIL"
+    assert "bad bytes" in outcome.detail
+
+
+def test_failing_post_hook_feedback_names_the_hook(tmp_path):
+    # A post-hook FAIL must not produce a blind retry (empty detail).
+    write_hook(tmp_path, "build", "post", 3)
+    adapter = FakeAdapter()
+    driver, ledger, _ = make_driver(tmp_path, adapter=adapter, path="bug-fix")
+    driver.run()
+    build_feedbacks = [fb for (s, fb) in adapter.feedbacks if s == "build"]
+    assert build_feedbacks[1] is not None
+    assert "post hook" in build_feedbacks[1].detail
+    assert "3" in build_feedbacks[1].detail

@@ -17,10 +17,12 @@ omitting the fourth input.
   so prompts stay bounded. Rejected: a well-known failure file in the worktree —
   stateful, survives across runs, invisible in signatures.
 - **D2 Evidence originates in the gate.** `GateOutcome` gains `detail: str = ""`.
-  The command gate captures the command's output (stdout+stderr merged), writes it
-  through to the driver's stdout (today's visible behavior), and keeps a capped tail
-  as detail. The marker gate reports the value it saw; the plan gate the path it
-  missed.
+  The command gate captures the command's output (stdout+stderr merged, decoded with
+  `errors="replace"` — untrusted bytes never crash a run), writes it through to the
+  driver's stdout after the command exits, and keeps a capped tail as detail. The
+  trade: live streaming and stream separation go away on gate commands (the
+  interactive path still inherits stdio). The marker gate reports the value it saw;
+  the plan gate the path it missed; a failing post hook its exit code.
 - **D3 Review findings ride the same channel.** Review FAIL → build re-entry passes
   `GateFeedback("CODE_REVIEW", round, tail(review text))` — the second blind loop
   (20-round ceiling) closes with the same mechanism, not a parallel one. Inside the
