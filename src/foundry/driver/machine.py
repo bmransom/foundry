@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import os
 import subprocess
+import sys
 import time
 from dataclasses import dataclass, field, replace
 from datetime import datetime, timezone
@@ -141,14 +142,20 @@ def command_gate(name: str, argv: list) -> GateCheck:
             argv,
             cwd=str(ctx.workspace) if ctx.workspace else None,
             capture_output=True,
-            text=True,
-            errors="replace",  # gate output is untrusted bytes; never crash the run
         )
-        output = (proc.stdout or "") + (proc.stderr or "")
-        if output:
-            print(output, end="", flush=True)
+        raw = (proc.stdout or b"") + (proc.stderr or b"")
+        if raw:
+            # Write through as bytes: the driver's stdout codec never re-encodes
+            # untrusted gate output, so it can never crash the run.
+            buffer = getattr(sys.stdout, "buffer", None)
+            if buffer is not None:
+                buffer.write(raw)
+                sys.stdout.flush()
+            else:  # a replaced stdout (e.g. capture layers) — decode lossily
+                print(raw.decode("utf-8", errors="replace"), end="", flush=True)
         if proc.returncode == 0:
             return GateOutcome(name, "PASS")
+        output = raw.decode("utf-8", errors="replace")
         return GateOutcome(name, "FAIL", detail=_tail(output, FEEDBACK_DETAIL_CAP))
 
     return check
@@ -267,12 +274,14 @@ class Driver:
                     if review_rounds >= REVIEW_ROUND_CEILING:
                         self._halt(run_id, stage, outcome.name)
                         return RunResult(run_id, "halted", outcome.name, self._started)
-                    # The findings live in the review's returned text — feed its
-                    # tail to the build re-entry (D3).
+                    # The findings live in the review's returned text; the gate's
+                    # own detail (marker verdict / failed hook) leads so a hook
+                    # FAIL never feeds evidence that contradicts the failure (D3).
+                    parts = [p for p in (outcome.detail, result.text if result else "") if p]
                     carry = GateFeedback(
                         outcome.name,
                         review_rounds,
-                        _tail(result.text if result else "", FEEDBACK_DETAIL_CAP),
+                        _tail("\n".join(parts), FEEDBACK_DETAIL_CAP),
                     )
                     idx = self._build_idx  # loop back to build
                     continue

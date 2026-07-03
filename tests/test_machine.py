@@ -534,3 +534,40 @@ def test_failing_post_hook_feedback_names_the_hook(tmp_path):
     assert build_feedbacks[1] is not None
     assert "post hook" in build_feedbacks[1].detail
     assert "3" in build_feedbacks[1].detail
+
+
+def test_command_gate_write_through_survives_ascii_stdout(tmp_path):
+    # Round-2 advisory: the write-through must not re-encode through a strict
+    # stdout codec — bytes pass through even under PYTHONIOENCODING=ascii.
+    import subprocess as sp
+    import sys
+
+    code = (
+        "from foundry.driver.machine import command_gate, GateContext\n"
+        "g = command_gate('tests', ['sh', '-c', \"printf '\\\\xff\\\\xfe raw'; exit 1\"])\n"
+        "o = g(GateContext(None, None))\n"
+        "assert o.outcome == 'FAIL'\n"
+    )
+    proc = sp.run(
+        [sys.executable, "-c", code],
+        env={**os.environ, "PYTHONIOENCODING": "ascii"},
+        capture_output=True,
+    )
+    assert proc.returncode == 0, proc.stderr
+
+
+def test_review_hook_fail_loopback_evidence_names_the_hook(tmp_path):
+    # A review post-hook FAIL must not feed build evidence that contradicts the
+    # failure (the review text may end CODE_REVIEW: PASS).
+    write_hook(tmp_path, "review", "post", 5)
+    adapter = FakeAdapter(
+        results={"review": StageResult(text="CODE_REVIEW: PASS", input_tokens=1,
+                                       output_tokens=1, exit_status=0)}
+    )
+    gates = all_pass_gates()
+    gates["review"] = marker_gate("CODE_REVIEW", "CODE_REVIEW", "PASS")
+    driver, ledger, _ = make_driver(tmp_path, adapter=adapter, path="bug-fix", gates=gates)
+    driver.run()  # halts at the review round ceiling; the loop-backs are the point
+    build_fbs = [fb for (s, fb) in adapter.feedbacks if s == "build"]
+    assert len(build_fbs) >= 2
+    assert "post hook exited 5" in build_fbs[1].detail

@@ -24,11 +24,13 @@ omitting the fourth input.
   interactive path still inherits stdio). The marker gate reports the value it saw;
   the plan gate the path it missed; a failing post hook its exit code.
 - **D3 Review findings ride the same channel.** Review FAIL → build re-entry passes
-  `GateFeedback("CODE_REVIEW", round, tail(review text))` — the second blind loop
-  (20-round ceiling) closes with the same mechanism, not a parallel one. Inside the
-  re-entered build, a build-gate FAIL replaces the review feedback (D1's
-  latest-evidence rule); build's retry count starts fresh each re-entry, as today —
-  `REVIEW_ROUND_CEILING` bounds the outer loop.
+  `GateFeedback("CODE_REVIEW", round, tail(gate detail + review text))` — the gate's
+  own detail leads, so a review post-hook FAIL never feeds evidence that contradicts
+  the failure; the findings follow in the text tail. The second blind loop (20-round
+  ceiling) closes with the same mechanism, not a parallel one. Inside the re-entered
+  build, a build-gate FAIL replaces the review feedback (D1's latest-evidence rule);
+  build's retry count starts fresh each re-entry, as today — `REVIEW_ROUND_CEILING`
+  bounds the outer loop.
 - **D4 The ledger persists the stage's returned text, capped.** `RunEvent` gains
   `result_text: str | None`; the machine records `tail(StageResult.text)` on
   `gate_evaluated`. Old events parse (field defaults None). The wide event stays one
