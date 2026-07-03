@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.4](https://github.com/bmransom/foundry/compare/v0.2.3...v0.2.4) (2026-07-03)
+
+
+### Features
+
+* **update:** pin sync — the config pin drives the hook and CI gate lines ([#83](https://github.com/bmransom/foundry/issues/83)) ([9a1d756](https://github.com/bmransom/foundry/commit/9a1d75669b2a4db3b3860a3b85c11bd27cc17fc6))
+
 ## [0.2.3](https://github.com/bmransom/foundry/compare/v0.2.2...v0.2.3) (2026-07-03)
 
 
