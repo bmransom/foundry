@@ -1,5 +1,5 @@
 [foundry]
-pin = "v2.0.0a0"
+pin = "v0.2.0"
 repo_url = "https://github.com/bmransom/foundry"
 
 [gate]
