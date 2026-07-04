@@ -9,7 +9,7 @@
     ".foundry/bin/foundry": {
       "template": "foundry-shim",
       "version": 1,
-      "sha256": "6747b5d1404257c4ae7b9beb415448364a8eb3b5d13954e5490160b86b1113aa"
+      "sha256": "6736961eb482e6f65f922a4813817aaca5dc11a133d7c75d45b30e7f8a088703"
     },
     ".githooks/pre-push": {
       "template": "pre-push",

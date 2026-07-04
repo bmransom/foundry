@@ -57,4 +57,20 @@ err="$(run_shim "$nopin" gate 2>&1 || true)"
 out="$(run_shim "$consumer" rubric spec)"
 [[ "$out" == *'foundry rubric spec'* ]] || fail "shim should forward args verbatim; got: $out"
 
+# --- a pin under another table must not win (section-aware parse) ---
+decoy="$(mkrepo decoy)"
+mkdir -p "$decoy/.foundry"
+cat > "$decoy/.foundry/config.toml" <<'EOF'
+[tool.other]
+pin = "v0.0.0-wrong"
+repo_url = "https://example.com/wrong"
+
+[foundry]
+pin = "v1.2.3"
+repo_url = "https://example.com/right"
+EOF
+out="$(run_shim "$decoy" gate)"
+[[ "$out" == *'git+https://example.com/right@v1.2.3'* ]] \
+  || fail "shim must read pin from [foundry], not another table; got: $out"
+
 echo "foundry_shim_test: PASS"

@@ -21,8 +21,10 @@ if [ ! -f "$config" ]; then
   exit 1
 fi
 
-pin="$(sed -n 's/^[[:space:]]*pin[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p' "$config" | head -n1)"
-repo_url="$(sed -n 's/^[[:space:]]*repo_url[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p' "$config" | head -n1)"
+# Read the double-quoted values (the form bootstrap writes) from the [foundry] section
+# only — a `pin`/`repo_url` under any other table must not win.
+pin="$(sed -n '/^\[foundry\]/,/^\[/ s/^[[:space:]]*pin[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p' "$config" | head -n1)"
+repo_url="$(sed -n '/^\[foundry\]/,/^\[/ s/^[[:space:]]*repo_url[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p' "$config" | head -n1)"
 if [ -z "$pin" ] || [ -z "$repo_url" ]; then
   echo "foundry: [foundry] pin/repo_url missing from $config" >&2
   exit 1
