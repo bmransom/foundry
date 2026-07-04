@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.7](https://github.com/bmransom/foundry/compare/v0.2.6...v0.2.7) (2026-07-04)
+
+
+### Features
+
+* **eval:** harness-agnostic triggering eval (claude|codex) ([#89](https://github.com/bmransom/foundry/issues/89)) ([77152cb](https://github.com/bmransom/foundry/commit/77152cba2f50bb0b33ca2b099321566f81984b02))
+
+
+### Bug Fixes
+
+* **skills:** tighten code + handoff descriptions (codex triggering signal) ([#91](https://github.com/bmransom/foundry/issues/91)) ([b1bab36](https://github.com/bmransom/foundry/commit/b1bab368784e554cfe85d26c4b724e93701c13f3))
+
 ## [0.2.6](https://github.com/bmransom/foundry/compare/v0.2.5...v0.2.6) (2026-07-04)
 
 
