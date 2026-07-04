@@ -1,6 +1,6 @@
 {
   "fixture": "triggering",
-  "note": "Skill-routing corpus: given the foundry skill descriptions, which single skill should a fresh model consult for each user message, or NONE (trivial, a non-foundry skill, or unrelated). Measures whether descriptions support correct routing \u2014 a proxy for live triggering, not skill activation. Categories: positive (should route to the named skill), recall_stress (positive phrased without the obvious keyword), keyword_trap (shares a keyword with a skill but routes elsewhere), near_miss_negative (adjacent to a skill but should not trigger), system_negative (unrelated or non-foundry).",
+  "note": "Skill-routing corpus: given the foundry skill descriptions, which single skill should a fresh model consult for each user message, or NONE (trivial, a non-foundry skill, or unrelated). Measures whether descriptions support correct routing — a proxy for live triggering, not skill activation. Categories: positive (should route to the named skill), recall_stress (positive phrased without the obvious keyword), keyword_trap (shares a keyword with a skill but routes elsewhere), near_miss_negative (adjacent to a skill but should not trigger), system_negative (unrelated or non-foundry).",
   "expect_values": [
     "debug",
     "design-patterns",
@@ -26,7 +26,7 @@
     },
     {
       "id": "perf-memory",
-      "query": "profile the memory growth in the worker \u2014 it OOMs after about 6 hours",
+      "query": "profile the memory growth in the worker — it OOMs after about 6 hours",
       "expect": "performance",
       "category": "positive"
     },
@@ -38,7 +38,7 @@
     },
     {
       "id": "dp-switch",
-      "query": "I've got a 12-branch if/else on payment provider type that keeps growing \u2014 what's the cleanest way to structure this?",
+      "query": "I've got a 12-branch if/else on payment provider type that keeps growing — what's the cleanest way to structure this?",
       "expect": "design-patterns",
       "category": "positive"
     },
@@ -56,7 +56,7 @@
     },
     {
       "id": "mod-where",
-      "query": "where should the new webhook handler go \u2014 we have api/, services/, and domain/ and I'm not sure",
+      "query": "where should the new webhook handler go — we have api/, services/, and domain/ and I'm not sure",
       "expect": "modular-structure",
       "category": "positive"
     },
@@ -80,13 +80,13 @@
     },
     {
       "id": "name-recall",
-      "query": "`mgr`, `tmp2`, `data3` are all over this module \u2014 can we make these clearer?",
+      "query": "`mgr`, `tmp2`, `data3` are all over this module — can we make these clearer?",
       "expect": "naming-standards",
       "category": "recall_stress"
     },
     {
       "id": "extract-skill-debug",
-      "query": "that systematic debugging method we just used was great \u2014 turn it into a reusable skill",
+      "query": "that systematic debugging method we just used was great — turn it into a reusable skill",
       "expect": "extract-skill",
       "category": "positive"
     },
@@ -116,7 +116,7 @@
     },
     {
       "id": "neg-aws-cost",
-      "query": "cut our AWS bill \u2014 shut down idle staging instances overnight",
+      "query": "cut our AWS bill — shut down idle staging instances overnight",
       "expect": "NONE",
       "category": "near_miss_negative"
     },
@@ -176,7 +176,7 @@
     },
     {
       "id": "debug-segfault",
-      "query": "my C program segfaults on startup \u2014 drive lldb to find the faulting line",
+      "query": "my C program segfaults on startup — drive lldb to find the faulting line",
       "expect": "debug",
       "category": "positive"
     },
@@ -188,7 +188,7 @@
     },
     {
       "id": "handoff-milestone",
-      "query": "I'm at a good stopping point \u2014 write a handoff briefing so a fresh session can pick up this work with verified state",
+      "query": "I'm at a good stopping point — write a handoff briefing so a fresh session can pick up this work with verified state",
       "expect": "handoff",
       "category": "positive"
     },
@@ -200,7 +200,7 @@
     },
     {
       "id": "code-review-diff",
-      "query": "review this implementation diff against its spec before I finish the card \u2014 check the tests actually discriminate",
+      "query": "review this implementation diff against its spec before I finish the card — check the tests actually discriminate",
       "expect": "code-review",
       "category": "positive"
     },

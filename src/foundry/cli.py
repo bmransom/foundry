@@ -316,13 +316,19 @@ def _rubric(args) -> int:
         valid = ", ".join(STAGE_ORDER)
         print(f"foundry rubric: unknown stage '{stage}'; valid: {valid}", file=sys.stderr)
         return 2
-    try:
-        print(load_rubric(stage))
-    except RubricError:
-        s = STAGES[stage]
-        print(
-            f"stage '{stage}' is {s.kind} — no judgment rubric; its gate is '{s.gate_name}'."
-        )
+    s = STAGES[stage]
+    if not s.rubrics:  # mechanical stage — no judgment rubric
+        print(f"stage '{stage}' is {s.kind} — no judgment rubric; its gate is '{s.gate_name}'.")
+        return 0
+    # Resolve the stage's own rubric name(s) — the driver's source of truth — so the printed
+    # text matches what it compiles even if a rubric is renamed or a stage gains a second.
+    sections = []
+    for name in s.rubrics:
+        try:
+            sections.append(load_rubric(name))
+        except RubricError:
+            sections.append(f"(rubric '{name}' is an advisory skill — see plugins/foundry/skills/{name})")
+    print("\n\n---\n\n".join(sections))
     return 0
 
 
