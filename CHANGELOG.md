@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.6](https://github.com/bmransom/foundry/compare/v0.2.5...v0.2.6) (2026-07-04)
+
+
+### Features
+
+* **skills:** restore the interactive skill layer + foundry rubric printer ([#87](https://github.com/bmransom/foundry/issues/87)) ([e444997](https://github.com/bmransom/foundry/commit/e44499730aa1ba81cd59d9470c8a0a9b46ffe3be))
+
 ## [0.2.5](https://github.com/bmransom/foundry/compare/v0.2.4...v0.2.5) (2026-07-04)
 
 
