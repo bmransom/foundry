@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.8](https://github.com/bmransom/foundry/compare/v0.2.7...v0.2.8) (2026-07-04)
+
+
+### Bug Fixes
+
+* **skills:** tighten performance/design-patterns/naming-standards triggering ([#92](https://github.com/bmransom/foundry/issues/92)) ([8cd0011](https://github.com/bmransom/foundry/commit/8cd00118e7efc11a2fc2e828b049b57992850ed1))
+
 ## [0.2.7](https://github.com/bmransom/foundry/compare/v0.2.6...v0.2.7) (2026-07-04)
 
 
