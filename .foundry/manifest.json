@@ -1,11 +1,16 @@
 {
   "pluginVersion": "0.1.0",
-  "conventionVersion": 5,
+  "conventionVersion": 6,
   "harnesses": [
     "claude-code",
     "codex"
   ],
   "files": {
+    ".foundry/bin/foundry": {
+      "template": "foundry-shim",
+      "version": 1,
+      "sha256": "6736961eb482e6f65f922a4813817aaca5dc11a133d7c75d45b30e7f8a088703"
+    },
     ".githooks/pre-push": {
       "template": "pre-push",
       "version": 1,

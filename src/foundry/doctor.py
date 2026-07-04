@@ -202,9 +202,8 @@ def _check_hooks(repo_root: Path) -> list[Finding]:
             "hooks",
             "pre-push invokes neither the pinned gate (`foundry gate`) nor "
             "scripts/check-fast.sh",
-            fix='point .githooks/pre-push at `uvx --from "git+https://github.com/'
-                'bmransom/foundry@<pin>" foundry gate` (or scripts/check-fast.sh '
-                "until T13 lands)",
+            fix="point .githooks/pre-push at `.foundry/bin/foundry gate` (the shim "
+                "resolves the pin from .foundry/config.toml)",
         ))
     return findings
 
