@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.9](https://github.com/bmransom/foundry/compare/v0.2.8...v0.2.9) (2026-07-04)
+
+
+### Features
+
+* **knowledge:** bounded contexts + alphabetical glossary conventions ([#96](https://github.com/bmransom/foundry/issues/96)) ([3c194a6](https://github.com/bmransom/foundry/commit/3c194a694dbdda4d061a8f7ff68aa0a68c94337f))
+
+
+### Bug Fixes
+
+* **bootstrap:** stamp the registry head, not a stale convention ([#94](https://github.com/bmransom/foundry/issues/94)) ([5a93afe](https://github.com/bmransom/foundry/commit/5a93afec71e1369810ce1e928968a42e293c4434))
+
 ## [0.2.8](https://github.com/bmransom/foundry/compare/v0.2.7...v0.2.8) (2026-07-04)
 
 
