@@ -107,7 +107,7 @@ def test_bootstrap_installs_the_executable_shim(tmp_path):
 def test_manifest_stamped(tmp_path):
     b.materialize(tmp_path, _answers())
     manifest = json.loads((tmp_path / ".foundry" / "manifest.json").read_text())
-    assert manifest["conventionVersion"] == 5
+    assert manifest["conventionVersion"] == 6
     assert manifest["harnesses"] == ["claude-code", "codex"]
     entry = manifest["files"]["scripts/board.sh"]
     assert entry["template"] == "board"
@@ -233,3 +233,11 @@ def test_interview_raises_on_missing_answers_block(tmp_path):
         b.interview(
             adapter, Route("claude-code", "claude-opus-4-8"), str(tmp_path), run=fake_run
         )
+
+
+def test_bootstrap_convention_matches_registry_head():
+    # The drift guard the bug slipped past: a fresh bootstrap must stamp the current
+    # registry head, or it installs head-shaped templates under a stale convention
+    # (the conv-6 shim under a conv-5 stamp). One number, checked mechanically.
+    from foundry.materializer import update as u
+    assert b.CONVENTION_VERSION == u.HEAD

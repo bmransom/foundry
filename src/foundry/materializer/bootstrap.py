@@ -25,7 +25,7 @@ from pathlib import Path
 from foundry import __version__
 from foundry.config import Route
 
-CONVENTION_VERSION = 5
+CONVENTION_VERSION = 6
 DEFAULT_REPO_URL = "https://github.com/bmransom/foundry"
 # Aligned to __version__ (no "v" prefix) so doctor's config check — which compares the
 # pin to the running CLI version verbatim — is clean on a fresh bootstrap.
