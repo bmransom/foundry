@@ -1,6 +1,6 @@
 ---
 name: handoff
-description: Use when a milestone is done and a fresh agent should continue the same work with durable state, verified context, and the same agent harness.
+description: Use when ending an agent session at a milestone so a fresh successor session continues the same work — write durable agent state (.agent/handoff/HANDOFF.md) with verified context, then spawn a same-harness successor. For agent-session-to-session continuity, not handing work to a human or another team (a QA sign-off or PR review is not this).
 ---
 
 # Handoff
