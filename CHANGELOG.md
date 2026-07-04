@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.5](https://github.com/bmransom/foundry/compare/v0.2.4...v0.2.5) (2026-07-04)
+
+
+### Features
+
+* **materializer:** .foundry/bin/foundry shim + conv-6 migration ([#85](https://github.com/bmransom/foundry/issues/85)) ([c1eca1f](https://github.com/bmransom/foundry/commit/c1eca1fa579493afe38f3fa44c828208cd1c483c))
+
 ## [0.2.4](https://github.com/bmransom/foundry/compare/v0.2.3...v0.2.4) (2026-07-03)
 
 
