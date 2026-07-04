@@ -14,7 +14,7 @@ reader, with nothing left stale, orphaned, or contradictory.
 
 | The change is… | Home |
 |---|---|
-| a **canonical name** the repo should keep using | a row in `knowledge/glossary.md`, with provenance |
+| a **canonical name** the repo should keep using | an alphabetical row in `knowledge/glossary.md` (note its bounded context when the repo spans several), with provenance |
 | a durable **explanation, contract, how-to, or decision** | a concept file under `knowledge/`, with an OKF type |
 | a standing **rule, boundary, or convention** | `AGENTS.md` (or `rules/`) |
 | the **record** that something changed | a `knowledge/log.md` entry, appended newest-first |
@@ -37,6 +37,9 @@ One fact often touches several homes at once.
 - No **orphan** (a concept nothing links to), no **stale** claim a newer source
   superseded, no **missing page** (a heavily-referenced idea with no file), no
   **contradiction** (two files disagreeing about the same concept).
+- The glossary documents the repo's **bounded contexts** when it spans more than one — the
+  same term can mean different things across a boundary — and names which context owns each
+  term; canonical terms stay alphabetical for findability.
 - Progressive disclosure holds: the `index` is regenerated, each concept has a tight
   one-line `description` and clear headings, and a superseded claim is marked
   `lifecycle: superseded` rather than deleted.
