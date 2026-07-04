@@ -45,5 +45,15 @@ if "$RUNNER" --grade-only "$TMP/wrong.json" >/dev/null 2>&1; then fail "wrong pr
   || fail "classify must map 'performance' to performance"
 [ "$("$RUNNER" --classify-reply "chitchat, nothing to do")" = "NONE" ] \
   || fail "classify must map a non-skill reply to NONE"
+# The code/code-review prefix pair is live again (interactive-skills restored both);
+# longest-name-first must not let 'code' steal a 'code-review' answer.
+[ "$("$RUNNER" --classify-reply "code-review")" = "code-review" ] \
+  || fail "classify must map 'code-review' to code-review, not code"
+[ "$("$RUNNER" --classify-reply "code")" = "code" ] \
+  || fail "classify must map 'code' to code"
+
+# --- harness selection: claude (default) or codex, nothing else ---------------
+"$RUNNER" --harness codex --dry-run >/dev/null || fail "--harness codex must be accepted"
+if "$RUNNER" --harness gpt --dry-run >/dev/null 2>&1; then fail "an unknown harness must be rejected"; fi
 
 echo "triggering_eval_test: PASS"
