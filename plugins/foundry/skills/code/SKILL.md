@@ -1,6 +1,6 @@
 ---
 name: code
-description: Use when implementing, adding, changing, or fixing a feature in a foundry-bootstrapped repo (roadmap/ROADMAP.md, roadmap/specs/, features/, .foundry/) and you want to drive it through the lifecycle in THIS session — spec, plan, build, verify, knowledge, review, finish — supervised, sharing the conversation you're already in. Invoke by name to pair on a card; the interactive twin of the headless `.foundry/bin/foundry run <card-id>`. Covers the arc from design through shipping.
+description: Use to drive a board card through the whole foundry lifecycle in THIS session — spec, plan, build, verify, knowledge, review, finish — in a foundry-bootstrapped repo (roadmap/ROADMAP.md, roadmap/specs/, .foundry/). Invoke by name to pair on a claimed card end to end, supervised, sharing the conversation; the interactive twin of the headless `.foundry/bin/foundry run <card-id>`. Not for a one-off code edit, a stray snippet, or writing tests on their own — that is ordinary coding outside the card lifecycle, not this.
 ---
 
 # The code lifecycle (supervised)
