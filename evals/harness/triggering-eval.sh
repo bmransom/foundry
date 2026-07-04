@@ -146,18 +146,22 @@ def _codex_reply(stdout):
 
 def classify(query):
     prompt = build_prompt(query)
-    if harness_cli == "codex":
-        # codex reads the prompt on stdin ("-"); read-only sandbox — this only classifies.
-        result = subprocess.run(
-            ["codex", "exec", "--json", "--sandbox", "read-only", "-"],
-            input=prompt, capture_output=True, text=True, timeout=300,
-        )
-        reply = _codex_reply(result.stdout or "")
-    else:
-        result = subprocess.run(
-            ["claude", "-p", prompt], capture_output=True, text=True, timeout=180
-        )
-        reply = (result.stdout or "").strip()
+    try:
+        if harness_cli == "codex":
+            # codex reads the prompt on stdin ("-"); read-only sandbox — this only classifies.
+            result = subprocess.run(
+                ["codex", "exec", "--json", "--sandbox", "read-only", "-"],
+                input=prompt, capture_output=True, text=True, timeout=300,
+            )
+            reply = _codex_reply(result.stdout or "")
+        else:
+            result = subprocess.run(
+                ["claude", "-p", prompt], capture_output=True, text=True, timeout=180
+            )
+            reply = (result.stdout or "").strip()
+    except subprocess.TimeoutExpired:
+        # One hung case must not discard every prior prediction — count it a miss.
+        return "NONE"
     lines = [line for line in reply.splitlines() if line.strip()]
     return match_reply(lines[0] if lines else "")
 
