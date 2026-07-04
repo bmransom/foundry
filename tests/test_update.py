@@ -87,12 +87,12 @@ def _marker_version(text):
 # --- migration chain 1 → 5 -----------------------------------------------------------
 
 
-def test_chain_conv1_to_5(tmp_path, conv1_chain_fixture):
+def test_chain_conv1_to_6(tmp_path, conv1_chain_fixture):
     repo = conv1_chain_fixture(tmp_path / "r")
     result = u.update(repo)
 
     manifest = _manifest(repo)
-    assert manifest["conventionVersion"] == 5
+    assert manifest["conventionVersion"] == 6
     assert manifest["pluginVersion"] == __version__
     # m002: docs → knowledge, kind→type.
     assert (repo / "knowledge" / "glossary.md").is_file()
@@ -105,11 +105,13 @@ def test_chain_conv1_to_5(tmp_path, conv1_chain_fixture):
     board = (repo / "roadmap" / "ROADMAP.md").read_text()
     assert "| Id |" in board
     assert "| paste-command |" in board
-    # m005: pinned run command in the pre-push, conv stamped 5.
+    # m005 then m006: the gate command lands as the pin-free shim call, conv stamped 6.
     pre_push = (repo / ".githooks" / "pre-push").read_text()
-    assert "foundry gate" in pre_push and "check-fast" not in pre_push
+    assert "exec .foundry/bin/foundry gate" in pre_push and "check-fast" not in pre_push
+    assert "uvx --from" not in pre_push
+    assert (repo / ".foundry" / "bin" / "foundry").is_file()
     assert set(result.migrated) == {
-        "okf-knowledge", "harness-agnostic", "card-ids", "pinned-run"
+        "okf-knowledge", "harness-agnostic", "card-ids", "pinned-run", "cli-shim"
     }
 
 

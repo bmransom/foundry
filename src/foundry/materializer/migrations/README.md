@@ -30,6 +30,7 @@ residue such as a stray `kind:` is a completeness failure, never a trigger.
 | 3 | `harness-agnostic` | `.claude/rules/` → `rules/`; `.foundry-manifest.json` → `.foundry/manifest.json`; record the harness set | a top-level `.foundry-manifest.json` (manifest not yet under `.foundry/`) or a `.claude/rules/` directory | `m003_harness_agnostic.py` |
 | 4 | `card-ids` | board gains a required slug-safe `Id` column (on claimable cards), enforced by `check-board.py` | a `roadmap/ROADMAP.md` card-table header with no `Id` column, or a manifest `conventionVersion < 4` | `m004_card_ids.py` |
 | 5 | `pinned-run` | vendored gate scripts retire for the pinned `uvx … foundry gate` command: rewrite `.githooks/pre-push` + CI, delete `check-board.py`/`prose-lint.py`, write `.foundry/config.toml` | a manifest `conventionVersion == 4` with a vendored gate script or a check-fast pre-push | `m005_pinned_run.py` |
+| 6 | `cli-shim` | install the repo-local `.foundry/bin/foundry` shim and collapse the pin: rewrite `.githooks/pre-push` + CI from the hardcoded `uvx --from "git+…@…" foundry gate` to `.foundry/bin/foundry gate`, so the pinned tag lives only in `.foundry/config.toml` | a manifest `conventionVersion == 5` with `.foundry/bin/foundry` absent | `m006_cli_shim.py` |
 
 Convention 1 is the pre-OKF `docs/` layout — no row, because nothing migrates *to* it.
 

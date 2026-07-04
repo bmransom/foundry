@@ -6,6 +6,10 @@ Changes to the knowledge base, newest first. A reserved OKF file — no frontmat
 
 ## 2026-07-03
 
+- **New** Added **CLI shim** (`.foundry/bin/foundry`, conv 6 `foundry-cli-shim`): the
+  repo-local, pin-free entry point every caller uses — the plugin ships skills, not the CLI,
+  so a session (and the `code` skill) reaches the pinned CLI through the shim. Collapses the
+  two-places pin [[Pinned run]]/pin-sync kept in step; extends **Pinned run**.
 - **New** Added **Gate feedback** (closed-loop-control / CI failure-reporting prior art; extends
   **Gate**) for `roadmap/specs/gate-feedback/` — the driver's first production run halted on three
   blind, identically-prompted build retries; retries now carry the failed gate's evidence.

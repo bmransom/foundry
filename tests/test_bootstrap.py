@@ -85,14 +85,23 @@ def test_verbatim_copied_byte_exact_with_exec_bits(tmp_path):
     assert not (pkg.stat().st_mode & stat.S_IXUSR)
 
 
-def test_pre_push_is_pinned_not_verbatim(tmp_path):
+def test_pre_push_routes_through_the_shim_pin_free(tmp_path):
     b.materialize(tmp_path, _answers())
     pre_push = tmp_path / ".githooks" / "pre-push"
     content = pre_push.read_text(encoding="utf-8")
-    assert 'uvx --from "git+https://example.test/widgetworks@' in content
-    assert "foundry gate" in content
+    # Pin-free: the hook calls the shim, which resolves the pin from config.toml (conv 6).
+    assert "exec .foundry/bin/foundry gate" in content
+    assert "uvx --from" not in content
     assert "check-fast" not in content
     assert os.access(pre_push, os.X_OK)
+
+
+def test_bootstrap_installs_the_executable_shim(tmp_path):
+    b.materialize(tmp_path, _answers())
+    shim = tmp_path / ".foundry" / "bin" / "foundry"
+    assert shim.is_file() and os.access(shim, os.X_OK)
+    # the pin the shim will read lives in config.toml
+    assert 'pin = "' in (tmp_path / ".foundry" / "config.toml").read_text(encoding="utf-8")
 
 
 def test_manifest_stamped(tmp_path):

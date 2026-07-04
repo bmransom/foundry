@@ -204,11 +204,13 @@ def _write_symlink(path: Path, target: str, rel: str, result: BootstrapResult) -
     result.written.append(rel)
 
 
-def _pinned_pre_push(repo_url: str, pin: str) -> bytes:
+def _shim_pre_push() -> bytes:
+    # Route through the repo-local shim: it reads the pin from .foundry/config.toml, so the
+    # pinned tag lives in one place (conv 6, foundry-cli-shim). Pin-free by design.
     return (
         "#!/usr/bin/env bash\n"
         "# Pre-push gate; bypass once with `git push --no-verify`.\n"
-        f'exec uvx --from "git+{repo_url}@{pin}" foundry gate\n'
+        "exec .foundry/bin/foundry gate\n"
     ).encode("utf-8")
 
 
@@ -229,7 +231,7 @@ def _render_config(answers: Answers) -> bytes:
 
 
 def _render_agents_md(answers: Answers) -> bytes:
-    pinned = f'uvx --from "git+{answers.repo_url}@{answers.pin}" foundry gate'
+    pinned = ".foundry/bin/foundry gate"
     command_lines = []
     if answers.gate_test:
         command_lines.append(f"{answers.gate_test}          # build gate: the repo's tests")
@@ -251,7 +253,8 @@ def _render_agents_md(answers: Answers) -> bytes:
         "```bash\n"
         f"{commands_block}\n"
         "```\n\n"
-        "The gate runs at the pinned foundry version from the pre-push hook and CI:\n\n"
+        "The gate runs from the pre-push hook and CI via the repo-local shim, which resolves\n"
+        "the pinned foundry version from `.foundry/config.toml`:\n\n"
         "```sh\n"
         f"{pinned}\n"
         "```\n\n"
@@ -294,7 +297,7 @@ def _copy_verbatim(repo_root: Path, answers: Answers, result: BootstrapResult) -
         executable = bool(source.stat().st_mode & stat.S_IXUSR)
 
         if rel == _PRE_PUSH_REL:
-            content = _pinned_pre_push(answers.repo_url, answers.pin)
+            content = _shim_pre_push()
             executable = True
         else:
             content = raw

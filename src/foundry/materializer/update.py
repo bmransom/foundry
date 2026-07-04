@@ -33,7 +33,7 @@ from pathlib import Path
 from foundry import __version__
 from foundry.materializer.bootstrap import verbatim_root
 
-HEAD = 5  # registry head (matches the highest migration module's CONVENTION)
+HEAD = 6  # registry head (matches the highest migration module's CONVENTION)
 
 _MARKER_RE = re.compile(r"foundry-template:\s*(\S+)\s+v(\d+)")
 _NEW_MANIFEST = ".foundry/manifest.json"
@@ -65,9 +65,16 @@ def _migrations() -> list:
         m003_harness_agnostic,
         m004_card_ids,
         m005_pinned_run,
+        m006_cli_shim,
     )
 
-    return [m002_okf_knowledge, m003_harness_agnostic, m004_card_ids, m005_pinned_run]
+    return [
+        m002_okf_knowledge,
+        m003_harness_agnostic,
+        m004_card_ids,
+        m005_pinned_run,
+        m006_cli_shim,
+    ]
 
 
 # --- manifest helpers ----------------------------------------------------------------

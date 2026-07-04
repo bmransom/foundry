@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# foundry-template: foundry-shim v1
+# Repo-local entry point to the pinned foundry CLI. Forwards every argument, so a caller
+# — the `code` skill, CI, or a human — never types a version: the pin lives once, in
+# .foundry/config.toml. Self-host: in foundry's own repo (src/foundry/cli.py present) it
+# runs the current tree, because a pinned `uvx` fetch would gate a stale published tag.
+set -euo pipefail
+
+repo="$(git rev-parse --show-toplevel 2>/dev/null)" || {
+  echo "foundry: not inside a git repository" >&2
+  exit 1
+}
+
+if [ -f "$repo/src/foundry/cli.py" ]; then
+  exec uv run --project "$repo" foundry "$@"
+fi
+
+config="$repo/.foundry/config.toml"
+if [ ! -f "$config" ]; then
+  echo "foundry: no .foundry/config.toml at repo root ($repo)" >&2
+  exit 1
+fi
+
+pin="$(sed -n 's/^[[:space:]]*pin[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p' "$config" | head -n1)"
+repo_url="$(sed -n 's/^[[:space:]]*repo_url[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p' "$config" | head -n1)"
+if [ -z "$pin" ] || [ -z "$repo_url" ]; then
+  echo "foundry: [foundry] pin/repo_url missing from $config" >&2
+  exit 1
+fi
+
+exec uvx --from "git+$repo_url@$pin" foundry "$@"
