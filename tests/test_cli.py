@@ -135,3 +135,45 @@ def test_runs_show_unknown_id_exits_2_listing_known_ids(tmp_path):
     )
     assert result.returncode == 2
     assert "r-known" in result.stderr
+
+
+def test_rubric_prints_stage_map():
+    result = subprocess.run(
+        [sys.executable, "-m", "foundry.cli", "rubric"],
+        capture_output=True, text=True,
+    )
+    assert result.returncode == 0
+    assert "stage" in result.stdout and "gate" in result.stdout
+    # every judgment/mixed stage advertises its fetch command
+    assert "foundry rubric spec" in result.stdout
+    assert "foundry rubric review" in result.stdout
+
+
+def test_rubric_prints_one_stage_verbatim():
+    result = subprocess.run(
+        [sys.executable, "-m", "foundry.cli", "rubric", "spec"],
+        capture_output=True, text=True,
+    )
+    assert result.returncode == 0
+    assert "Spec stage rubric" in result.stdout
+    # byte-identical to what the driver compiles (same loader, same source)
+    from foundry.driver.prompts import load_rubric
+    assert result.stdout.rstrip("\n") == load_rubric("spec")
+
+
+def test_rubric_mechanical_stage_has_no_rubric():
+    result = subprocess.run(
+        [sys.executable, "-m", "foundry.cli", "rubric", "verify"],
+        capture_output=True, text=True,
+    )
+    assert result.returncode == 0
+    assert "no judgment rubric" in result.stdout and "gate" in result.stdout
+
+
+def test_rubric_unknown_stage_errors_listing_valid():
+    result = subprocess.run(
+        [sys.executable, "-m", "foundry.cli", "rubric", "nope"],
+        capture_output=True, text=True,
+    )
+    assert result.returncode == 2
+    assert "unknown stage" in result.stderr and "spec" in result.stderr

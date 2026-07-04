@@ -6,6 +6,14 @@ Changes to the knowledge base, newest first. A reserved OKF file — no frontmat
 
 ## 2026-07-03
 
+- **Update** Restored the interactive skill layer v2 (#70) deleted — `code`, `handoff`,
+  `spec-review`, `code-review`, `knowledge` — as the supervised twin of the driver. The stage
+  skills single-source their judgment from the new `foundry rubric <stage>` printer (one
+  source, two consumers: driver compile + skill fetch), reached via the `.foundry/bin/foundry`
+  shim. `handoff` restored near-verbatim (its `spawn-fresh-session.sh` runner survived the
+  purge). No glossary rows — the skills are generic engineering practice.
+
+
 - **New** Added **CLI shim** (`.foundry/bin/foundry`, conv 6 `foundry-cli-shim`): the
   repo-local, pin-free entry point every caller uses — the plugin ships skills, not the CLI,
   so a session (and the `code` skill) reaches the pinned CLI through the shim. Collapses the

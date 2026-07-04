@@ -111,6 +111,15 @@ def build_parser() -> argparse.ArgumentParser:
         help="keep the isolated review worktree instead of cleaning it up",
     )
 
+    rubric = subparsers.add_parser(
+        "rubric",
+        help="print the lifecycle stage map, or one stage's rubric (for the interactive skills)",
+    )
+    rubric.add_argument(
+        "stage", nargs="?",
+        help="a stage name; omit to print the ordered stage map",
+    )
+
     for name in STUB_SUBCOMMANDS:
         subparsers.add_parser(name)
     return parser
@@ -282,8 +291,45 @@ def main(argv: list[str] | None = None) -> int:
         return _eval(args)
     if args.command == "review":
         return _review(args)
+    if args.command == "rubric":
+        return _rubric(args)
     print(f"foundry {args.command}: not yet implemented", file=sys.stderr)
     return 2
+
+
+def _rubric(args) -> int:
+    """Print the lifecycle stage map, or one stage's rubric verbatim — the single source
+    of stage judgment the interactive skills fetch and the driver compiles."""
+    from foundry.driver.prompts import RubricError, load_rubric
+    from foundry.driver.stages import STAGE_ORDER, STAGES
+
+    if args.stage is None:
+        print("stage       kind        gate         rubric")
+        for name in STAGE_ORDER:
+            s = STAGES[name]
+            has = "foundry rubric " + name if s.rubrics else "—"
+            print(f"{name:<11} {s.kind:<11} {s.gate_name:<12} {has}")
+        return 0
+
+    stage = args.stage.strip()
+    if stage not in STAGES:
+        valid = ", ".join(STAGE_ORDER)
+        print(f"foundry rubric: unknown stage '{stage}'; valid: {valid}", file=sys.stderr)
+        return 2
+    s = STAGES[stage]
+    if not s.rubrics:  # mechanical stage — no judgment rubric
+        print(f"stage '{stage}' is {s.kind} — no judgment rubric; its gate is '{s.gate_name}'.")
+        return 0
+    # Resolve the stage's own rubric name(s) — the driver's source of truth — so the printed
+    # text matches what it compiles even if a rubric is renamed or a stage gains a second.
+    sections = []
+    for name in s.rubrics:
+        try:
+            sections.append(load_rubric(name))
+        except RubricError:
+            sections.append(f"(rubric '{name}' is an advisory skill — see plugins/foundry/skills/{name})")
+    print("\n\n---\n\n".join(sections))
+    return 0
 
 
 if __name__ == "__main__":

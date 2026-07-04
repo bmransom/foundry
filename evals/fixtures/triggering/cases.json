@@ -179,6 +179,36 @@
       "query": "my C program segfaults on startup — drive lldb to find the faulting line",
       "expect": "debug",
       "category": "positive"
+    },
+    {
+      "id": "code-lifecycle",
+      "query": "implement the CSV export feature in this foundry repo end to end, from spec through shipping the card",
+      "expect": "code",
+      "category": "positive"
+    },
+    {
+      "id": "handoff-milestone",
+      "query": "I'm at a good stopping point — write a handoff briefing so a fresh session can pick up this work with verified state",
+      "expect": "handoff",
+      "category": "positive"
+    },
+    {
+      "id": "spec-review-prose",
+      "query": "review my requirements.md and design.md for naming, vocabulary, and spec-format problems before I finalize them",
+      "expect": "spec-review",
+      "category": "positive"
+    },
+    {
+      "id": "code-review-diff",
+      "query": "review this implementation diff against its spec before I finish the card — check the tests actually discriminate",
+      "expect": "code-review",
+      "category": "positive"
+    },
+    {
+      "id": "knowledge-place",
+      "query": "add a glossary term for this new concept, record its provenance, and log it in the knowledge base",
+      "expect": "knowledge",
+      "category": "positive"
     }
   ]
 }
