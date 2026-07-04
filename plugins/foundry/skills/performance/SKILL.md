@@ -1,6 +1,6 @@
 ---
 name: performance
-description: Use when designing, implementing, reviewing, or validating performance-sensitive work; benchmarking, baselining, profiling, tracing, logging, resource analysis, latency, throughput, memory, CPU, IO, cost, scaling, regressions, or comparing main vs feature, flag-off vs flag-on, old vs new, prior vs current, or local vs reference behavior.
+description: Use when designing, implementing, reviewing, or validating performance-sensitive work; benchmarking, baselining, profiling, tracing, resource analysis, latency, throughput, memory, CPU, IO, the compute cost of a code path, scaling, regressions, or comparing main vs feature, flag-off vs flag-on, old vs new, prior vs current, or local vs reference behavior. Not for lowering a cloud bill or shutting down idle infrastructure — that is cost/ops work, not code performance.
 ---
 
 # Performance

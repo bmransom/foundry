@@ -1,6 +1,6 @@
 ---
 name: naming-standards
-description: Use when choosing, reviewing, or changing names for features, concepts, glossary terms, APIs, modules, files, directories, fields, flags, metrics, tests, configs, commands, public types, or user-facing vocabulary.
+description: Use when choosing, reviewing, or changing names for features, concepts, glossary terms, APIs, modules, files, directories, fields, flags, metrics, tests, configs, commands, public types, or user-facing vocabulary. Not for translating or localizing display text into another language — that is i18n, not choosing a name.
 ---
 
 # Naming Standards

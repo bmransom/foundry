@@ -1,6 +1,6 @@
 ---
 name: design-patterns
-description: Use when choosing, reviewing, or refactoring object, module, or service interactions; extension points; algorithm selection; adapters; eventing; construction; dependency boundaries; or when Strategy, Observer, Adapter, Factory, Builder, Facade, Decorator, Command, State, or similar patterns may fit.
+description: Use when choosing, reviewing, or refactoring object, module, or service interactions; extension points; algorithm selection; adapters; eventing; construction; dependency boundaries; or when Strategy, Observer, Adapter, Factory, Builder, Facade, Decorator, Command, State, or similar patterns may fit. Not for open-ended feature or requirements brainstorming — this is for structuring code that exists or is being written, not ideation.
 ---
 
 # Design Patterns
