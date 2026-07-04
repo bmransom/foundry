@@ -6,6 +6,7 @@ Changes to the knowledge base, newest first. A reserved OKF file — no frontmat
 
 ## 2026-07-03
 
+- **Update** Made the triggering eval harness-agnostic (`triggering-eval.sh --harness claude|codex`) — it was hardcoded to `claude -p` though v2 routes every other agent call through adapters; codex classifies via `codex exec --json`.
 - **Update** Restored the interactive skill layer v2 (#70) deleted — `code`, `handoff`,
   `spec-review`, `code-review`, `knowledge` — as the supervised twin of the driver. The stage
   skills single-source their judgment from the new `foundry rubric <stage>` printer (one
