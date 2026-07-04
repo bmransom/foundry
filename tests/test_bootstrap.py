@@ -241,3 +241,11 @@ def test_bootstrap_convention_matches_registry_head():
     # (the conv-6 shim under a conv-5 stamp). One number, checked mechanically.
     from foundry.materializer import update as u
     assert b.CONVENTION_VERSION == u.HEAD
+
+
+def test_glossary_seed_documents_contexts_and_alphabetization(tmp_path):
+    b.materialize(tmp_path, _answers())
+    glossary = (tmp_path / "knowledge" / "glossary.md").read_text(encoding="utf-8")
+    assert "## Bounded contexts" in glossary
+    assert "alphabetical" in glossary.lower()
+    assert "foundry-seed: glossary v2" in glossary

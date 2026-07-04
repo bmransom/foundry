@@ -169,3 +169,9 @@ def test_build_rubric_instructs_running_the_test_command():
     text = prompts.load_rubric("build")
     assert "[gate].test" in text
     assert "exits 0" in text
+
+
+def test_knowledge_rubric_covers_bounded_contexts_and_ordering():
+    text = prompts.load_rubric("knowledge")
+    assert "bounded context" in text.lower()
+    assert "alphabetical" in text.lower()

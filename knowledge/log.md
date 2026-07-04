@@ -6,6 +6,7 @@ Changes to the knowledge base, newest first. A reserved OKF file — no frontmat
 
 ## 2026-07-03
 
+- **Update** Added two glossary conventions: a **Bounded contexts** section (document sub-domain boundaries where a term's meaning differs, like the ubiquitous language and entity model) and an **alphabetical** ordering nudge for canonical terms — glossary seed v2 + knowledge rubric. Prior art: DDD bounded contexts.
 - **Update** Fixed `foundry bootstrap` stamping `conventionVersion` 5 while installing the conv-6 shim (`CONVENTION_VERSION` missed the cli-shim bump); added a drift guard test asserting it equals the registry head.
 - **Update** Tightened the `performance`, `design-patterns`, and `naming-standards` skill descriptions after the codex triggering run flagged them over-broad (cloud-bill ops, feature brainstorming, UI translation) — a scoped exclusion on each to true intent.
 - **Update** Tightened the `code` and `handoff` skill descriptions after a live codex triggering run (27/33) flagged them over-broad (`code` claimed generic coding; `handoff` a human QA hand-off) — scoped to a board-card lifecycle and agent-session continuity.
