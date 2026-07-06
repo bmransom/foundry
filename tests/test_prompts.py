@@ -122,7 +122,7 @@ def test_seed_markers_match_between_readme_copies():
     seed = (REPO_ROOT / "src" / "foundry" / "templates" / "seeds"
             / "roadmap" / "specs" / "README.md").read_text()
     repo = (REPO_ROOT / "roadmap" / "specs" / "README.md").read_text()
-    marker = "<!-- foundry-seed: specs-readme v4 -->"
+    marker = "<!-- foundry-seed: specs-readme v5 -->"
     assert marker in seed
     assert marker in repo
 
@@ -133,9 +133,18 @@ def test_seed_readmes_require_surface_and_invariants():
         / "roadmap" / "specs" / "README.md",
         REPO_ROOT / "roadmap" / "specs" / "README.md",
     ):
-        text = path.read_text()
+        text = " ".join(path.read_text().split())
         assert "Public surface" in text
         assert "Invariants" in text
+        # the design order: structs before interfaces, persisted in the class diagram
+        assert "structs before interfaces" in text
+        assert "class diagram" in text.lower()
+
+
+def test_spec_rubric_prescribes_structs_before_interfaces():
+    text = " ".join(prompts.load_rubric("spec").split())  # normalize line wraps
+    assert "structs before interfaces" in text
+    assert "class diagram that persists" in text
 
 
 # --- gate feedback (gate-feedback spec: US-1, US-4) --------------------------
