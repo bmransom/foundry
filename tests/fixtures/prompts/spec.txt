@@ -16,13 +16,19 @@ open question, never absorb it into build.
 
 - `requirements.md` states user stories with EARS acceptance criteria — one testable
   behavior per criterion.
-- `design.md` declares a **Public surface** section: every new or changed type,
-  signature, wire format, and config key. A missing section is a blocking finding.
+- `design.md` declares a **Public surface** section, designed **structs before
+  interfaces**: first the data structures with their fields and per-field invariants, then
+  the interfaces over them — signatures, protocols or traits, wire formats, and config
+  keys. Data shapes drive the operations, not the reverse. A missing section is a blocking
+  finding.
 - `design.md` declares an **Invariants** section: the properties that must always hold. A
   missing section is a blocking finding.
 - `design.md` names the metrics that tell whether the feature works, or states **N/A**
-  with a one-line reason; it carries a Mermaid architecture or component diagram, and a
-  class diagram where the structure is typed.
+  with a one-line reason; it carries a Mermaid architecture or component diagram — how the
+  structs and interfaces compose — and a **class diagram that persists the public
+  surface**: every struct (with its fields) and interface it declared. A typed surface
+  whose structs or interfaces are absent from the class diagram is a blocking finding; a
+  shell-only component with no typed structure uses architecture plus data-flow instead.
 - `tasks.md` is ordered in waves; each task is TDD (its test lands red first) and names
   the gate that proves it.
 - Names match the glossary's canonical terms and entity model; a new canonical name
