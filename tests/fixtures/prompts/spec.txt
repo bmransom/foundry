@@ -25,33 +25,54 @@ open question, never absorb it into build.
   missing section is a blocking finding.
 - `design.md` names the metrics that tell whether the feature works, or states **N/A**
   with a one-line reason; it carries a Mermaid architecture or component diagram — how the
-  structs and interfaces compose — and a **class diagram that persists the public
-  surface**: every struct (with its fields) and interface it declared. A typed surface
-  whose structs or interfaces are absent from the class diagram is a blocking finding; a
-  shell-only component with no typed structure uses architecture plus data-flow instead.
+  structs and interfaces compose — and a class diagram of the declared types and their
+  relationships. Fields live once, in the Public surface; the diagram does not repeat
+  them. A typed surface whose types are absent from the class diagram is a blocking
+  finding; a shell-only component with no typed structure uses architecture plus data-flow
+  instead.
 - `tasks.md` is ordered in waves; each task is TDD (its test lands red first) and names
   the gate that proves it.
 - Names match the glossary's canonical terms and entity model; a new canonical name
   carries its prior-art provenance.
+- Every `path:line` anchor resolves to a line that contains the cited symbol.
 - Prose meets the repo's writing style: no needless words, active voice, definite
   assertions.
+
+## Design questions (advisory)
+
+Ask the author these; answer each that raises something with a short critique quoting
+the spec text it rests on. They never block, and a reviewer never removes content: a
+suggested cut names the value it removes, and the author decides.
+
+1. **Traceable.** Does every acceptance criterion trace to a stated problem, every
+   public-surface item to a criterion, and every task to a criterion and a gate?
+2. **Simplest sufficient.** Is there a materially simpler design that meets the same
+   criteria? Name it if so.
+3. **Grounded.** Does every empirical claim cite its evidence, or name the tracer bullet
+   that could refute it?
+4. **Consistent.** Does anything contradict the code, the glossary, the roadmap, or
+   another spec?
+5. **Invariant-complete.** Would the invariants catch the failure modes the problem
+   statement names?
+6. **Executable.** Could a builder start the first wave without asking a question?
 
 ## Severity
 
 A **contract violation** is blocking: a wrong canonical name, a debt term used for its
 concept, an entity-model conflict, missing provenance, a spec-format breach, a missing
-**Public surface** or **Invariants** section, or an internal inconsistency. A taste-level
-prose preference is advisory. Objective banned filler is the prose linter's job, not a
-finding here.
+**Public surface** or **Invariants** section, a broken anchor, or an internal
+inconsistency. Design questions and taste-level prose preferences are advisory. Objective
+banned filler is the prose linter's job, not a finding here.
 
 ## Open questions
 
-Every public-surface or invariant decision the spec cannot resolve becomes an
-`open_questions` entry — never a silent assumption. Each entry names its `topic`
-(`surface` or `invariant`) and the `question` in one line.
+Every decision the spec cannot settle becomes an `open_questions` entry — never a silent
+assumption. Each entry names its `topic` (`surface`, `invariant`, `feasibility`, or
+`evidence`) and the `question` in one line.
 
 ## Output contract
 
+List the blocking findings, then the advisory design questions that raised something.
 Emit a fenced JSON block carrying the open questions, then the verdict as the **last
 line**. The JSON shape:
 

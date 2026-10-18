@@ -4,6 +4,10 @@
 
 Changes to the knowledge base, newest first. A reserved OKF file — no frontmatter.
 
+## 2026-10-18
+
+- **Update** Spec gate: the contract stays blocking (plus `path:line` anchors must resolve); design judgment becomes six advisory questions to the author that never block — a reviewer never removes content, and a suggested cut names the value it removes. The class diagram records types and relationships; fields live once in the Public surface. Spec format: check each review finding against the code before applying it — spec-format seed v6 + spec rubric.
+
 ## 2026-07-03
 
 - **Update** Design convention: `design.md` designs **structs before interfaces** (data shapes drive the operations), and the **class + architecture diagrams persist** every struct and interface — spec-format seed v5 + spec rubric.

@@ -122,7 +122,7 @@ def test_seed_markers_match_between_readme_copies():
     seed = (REPO_ROOT / "src" / "foundry" / "templates" / "seeds"
             / "roadmap" / "specs" / "README.md").read_text()
     repo = (REPO_ROOT / "roadmap" / "specs" / "README.md").read_text()
-    marker = "<!-- foundry-seed: specs-readme v5 -->"
+    marker = "<!-- foundry-seed: specs-readme v6 -->"
     assert marker in seed
     assert marker in repo
 
@@ -136,7 +136,7 @@ def test_seed_readmes_require_surface_and_invariants():
         text = " ".join(path.read_text().split())
         assert "Public surface" in text
         assert "Invariants" in text
-        # the design order: structs before interfaces, persisted in the class diagram
+        # the design order: structs before interfaces, with a class diagram of the types
         assert "structs before interfaces" in text
         assert "class diagram" in text.lower()
 
@@ -144,7 +144,20 @@ def test_seed_readmes_require_surface_and_invariants():
 def test_spec_rubric_prescribes_structs_before_interfaces():
     text = " ".join(prompts.load_rubric("spec").split())  # normalize line wraps
     assert "structs before interfaces" in text
-    assert "class diagram that persists" in text
+    # the class diagram records types and relationships; fields live once, in the surface
+    assert "class diagram of the declared types and their relationships" in text
+    assert "every struct (with its fields)" not in text
+
+
+def test_spec_rubric_keeps_design_questions_advisory():
+    # Substance is asked, never enforced: the questions cannot block and a reviewer
+    # cannot cut content — the author decides.
+    text = " ".join(prompts.load_rubric("spec").split())
+    for question in ("Traceable", "Simplest sufficient", "Grounded", "Consistent",
+                     "Invariant-complete", "Executable"):
+        assert f"**{question}.**" in text
+    assert "They never block, and a reviewer never removes content" in text
+    assert "Design questions and taste-level prose preferences are advisory" in text
 
 
 # --- gate feedback (gate-feedback spec: US-1, US-4) --------------------------

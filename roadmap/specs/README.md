@@ -3,7 +3,7 @@ title: Spec format
 description: How specs are written — requirements, design, and tasks per feature.
 ---
 
-<!-- foundry-seed: specs-readme v5 -->
+<!-- foundry-seed: specs-readme v6 -->
 
 # Specs
 
@@ -43,8 +43,8 @@ parallel; each wave builds on the last. Every task names the gate that proves it
 invariants each field carries. Then the interfaces over them — signatures, protocols or
 traits, wire formats, and config keys. Data shapes drive the operations, not the reverse.
 This is the contract the naming and structure reviews grade against; a missing section is
-a spec-stage gate failure. The **class diagram** is its durable record: every struct and
-interface declared here appears there.
+a spec-stage gate failure. The **class diagram** records the declared types and their
+relationships; fields live once, here.
 
 ## Invariants
 
@@ -62,9 +62,8 @@ at spec time so success is testable, not asserted; N/A is an explicit answer, no
 ## Diagrams
 
 `design.md` SHOULD include a Mermaid **architecture** or component diagram — how the
-structs and interfaces compose and where each stage runs — and a **class** diagram that
-persists the public surface: every designed struct (with its fields) and the interfaces
-over them, and their relationships. A shell-only component with no typed structure uses
+structs and interfaces compose and where each stage runs — and a **class** diagram of
+the declared types and their relationships (fields stay in the Public surface). A shell-only component with no typed structure uses
 architecture plus data-flow instead of a class diagram. Diagrams are reviewed twice:
 by `spec-review` at design time (accuracy and glossary vocabulary) and by `code-review`'s
 docs-sync at build time (the diagram matches the shipped code; drift is a finding). Where
@@ -73,5 +72,7 @@ in each context — not just the boxes.
 
 ## Review before approval
 
-Use `spec-review` in fresh context on the changed spec files and apply its findings
-before presenting `design.md` for approval.
+Use `spec-review` in fresh context on the changed spec files before presenting
+`design.md` for approval. Check each finding against the code before applying it — a
+reviewer can cite a type or rule that does not exist. Contract findings block; design
+questions are advisory: the reviewer flags, never removes, and the author decides.
