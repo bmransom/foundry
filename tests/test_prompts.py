@@ -144,18 +144,20 @@ def test_seed_readmes_require_surface_and_invariants():
 def test_spec_rubric_prescribes_structs_before_interfaces():
     text = " ".join(prompts.load_rubric("spec").split())  # normalize line wraps
     assert "structs before interfaces" in text
-    assert "Each type is stated once" in text
+    # the class diagram records types and relationships; fields live once, in the surface
+    assert "class diagram of the declared types and their relationships" in text
+    assert "every struct (with its fields)" not in text
 
 
-def test_spec_rubric_judges_substance_with_binary_questions():
-    # Judgment is spent on substance, one PASS/FAIL question each; form is binary and
-    # proportion forbids rewarding length or repetition.
+def test_spec_rubric_keeps_design_questions_advisory():
+    # Substance is asked, never enforced: the questions cannot block and a reviewer
+    # cannot cut content — the author decides.
     text = " ".join(prompts.load_rubric("spec").split())
     for question in ("Traceable", "Simplest sufficient", "Grounded", "Consistent",
                      "Invariant-complete", "Executable"):
         assert f"**{question}.**" in text
-    assert "PASS or FAIL" in text
-    assert "## Proportion" in prompts.load_rubric("spec")
+    assert "They never block, and a reviewer never removes content" in text
+    assert "Design questions and taste-level prose preferences are advisory" in text
 
 
 # --- gate feedback (gate-feedback spec: US-1, US-4) --------------------------
