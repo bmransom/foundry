@@ -122,7 +122,7 @@ def test_seed_markers_match_between_readme_copies():
     seed = (REPO_ROOT / "src" / "foundry" / "templates" / "seeds"
             / "roadmap" / "specs" / "README.md").read_text()
     repo = (REPO_ROOT / "roadmap" / "specs" / "README.md").read_text()
-    marker = "<!-- foundry-seed: specs-readme v5 -->"
+    marker = "<!-- foundry-seed: specs-readme v6 -->"
     assert marker in seed
     assert marker in repo
 
@@ -136,7 +136,7 @@ def test_seed_readmes_require_surface_and_invariants():
         text = " ".join(path.read_text().split())
         assert "Public surface" in text
         assert "Invariants" in text
-        # the design order: structs before interfaces, persisted in the class diagram
+        # the design order: structs before interfaces, with a class diagram of the types
         assert "structs before interfaces" in text
         assert "class diagram" in text.lower()
 
@@ -144,7 +144,18 @@ def test_seed_readmes_require_surface_and_invariants():
 def test_spec_rubric_prescribes_structs_before_interfaces():
     text = " ".join(prompts.load_rubric("spec").split())  # normalize line wraps
     assert "structs before interfaces" in text
-    assert "class diagram that persists" in text
+    assert "Each type is stated once" in text
+
+
+def test_spec_rubric_judges_substance_with_binary_questions():
+    # Judgment is spent on substance, one PASS/FAIL question each; form is binary and
+    # proportion forbids rewarding length or repetition.
+    text = " ".join(prompts.load_rubric("spec").split())
+    for question in ("Traceable", "Simplest sufficient", "Grounded", "Consistent",
+                     "Invariant-complete", "Executable"):
+        assert f"**{question}.**" in text
+    assert "PASS or FAIL" in text
+    assert "## Proportion" in prompts.load_rubric("spec")
 
 
 # --- gate feedback (gate-feedback spec: US-1, US-4) --------------------------
