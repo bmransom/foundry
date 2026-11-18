@@ -4,6 +4,10 @@
 
 Changes to the knowledge base, newest first. A reserved OKF file — no frontmatter.
 
+## 2026-11-17
+
+- **Update** Fixed `foundry bootstrap` pinning a bare version (`0.2.9`): the shim fetches `git+<repo_url>@<pin>` and releases are tagged `v<version>`, so the pre-push gate failed in every fresh repo. The default pin is now the release tag, with a test tying it to release-please's tag format.
+
 ## 2026-10-18
 
 - **Update** Spec gate: the contract stays blocking (plus `path:line` anchors must resolve); design judgment becomes six advisory questions to the author that never block — a reviewer never removes content, and a suggested cut names the value it removes. The class diagram records types and relationships; fields live once in the Public surface. Spec format: check each review finding against the code before applying it — spec-format seed v6 + spec rubric.

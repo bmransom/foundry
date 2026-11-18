@@ -27,9 +27,9 @@ from foundry.config import Route
 
 CONVENTION_VERSION = 6
 DEFAULT_REPO_URL = "https://github.com/bmransom/foundry"
-# Aligned to __version__ (no "v" prefix) so doctor's config check — which compares the
-# pin to the running CLI version verbatim — is clean on a fresh bootstrap.
-DEFAULT_PIN = __version__
+# The release tag: the shim fetches `git+<repo_url>@<pin>`, and release-please tags each
+# release `v<version>`, so a bare version names no ref. doctor accepts the `v` prefix.
+DEFAULT_PIN = "v" + __version__
 DEFAULT_HARNESSES = ("claude-code", "codex")
 
 # `# foundry-template: <name> v<N>` in any comment host (sh, //, JSON "//": "...").

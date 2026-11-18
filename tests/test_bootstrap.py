@@ -64,10 +64,14 @@ def test_answers_from_json_file(tmp_path):
     assert answers.gate_commands == ("scripts/check-heavy.sh",)
 
 
-def test_default_pin_aligns_with_version():
-    # doctor's config check compares pin == __version__ verbatim; default must match so a
-    # freshly bootstrapped repo is doctor-clean.
-    assert b.Answers.from_dict({"repo_name": "x"}).pin == __version__
+def test_default_pin_is_the_release_tag():
+    # The shim runs `uvx --from git+<repo_url>@<pin>`, so the pin must name a real git ref.
+    # release-please tags each release `v<version>` (include-v-in-tag defaults on); a bare
+    # `0.2.9` resolves nothing, which broke the pre-push gate in every fresh repo.
+    root = Path(__file__).resolve().parents[1]
+    config = json.loads((root / "release-please-config.json").read_text(encoding="utf-8"))
+    assert config.get("include-v-in-tag", True), "tags dropped the v: drop it from the pin"
+    assert b.Answers.from_dict({"repo_name": "x"}).pin == "v" + __version__
 
 
 # --- Deterministic materialize (AC-7.1) -----------------------------------------------
@@ -135,7 +139,7 @@ def test_no_claude_md_when_codex_only(tmp_path):
 def test_config_toml_written(tmp_path):
     b.materialize(tmp_path, _answers())
     config = tomllib.loads((tmp_path / ".foundry" / "config.toml").read_text())
-    assert config["foundry"]["pin"] == __version__
+    assert config["foundry"]["pin"] == "v" + __version__
     assert config["foundry"]["repo_url"] == "https://example.test/widgetworks"
     assert config["gate"]["test"] == "pytest -q"
     assert config["gate"]["commands"] == ["scripts/check-heavy.sh"]
